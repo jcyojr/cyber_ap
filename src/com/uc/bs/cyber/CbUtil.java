@@ -1595,6 +1595,16 @@ public class CbUtil extends com.uc.core.misc.Utils{
 
 		  }
 			 
+			public static String getCurrentDate() {
+				
+				String cDate ="";
+				
+			    Date date = new Date();
+			    SimpleDateFormat sdf = new SimpleDateFormat("yyyymmdd");
+			    cDate = sdf.format(date);
+				
+				return cDate;
+			}		 
 			 
 		
 }
