@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="KF271001" >
+
+    <!-- 세외수입 조회내역 가져온다. -->
+	<select id="SELECT_BNON_SEARCH_LIST" resultClass="mapForm" parameterClass="mapForm">
+	<![CDATA[    
+	SELECT     EPAY_NO      	    /* 전자납부번호 */
+			     , TAX_ITEM     		/* 과세목코드 */
+			     , TAX_YM       		/* 부과년월 */
+			     , FC_TAX_NO_CHECK(TAX_NO)  AS TAX_NO				/* 납부번호 */
+			     , DECODE(BUGWA_STAT,'02','2','1') BUGWA_STAT      		/* 부과 체납 구분 */
+			     ,(CASE
+			           WHEN F_GET_GYMD (DUE_DT) >= TO_CHAR (SYSDATE, 'YYYYMMDD')
+			              THEN PAYMENT_DATE1
+			           WHEN F_GET_GYMD (DUE_F_DT) >= TO_CHAR (SYSDATE, 'YYYYMMDD') 
+			              THEN PAYMENT_DATE1 + AFTPAYMENT_DATE1
+			           ELSE PAYMENT_DATE1 + AFTPAYMENT_DATE1
+			        END ) AS BNON_AMT 	    /* 납부금액 */
+			     , DUE_DT                   /* 납기일자 */
+			     , FC_GET_GYMD(DUE_F_DT,DUE_DT) DUE_F_DT     /* 납기후일자 */
+			     , F_GET_GYMD(DUE_DT) GYMD
+		 FROM TX2111_VW_OCR           /*표준세수입 TBL*/
+        WHERE EPAY_NO  IS NOT NULL    /*전자납부번호는 무조건 있어야된다.	*/
+		AND SNTG     IN ('0', '9')  /*납부상태 미수납 및 취소*/
+		AND F_GET_GYMD(DUE_F_DT) >= TO_CHAR(SYSDATE, 'YYYYMMDD')   /*납부가능한 것만...*/
+        AND TAX_ITEM  IN ('281005', '288125')
+	]]>      
+		/*조건 주민번호*/
+		<isNotEmpty prepend = "AND" property="JUMIN_NO">
+		 	REG_NO  = FC_DAMO(#JUMIN_NO#)     /*주민번호 */
+		</isNotEmpty>
+	
+	    UNION ALL
+	    
+	 <![CDATA[
+	     SELECT   RPAD(EPAY_NO,19,'0') AS EPAY_NO
+                ,TAX_ITEM
+                ,TAX_YY || TAX_MM AS TAX_YM
+                ,SUBSTR(OCR_BD, 3, 29)||'000' TAX_NO
+                ,DECODE(BUGWA_STAT,'B','1','D','1','F','1','2') BUGWA_STAT
+                ,(CASE
+			           WHEN F_GET_GYMD (DUE_DT) >= TO_CHAR (SYSDATE, 'YYYYMMDD')
+			              THEN BUTT
+			           WHEN F_GET_GYMD (FDUE_DT) >= TO_CHAR (SYSDATE, 'YYYYMMDD') 
+			              THEN BUTT + GAMONEY
+			           ELSE BUTT + GAMONEY
+			       END ) AS BNON_AMT 	    /* 납부금액 */
+                 ,DUE_DT                    /* 납기일자 */
+                 ,FC_GET_GYMD(NVL(DUE_F_DT, '00000000'),DUE_DT)  DUE_F_DT  /* 납기후일자 */
+                 ,F_GET_GYMD(DUE_DT) GYMD
+        FROM TX2121_VW_OCR             /*구세외수입 TBL*/
+        WHERE EPAY_NO  IS NOT NULL     /*전자납부번호는 무조건 있어야된다.	*/
+        AND SNTG     IN ('0', '9')     /*납부상태 미수납 및 취소*/
+		AND F_GET_GYMD(DUE_F_DT) >= TO_CHAR(SYSDATE, 'YYYYMMDD')   /*납부가능한 것만...*/
+       
+	 ]]>      
+	    /*조건 주민번호*/
+		<isNotEmpty prepend = "AND" property="JUMIN_NO">
+		 	REG_NO  = FC_DAMO(#JUMIN_NO#)     /*주민번호 */
+		</isNotEmpty>	
+
+	</select>
+	
+	
+</sqlMap>

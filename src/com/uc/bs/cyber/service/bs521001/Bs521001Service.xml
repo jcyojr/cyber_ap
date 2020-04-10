@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="BS521001" >
+
+	<!-- TAX 짤라서 조회조건 만들어야된다 -->
+    <!-- 지방세 조회내역 가져온다. -->
+	<select id="SELECT_TAX_SEARCH_LIST" resultClass="mapForm" parameterClass="mapForm">
+		<![CDATA[    
+	 	SELECT '1' TAX_GBN
+	 				, SUBSTR(TAX_NO, 3, 29) TAXNO
+	       			, TAX_ITEM
+	       			, TAX_YY||TAX_MM TAX_YM
+		       	 	, TAX_DIV
+		        	, DLQ_DIV
+		        	, F_GET_GYMD(DUE_DT) AS DUE_DT
+		        	, FC_GET_GYMD(GGYM,DUE_DT) DUE_F_DT
+		        	, SUM_B_AMT AMT
+		        	, SUM_F_AMT AFTAMT 
+		        	, RCP_CNT SEQNO
+		        	, MNTX
+                    , MNTX_ADTX
+                    , CPTX
+                    , CPTX_ADTX
+                    , CFTX
+                    , CFTX_ADTX
+                    , LETX
+                    , LETX_ADTX
+                    , ASTX
+                    , ASTX_ADTX
+                    , TAX_DT
+	    	FROM TX1101_VW_OCR      
+       	  WHERE EPAY_NO  IS NOT NULL    		/*전자납부번호는 무조건 있어야된다.	*/
+       		   AND SNTG     IN ('0', '9') 		/*납부상태 미수납 및 취소*/
+		       AND F_GET_GYMD(GGYM) >= TO_CHAR(SYSDATE, 'YYYYMMDD')   /*납부가능한 것만...*/
+   		 ]]>      
+		 	   AND REG_NO  = FC_DAMO(#JUMIN_NO#)       /*주민번호 */
+
+	</select>
+</sqlMap>

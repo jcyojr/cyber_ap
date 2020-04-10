@@ -1,0 +1,793 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXBT2411" >
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+<!-- 1. TXBT2411 : 표준세외수입 부과자료연계 구청별                              -->
+<!-- 2. 부과자료 및 부가가치세 부과내역을 사이버지방세청 DB로 연계하여 가져온다. -->
+<!-- 3. 구청별 연계자료는 시청과 달리 배치로 구동되어 진다.                      -->
+<!-- 4. 저녁 9시 한번만 구동된다.                                                -->
+<!-- 5. 연계쿼리[NIS], 사이버세청[CYBER]로 구분한다.                             -->
+<!-- 6. 구청의 DB가 ORACLE 8 버전이 있으므로 8버젼에 맞게 쿼리를 만듦            -->
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+
+    <!-- 부과전송건수/부가가치세건수를 구하기위한 통계 -->
+    <!-- [SEOI_GB] 01.부과 02.부과가치세 -->
+    <!-- NIS 해당 지자체 연결 -->
+	<select id="SELECT_LEVY_INFO_STATIC" resultClass="mapForm">
+
+          SELECT 
+                SUBSTR(A.DEP_CODE,1,3) AS DEPT_CD    /*부서코드(1,3) : 구청코드*/
+              , COUNT(*)               AS CNT        /*갯수*/
+      
+          FROM
+                RISTNLVBOOK   A           /*부과대장 TBL*/
+              , CMMTNDPTMNT   B           /*부서 TBL    */
+              , CMMTNSEMOK    C           /*세목코드 TBL*/
+              , CMMTNTAXINFO  D           /*세액정보 TBL*/
+              , CMMTNBUDGET   E           /*예산과목 TBL*/
+              , CMMTNOFFICE   F           /*자치단체 TBL*/
+              
+          WHERE A.LVY_DEL_GBN       = '02'           /*부과취소구분 01.취소 02.미취소*/
+             
+          <isEqual prepend="AND" property="SEOI_GB" compareValue="01">
+              A.THAP_GBN          IN ( '01','02')  /*통합구분 01.통합 02.미통합    */
+          </isEqual>   
+          <isEqual prepend="AND" property="SEOI_GB" compareValue="02">
+              A.THAP_GBN          IN ( '03')       /*통합구분 03.부가가치세        */
+          </isEqual>            
+           
+          <![CDATA[    
+              AND A.DIV_GBN           = '02'           /*분납구분 01.분납 02.미분납    */
+              AND A.DEP_CODE          = B.DEP_CODE(+)
+              AND A.ACC_YEAR          = C.ACC_YEAR(+)
+              AND A.ACC_GBN           = C.ACC_GBN(+)                    
+              AND A.ACC_GBN           <>'16'           /*16제외*/
+              AND A.SEMOK_CODE        = C.SEMOK_CODE(+)    
+          ]]>  
+              
+          <isEqual prepend="AND" property="SEOI_GB" compareValue="01">    
+              <![CDATA[    
+              A.SEMOK_CODE        >= '201000' AND A.SEMOK_CODE < '300000'
+              ]]>  
+              
+              <isNotEmpty prepend = "AND" property="BS_NOT_IN_SEMOK">
+              	  SUBSTR(A.SEMOK_CODE,1,3) NOT IN (#BS_NOT_IN_SEMOK#)              /*(중요) 사용하지 않는 과목은 가져오지 않는다...나중에 세외수입에서는 꼭 추가해야 함*/
+              </isNotEmpty>
+          </isEqual>    
+          
+          <isEqual prepend="AND" property="SEOI_GB" compareValue="02">
+              SUBSTR(A.SEMOK_CODE,1,3) IN ('299')
+          </isEqual> 
+          
+              AND A.LST_AMT + A.LST_ADD_AMT + A.DIV_IJA > 0
+              AND A.DEP_CODE          = B.DEP_CODE(+)
+              AND A.DEP_CODE          = D.DEP_CODE(+)
+              AND A.ACC_YEAR          = D.ACC_YEAR(+)
+              AND A.ACC_GBN           = D.ACC_GBN(+)
+              AND A.SEMOK_CODE        = D.SEMOK_CODE(+)
+              AND D.BUD_CODE          = E.BUD_CODE(+)
+              AND D.ACC_YEAR          = E.ACC_YEAR(+)
+              AND B.SF_TEAM_CODE      = F.SF_TEAM_CODE
+              AND F.SF_TEAM_NM        LIKE '부산%'
+              AND A.ACC_YEAR          BETWEEN '1900' AND '9999'    
+              AND A.PAY_GBN           = '02'          /*수납구분 01.수납 02.미수납 03.일부수납 */
+              AND A.LSS_GBN           = '02'          /*결손구분 01.결손 02.미결손 */
+              
+         <isEqual prepend="AND" property="SEOI_GB" compareValue="01">    
+                  DECODE (ABS (NVL(replace(A.LST_NAP_YMD, '-', ''),'0') -  NVL(replace(A.AFT_NAP_YMD, '-', ''),'0')), NVL(replace(A.LST_NAP_YMD, '-', ''),'0') - NVL(replace(A.AFT_NAP_YMD, '-', ''),'0'), A.LST_NAP_YMD, A.AFT_NAP_YMD) >= TO_CHAR(SYSDATE,'YYYYMMDD')
+              AND A.ERC_NO            IS NOT NULL    
+         </isEqual>
+         
+         <isEqual prepend="AND" property="SEOI_GB" compareValue="02">
+              A.ACC_GBN||A.SEMOK_CODE BETWEEN '00000000'  AND '99999999'
+              AND A.THLVY_KEY         IS NOT NULL
+         </isEqual>
+                
+              AND A.LVY_STT_GBN       = '01'          /*부과상태구분 01.부과 02.체납  */
+              AND A.LVY_GBN           IS NOT NULL
+              
+          GROUP BY SUBSTR(A.DEP_CODE,1,3)
+          
+	</select>
+
+    <!-- CYBER -->
+    <!-- 세외수입 부가 전송관리에 전송로그를 기록한다. -->
+	<insert id="INSERT_LOG_TX2191_TB" parameterClass="mapForm">
+	<![CDATA[
+	
+	    INSERT INTO TX2191_TB     /*세외수입부가전송관리 TBL*/ 
+		   (  TRS_DT              /*전송일자*/
+			, SGG_COD             /*구청코드*/
+			, TYPE                /*타입*/
+			, CNT                 /*시작건수*/
+			, END_CNT             /*종료건수*/
+			, GUBUN               /*구분*/
+		)
+	    VALUES ( TO_DATE(#TRS_DT#,  'YYYYMMDDHH24MISS') 
+		       , #SGG_COD#
+			   , #TYPE#               /*'I', 'B', 'D' : '입력', '부가가치세', '삭제'*/
+			   , #CNT#
+			   , #END_CNT# 
+			   , #GUBUN#              /*'00'*/
+		)
+	]]>	
+	</insert>
+	
+	<!-- 세외수입 부가 전송관리 에 전송로그를 업데이트 한다. -->
+	<!-- CYBER -->
+	<update id="UPDATE_LOG_TX2191_TB" parameterClass="mapForm">
+    <![CDATA[
+    
+         UPDATE TX2191_TB
+            SET END_CNT    = #END_CNT#
+               ,END_DATE   = SYSDATE
+         WHERE TRS_DT      = TO_DATE(#TRS_DT#,  'YYYYMMDDHH24MISS') 
+           AND SGG_COD     = #SGG_COD#
+           AND TYPE        = #TYPE#
+           AND CNT         = #CNT#
+           AND GUBUN       = #GUBUN#
+    
+    ]]>	
+	</update>
+
+    <!-- CYBER -->
+    <!-- 부과전송건수/부가가치세를 구하기위한 통계(구청별 전송일자 전송건수) -->
+	<select id="SELECT_LEVY_INFO_FOR_DATE" resultClass="mapForm">
+	<![CDATA[
+ 
+          SELECT
+                B.TRS_DT
+              , SGG_COD
+              , CNT
+          FROM
+          (
+              SELECT
+                  MAX(TRS_DT)     TRS_DT
+              FROM TX2191_TB      /*세외수입 부과 전송 관리*/ 
+              WHERE SGG_COD     = #SGG_COD#
+                AND GUBUN       = '00'
+          ) A, TX2191_TB B
+          WHERE A.TRS_DT        = B.TRS_DT
+            AND B.GUBUN         = '00'
+            AND ROWNUM          = 1
+          
+    ]]>
+	</select>		
+
+    <!-- CYBER -->
+    <!-- 표준세외수입 원장에 부과연계자료가 있는지 체크한다. -->
+	<select id="SELECT_LEVY_DATA" parameterClass="mapForm" resultClass="integer">
+	<![CDATA[
+ 
+        SELECT
+            COUNT(*) CHK_EXIST
+        FROM TX2111_TB A, TX2112_TB B
+        WHERE A.TAX_NO = B.TAX_NO
+          AND A.SGG_COD = B.SGG_COD
+          AND A.TAX_NO  = #TAX_NO#  /*납세번호*/
+          AND ROWNUM  = 1
+          
+    ]]>
+	</select>		
+	
+	<!-- NIS -->
+	<!-- 전자납부 고지내역 READ  -->
+	<select id="SELECT_LEVY_INFO_LIST" resultClass="mapForm">
+	    <![CDATA[
+	
+        SELECT 
+              A.ERC_NO                                                                          EPAY_NO            /*전자납부번호(19) */
+            , A.LVY_KEY                                                                         TAX_NO             /*부과대장키:납세번호(31) */
+            , DECODE(A.ACC_GBN,'16','[국세외]'
+                              ,'31','[시세외]'
+                              ,'41','[구군세외]'
+                              ,'61','[구군세외]')||' '||C.SEMOK_NM                              TAX_NOTICE_TITLE    /*고지서제목 */
+            , A.DEP_CODE                                                                        PART_CODE           /*부서코드(11)*/
+            , F.SF_TEAM_NM||' '||B.DEP_NM                                                       ORG_PART_CODE       /*부서코드명*/
+            , A.ACC_YEAR                                                                        ACCOUNT_YEAR        /*회계년도*/
+            , A.ACC_GBN                                                                         ACCT_COD            /*회계구분(2)*/
+            , DECODE(A.ACC_GBN,'16','국세'
+                              ,'31','시세'
+                              ,'41','구군세'
+                              ,'61','구군세')                                                   ACCOUNT_NAME        /*회계구분명*/
+            , A.SEMOK_CODE                                                                      TAX_ITEM            /*세목코드(6) */
+            , C.SEMOK_NM                                                                        TAX_NM              /*세목코드명 */
+            , A.LVY_NO                                                                          TAX_SNO             /*부과번호(6) */
+            , A.DIV_SNO                                                                         DIVIDED_PAYMENT_SEQNUM   /*분납순번(2)*/
+            , SUBSTRB(A.LVY_YMD, 1 , 6)                                                         TAX_YM              /*부과월(6) */
+            , DECODE(A.LVY_GBN, '01', '정기', '수시')                                           LEVY_DIV            /*부과구분명*/
+            , SUBSTR(A.LVY_GBN, 2, 1)                                                           TAX_DIV             /*기분(1) */
+            , NVL(A.PER_NM, ' ')                                                                REG_NM              /*납세자성명 */
+            , A.PER_TEL                                                                         REG_TEL             /*납세자전화번호 */
+            , REPLACE(A.PER_PID,' ','')                                                         REG_NO              /*납세자주민등록번호 */
+            , A.PER_POST                                                                        REG_ZIPCD           /*납세자우편번호 */
+            , FC_CMMCD01(
+                  A.PER_POST, A.PER_POST_SNO, 
+                  A.PER_SAN, A.PER_BUNJI, A.PER_HO,
+                  A.PER_SPEC_ADDR, A.PER_SPEC_DONG, 
+                  A.PER_SPEC_HO, A.PER_TONG, A.PER_BAN
+              )                                                                                 ADDRESS             /*주소  */
+            , NVL(A.OBJ_NM, ' ')                                                                TAX_GDS             /*물건명(물건이 있는주소) 과세대상 */
+            , NVL(A.MGE_ITEM1,' ')                                                              LEVY_DETAIL1        /*관리항목1*/
+            , A.MGE_ITEM2                                                                       LEVY_DETAIL2
+            , A.MGE_ITEM3                                                                       LEVY_DETAIL3
+            , A.MGE_ITEM4                                                                       LEVY_DETAIL4
+            , A.MGE_ITEM5                                                                       LEVY_DETAIL5
+            , A.MGE_ITEM6                                                                       LEVY_DETAIL6
+            , A.FST_NAP_YMD                                                                     DUE_DT              /*최초납기일 */
+            , DECODE (ABS (NVL(A.LST_NAP_YMD,'0') -  NVL(A.AFT_NAP_YMD,'0')), NVL(A.LST_NAP_YMD,'0') - NVL(A.AFT_NAP_YMD,'0'), A.LST_NAP_YMD, A.AFT_NAP_YMD)  DUE_F_DT            /*납기마감일 */
+
+            , DECODE(A.LVY_STT_GBN, '01'                                                       /*부과상태구분 01.부과 02.체납 */
+                , LPAD(DECODE(A.ACC_GBN,'16', A.LST_AMT, 0), 10, 0)                            /*회계구분:16(국세외) - 최종본세*/
+                , LPAD(DECODE(A.ACC_GBN,'16', A.LST_AMT+A.LST_ADD_AMT+A.DIV_IJA, 0), 10, 0)    /*회계구분:16(국세외) - 최종본세 + 최종가산금 + 분납이자 */
+              )                                                                                 NATN_TAX            /*국세*/
+            , LPAD(DECODE(D.ADD_GBN,'02', D.ADD_RATE                                           /*가산구분 (01:없음, 02:가산금, 03:중가산금, 04:이율, 05:기타) */
+                                   ,'03', D.ADD_RATE                                              
+                                   ,'04', D.ADD_RATE
+                                   ,'00'), 2, 0)                                                NATN_RATE           /*국세요율*/
+            , DECODE( A.LVY_STT_GBN, '01'
+                , LPAD(DECODE(A.ACC_GBN,'31', A.LST_AMT, 0), 10, 0)                            /*회계구분:16(시세외)*/
+                , LPAD(DECODE(A.ACC_GBN,'31', A.LST_AMT+A.LST_ADD_AMT+A.DIV_IJA, 0), 10, 0)
+              )                                                                                 SIDO_TAX            /*시도세*/
+            , LPAD(DECODE(D.ADD_GBN,'02',D.ADD_RATE
+                                   ,'03',D.ADD_RATE
+                                   ,'04',D.ADD_RATE
+                                   ,'00'), 2 ,0)                                                SIDO_RATE           /*시도세요율*/
+            , DECODE(A.LVY_STT_GBN, '01'
+                , LPAD(DECODE(A.ACC_GBN,'41',A.LST_AMT,'61',A.LST_AMT, 0), 10, 0)
+                , LPAD(DECODE(A.ACC_GBN,'41',A.LST_AMT+A.LST_ADD_AMT+A.DIV_IJA,'61',A.LST_AMT+A.LST_ADD_AMT+A.DIV_IJA,0), 10, 0)
+              )                                                                                 SIGUNGU_TAX         /*시군세*/
+            , LPAD(DECODE(D.ADD_GBN,'02',D.ADD_RATE,'03',D.ADD_RATE,'04',D.ADD_RATE,'00'),2,0)  SIGUNGU_RATE        /*시군세요율*/
+            , C.SEMOK_NM                                                                        SUBJECT_NAME1       /*세외수입 세목명(과목명)*/
+            , A.LST_AMT+DIV_IJA                                                                 PAYMENT_DATE1       /*최종본세 + 분납이자 (납기내금액1)*/
+            , A.LST_ADD_AMT                                                                     AFTPAYMENT_DATE1    /*최종가산금 (납기후금액1)*/
+            , ''                                                                                SUBJECT_NAME2
+            ,  0                                                                                PAYMENT_DATE2
+            ,  0                                                                                AFTPAYMENT_DATE2
+            , ''                                                                                SUBJECT_NAME3
+            ,  0                                                                                PAYMENT_DATE3
+            ,  0                                                                                AFTPAYMENT_DATE3
+            , B.DEP_NM                                                                          BUGWA_BUSEONAME     /*부과부서명*/
+            , ''                                                                                SUNAP_BUSEONAME     /*수납부서명*/
+            , ''                                                                                USER_NAME
+            , ''                                                                                USER_TEL_NO
+            , SUBSTR(FC_BUSAN_OCR_CHECKSUM(
+                  A.LVY_KEY
+                , DECODE(A.LVY_STT_GBN,'01','1','2')||LPAD(DECODE(A.LVY_STT_GBN,'01',A.LST_AMT+A.DIV_IJA,A.LST_AMT+A.LST_ADD_AMT+A.DIV_IJA),11,0)||
+                  DECODE(A.LVY_STT_GBN,'01',FST_NAP_YMD,DECODE (ABS (NVL(A.LST_NAP_YMD,'0') -  NVL(A.AFT_NAP_YMD,'0')), NVL(A.LST_NAP_YMD,'0') - NVL(A.AFT_NAP_YMD,'0'), A.LST_NAP_YMD, A.AFT_NAP_YMD))||'0'
+                , LPAD(DECODE(A.ACC_GBN,'16',DECODE(A.LVY_STT_GBN,'01',A.LST_AMT+A.DIV_IJA,A.LST_AMT+A.LST_ADD_AMT+A.DIV_IJA),0),10,0)||
+                  LPAD(DECODE(A.LVY_STT_GBN,'01',DECODE(D.ADD_GBN,'02',D.ADD_RATE,'03',D.ADD_RATE,'04',D.ADD_RATE,'00'),'02','00'),2,0)||
+                  LPAD(DECODE(A.ACC_GBN,'31',DECODE(A.LVY_STT_GBN,'01',A.LST_AMT+A.DIV_IJA,A.LST_AMT+A.LST_ADD_AMT+A.DIV_IJA),0),10,0)||
+                  LPAD(DECODE(A.LVY_STT_GBN,'01',DECODE(D.ADD_GBN,'02',D.ADD_RATE,'03',D.ADD_RATE,'04',D.ADD_RATE,'00'),'02','00'),2,0)||
+                  LPAD(DECODE(A.ACC_GBN,'41',DECODE(A.LVY_STT_GBN,'01',A.LST_AMT+A.DIV_IJA,A.LST_AMT+A.LST_ADD_AMT+A.DIV_IJA),'61',
+                                             DECODE(A.LVY_STT_GBN,'01',A.LST_AMT+A.DIV_IJA,A.LST_AMT+A.LST_ADD_AMT+A.DIV_IJA),0),10,0)||
+                  LPAD(DECODE(A.LVY_STT_GBN,'01',DECODE(D.ADD_GBN,'02',D.ADD_RATE,'03',D.ADD_RATE,'04',D.ADD_RATE,'00'),'02','00'),2,0)
+                , SUBSTR(A.LVY_YMD,5,2)||DECODE( A.LST_ADD_AMT , 0 , 2||LPAD(A.LST_AMT+A.DIV_IJA,12,0) , 0||LPAD(A.LST_AMT+A.LST_ADD_AMT+A.DIV_IJA,12,0))
+              ), 1, 108)                                                                        OCR_BD              /*OCR_BAND*/
+            , '0'                                                                               SNTG                /*납부여부 0:미수납, 1:수납처리중, 2:수납 */
+            , DECODE (ABS (NVL(A.LST_NAP_YMD,'0') -  NVL(A.AFT_NAP_YMD,'0')), NVL(A.LST_NAP_YMD,'0') - NVL(A.AFT_NAP_YMD,'0'), A.LST_NAP_YMD, A.AFT_NAP_YMD)   PAID_DATE          /*납부일자*/
+            , '2'                                                                               TAX_GB             /*세금구분 1:지방세, 2:세외수입 */
+            , A.ATT_GBN                                                                         ABKU               /*압류구분 01.압류 02.미압류 */
+            , A.LVY_STT_GBN                                                                     BUGWA_STAT         /*부과상태구분 01.부과 02.체납*/
+            , SUBSTRB(A.DEP_CODE,1,3)                                                           SGG_COD            /*구청코드 */
+            , A.THAP_GBN                                                                        THAP_GBN           /*통합구분 01.통합 02.미통합*/
+            
+        FROM
+              RISTNLVBOOK   A           /*부과대장 TBL*/
+            , CMMTNDPTMNT   B           /*부서 TBL    */
+            , CMMTNSEMOK    C           /*세목코드 TBL*/
+            , CMMTNTAXINFO  D           /*세액정보 TBL*/
+            , CMMTNBUDGET   E           /*예산과목 TBL*/
+            , CMMTNOFFICE   F           /*자치단체 TBL*/
+
+        WHERE
+                A.LVY_DEL_GBN       = '02'                                        /*부과취소구분 01.취소 02.미취소*/
+            AND A.THAP_GBN          IN ('01','02')                                /*통합구분 01.통합 02.미통합    */
+            AND A.DIV_GBN           = '02'                                        /*분납구분 01.분납 02.미분납    */
+            AND A.DEP_CODE          = B.DEP_CODE(+)
+            AND A.ACC_YEAR          = C.ACC_YEAR(+)
+            AND A.ACC_GBN           = C.ACC_GBN(+)                    
+            AND A.ACC_GBN           <>'16'
+            AND A.SEMOK_CODE        = C.SEMOK_CODE(+)    
+            AND A.SEMOK_CODE        >= '201000' AND A.SEMOK_CODE < '300000'
+        ]]>
+            
+        <isNotEmpty prepend = "AND" property="BS_NOT_IN_SEMOK">    
+            SUBSTR(A.SEMOK_CODE,1,3) NOT IN (#BS_NOT_IN_SEMOK#)               /*(중요) 사용하지 않는 과목은 가져오지 않는다. 나중에 세외수입에서는 꼭 추가해야 함*/
+        </isNotEmpty>    
+        <![CDATA[
+            AND A.LST_AMT + A.LST_ADD_AMT + A.DIV_IJA > 0
+            AND A.DEP_CODE          = B.DEP_CODE(+)
+            AND A.DEP_CODE          = D.DEP_CODE(+)
+            AND A.ACC_YEAR          = D.ACC_YEAR(+)
+            AND A.ACC_GBN           = D.ACC_GBN(+)
+            AND A.SEMOK_CODE        = D.SEMOK_CODE(+)
+            AND D.BUD_CODE          = E.BUD_CODE(+)
+            AND D.ACC_YEAR          = E.ACC_YEAR(+)
+            AND B.SF_TEAM_CODE      = F.SF_TEAM_CODE
+            AND F.SF_TEAM_NM        LIKE '부산%'
+            AND A.ACC_YEAR          BETWEEN '1900' AND '9999'    
+            AND A.PAY_GBN           = '02'                                        /*수납구분 01.수납 02.미수납 03.일부수납 */
+            AND A.LSS_GBN           = '02'                                        /*결손구분 01.결손 02.미결손 */
+            AND DECODE (ABS (NVL(replace(A.LST_NAP_YMD, '-', ''),'0') -  NVL(replace(A.AFT_NAP_YMD, '-', ''),'0')), NVL(replace(A.LST_NAP_YMD, '-', ''),'0') - NVL(replace(A.AFT_NAP_YMD, '-', ''),'0'), A.LST_NAP_YMD, A.AFT_NAP_YMD) >= TO_CHAR(SYSDATE,'YYYYMMDD')
+            AND A.LVY_STT_GBN       = '01'                                        /*부과상태구분 01.부과 02.체납  */
+            AND A.ERC_NO            IS NOT NULL
+            AND A.PER_PID           IS NOT NULL                                   /*주민번호는 반드시 있어야 함...*/
+            AND A.LVY_GBN           IS NOT NULL                                   /*기준도 반드시 있어야 함...*/
+	    ]]>
+	</select>	
+	
+	<!-- NIS -->
+	<!-- 부가가치세 고지내역 READ  -->
+	<select id="SELECT_VAT_INFO_LIST" resultClass="mapForm">
+	<![CDATA[
+	
+        SELECT 
+              A.LVY_KEY               LVY_KEY               /*부과대장키(31) */
+            , A.FST_AMT               FST_AMT               /*최초본세*/
+            , A.THLVY_KEY             THLVY_KEY             /*모번호키(31)(부가가치세인경우만)*/
+        FROM
+              RISTNLVBOOK   A       /*부과대장 TBL*/
+            , CMMTNDPTMNT   B       /*부서 TBL    */
+            , CMMTNSEMOK    C       /*세목코드 TBL*/
+            , CMMTNTAXINFO  D       /*세액정보 TBL*/
+            , CMMTNBUDGET   E       /*예산과목 TBL*/
+            , CMMTNOFFICE   F       /*자치단체 TBL*/
+        WHERE
+                A.LVY_DEL_GBN       = '02'                     /*부과취소구분 01.취소 02.미취소 */
+            AND A.THAP_GBN          IN ('03')                  /*통합구분 01.통합 02.미통합 03.VAT */
+            AND A.DIV_GBN           = '02'                     /*분납구분 01.분납 02.미분납    */
+            AND A.DEP_CODE          = B.DEP_CODE(+)
+            AND A.ACC_YEAR          = C.ACC_YEAR(+)
+            AND A.ACC_GBN           = C.ACC_GBN(+)                    
+            AND A.SEMOK_CODE        = C.SEMOK_CODE(+)    
+            AND SUBSTR(A.SEMOK_CODE,1,3) IN ('299')            /*과목[299]에만 적용*/
+            AND A.LST_AMT + A.LST_ADD_AMT + A.DIV_IJA > 0      /*(최종본세 + 최종가산금 + 분납이자) > 0 */
+            AND A.DEP_CODE          = B.DEP_CODE(+)
+            AND A.DEP_CODE          = D.DEP_CODE(+)
+            AND A.ACC_YEAR          = D.ACC_YEAR(+)
+            AND A.ACC_GBN           = D.ACC_GBN(+)
+            AND A.SEMOK_CODE        = D.SEMOK_CODE(+)
+            AND D.BUD_CODE          = E.BUD_CODE(+)
+            AND D.ACC_YEAR          = E.ACC_YEAR(+)
+            AND B.SF_TEAM_CODE      = F.SF_TEAM_CODE
+            AND F.SF_TEAM_NM        LIKE '부산%'
+            AND A.ACC_GBN||A.SEMOK_CODE BETWEEN '00000000'  AND '99999999'
+            AND A.ACC_YEAR          BETWEEN '1900' AND '9999'    
+            AND A.PAY_GBN           = '02'                    /*수납구분 01.수납 02.미수납 03.일부수납 */
+            AND A.LSS_GBN           = '02'                    /*결손구분 01.결손 02.미결손 */
+            AND A.LVY_STT_GBN       = '01'                    /*부과상태구분 01.부과 02.체납  */
+            AND A.THLVY_KEY         IS NOT NULL               /*THLVY_KEY NOT NULL 인경우만 (부가가치세인경우)*/
+ 
+	]]>
+	</select>	
+	
+	<!-- 부가가치세 처리를 위한 회계코드를 가져온다. -->
+	<!-- 31: 시세외  41,61:구군세외를 처리하기 위함. -->
+	<!-- CYBER -->
+	<select id="SELECT_VAT_ACCT_LIST" parameterClass="mapForm" resultClass="string">
+    <![CDATA[
+    
+        SELECT
+           NVL(A.ACCT_COD, '99') AS CHK_ACC  /*회계코드*/
+        FROM  TX2111_TB A, TX2112_TB B  /*A:표준세외수입 부과, B:표준세외수입 부과상세 */
+        WHERE A.TAX_NO     =  B.TAX_NO
+          AND A.BU_ADD_YN  = 'N'      /*부가가치구분 */
+          AND B.BUGWA_STAT = '01'     /*부과상태 01:부과, 02:체납 */ 
+          AND B.THAP_GBN   = '01'     /*통합고지구분(1:통합고지,2:개별고지,3:통합고지이관 */
+          AND A.TAX_NO     = #THLVY_KEY#  /*부과대장키(31) : 납부번호 */
+    
+    ]]>
+	</select>	
+	
+	<!-- CYBER -->
+	<!-- 부가가치세 기 부과자료 삭제
+	    (EX:일반고지로 부과처리되어 있는 부가세 자료를 찻아서 합산전 삭제) -->
+	<delete id ="DELETE_EXT_VAT_INFO" parameterClass="mapForm">
+	<![CDATA[
+	
+	    DELETE FROM TX2111_TB   /*표준세외수입 부과*/
+	    WHERE  TAX_NO           = #LVY_KEY#     /*부과대장 키(조합키)*/
+	      AND  TAX_ITEM         = '299099'      /*과세목코드*/
+	
+	]]>
+	</delete>
+	
+	<!-- CYBER -->
+	<!-- 부가가치세 기 상세부과자료 삭제
+	    (EX:일반고지로 부과처리되어 있는 부가세 자료를 찻아서 합산전 삭제) 
+	    상세자료 삭제후 정상이면 부과자료를 삭제한다                       -->
+	<delete id ="DELETE_EXT_VAT_DETAIL_INFO" parameterClass="mapForm">
+	<![CDATA[
+	
+	    DELETE FROM TX2112_TB   /*표준세외수입 부과상세*/
+	    WHERE  TAX_NO           = #LVY_KEY#     /*부과대장 키(조합키) : 납세번호*/
+	      AND  TAX_CNT          = 0             /*부과순번 */
+	      AND  THAP_GBN         = '02'          /*통합고지구분(1:통합고지,2:개별고지,3:통합고지이관 */
+	      AND  BUGWA_STAT       = '01'          /*부과상태 01:부과, 02:체납 */ 
+	      AND  SNTG             IN ('0','9')    /*납부여부 0:미수납, 1:수납처리중, 2:수납*/
+	      AND  EXISTS(
+	      
+	                  SELECT 'Y' FROM TX2111_TB
+	                  WHERE  TAX_NO           = #LVY_KEY#     /*부과대장 키(조합키)*/
+	                    AND  TAX_ITEM         = '299099'      /*과세목코드*/
+	      
+	      )
+	     
+	]]>
+	</delete>	
+	 
+	<!-- 부가금액을 업데이트 한다. 상세내역-->
+	<!-- 회계 [31], [41,61] 경우를 분리한다.   -->
+	<!-- CYBER -->
+	<update id="UPDATE_VAT_AMT_DETAIL_SAVE" parameterClass="mapForm">
+
+        UPDATE TX2112_TB     /*표준세외수입 부과상세*/
+        SET  
+             SIGUNGU_TAX   = (CASE WHEN #CHK_ACC#='31' THEN #SIGUNGU_TAX# 
+        						   WHEN #CHK_ACC# IN ('41','61') THEN SIGUNGU_TAX + #SIGUNGU_TAX#
+        						   ELSE SIGUNGU_TAX 
+        					  END)                          /*시군구세*/
+            ,PAYMENT_DATE1 = (CASE WHEN #CHK_ACC# IN ('31','41','61') THEN PAYMENT_DATE1 + #SIGUNGU_TAX# 
+        						   ELSE PAYMENT_DATE1 
+        					  END)                          /*납기내금액1*/    
+            ,OCR_BD        = (CASE WHEN #CHK_ACC#='31' THEN SUBSTR(FC_BUSAN_OCR_CHECKSUM( SUBSTR(OCR_BD,1,31), SUBSTR(OCR_BD,33,20)||'2', SUBSTR(OCR_BD,55,24)||LPAD(#SIGUNGU_TAX#,10,'0')||'00', SUBSTR(OCR_BD,92, 15)), 1, 108)
+        						   WHEN #CHK_ACC# IN ('41','61') THEN SUBSTR(FC_BUSAN_OCR_CHECKSUM( SUBSTR(OCR_BD,1,31), SUBSTR(OCR_BD,33,20)||'3', SUBSTR(OCR_BD,55,24)||LPAD(SIGUNGU_TAX + #SIGUNGU_TAX#,10,'0')||SUBSTR(OCR_BD, 89, 2), SUBSTR(OCR_BD,92, 15)), 1, 108) 
+        						   ELSE OCR_BD 
+        					  END)   
+            ,LAST_DTM      = SYSDATE
+            
+        WHERE TAX_NO       = #THLVY_KEY#    /*부과대장 키(조합키)*/
+          AND TAX_CNT      =  0
+          AND SNTG         IN ('0','9')     /*납부여부 0:미수납, 1:수납처리중, 2:수납*/
+          AND BUGWA_STAT   = '01'           /*부과상태 01:부과, 02:체납 */ 
+        
+	</update>	
+	
+	<!-- 부가가치세구분 업데이트. 부과내역 -->
+	<update id="UPDATE_VAT_AMT_SAVE" parameterClass="mapForm">
+
+        UPDATE TX2111_TB     /*표준세외수입 부과*/
+        SET  BU_ADD_YN       = 'Y'          /*부가가치세 구분*/        
+           , LAST_DTM        = SYSDATE
+        WHERE TAX_NO         = #THLVY_KEY#  /*부과대장 키(조합키)*/
+
+        
+	</update>	
+	
+	<!-- CYBER -->
+    <!-- 표준세외수입 부과상세 :: 표준세외수입 부과의 상세 금액 정보 입력  -->
+	<insert id="INSERT_PUB_SEOI_LEVY_DETAIL" parameterClass="mapForm">
+	<![CDATA[
+	
+        INSERT INTO TX2112_TB(
+                TAX_NO               /*납세번호            (31)*/ 
+               ,SGG_COD              /*구청코드*/
+               ,TAX_CNT              /*부과순번            (3 )*/ 
+               ,BUGWA_STAT           /*부과상태            (2 )*/ 
+               ,NATN_TAX             /*국세                (22)*/ 
+               ,NATN_RATE            /*국세요율            (22)*/ 
+               ,SIDO_TAX             /*시도세              (22)*/ 
+               ,SIDO_RATE            /*시도세요율          (22)*/ 
+               ,SIGUNGU_TAX          /*시군구세            (22)*/ 
+               ,SIGUNGU_RATE         /*시군구세요율        (22)*/ 
+               ,SUBJECT_NAME1        /*과목명칭1           (40)*/ 
+               ,PAYMENT_DATE1        /*납기내금액1         (22)*/ 
+               ,AFTPAYMENT_DATE1     /*납기후금액1         (22)*/ 
+               ,SUBJECT_NAME2        /*과목명칭2           (40)*/ 
+               ,PAYMENT_DATE2        /*납기내금액2         (22)*/ 
+               ,AFTPAYMENT_DATE2     /*납기후금액2         (22)*/ 
+               ,SUBJECT_NAME3        /*과목명칭3           (40)*/ 
+               ,PAYMENT_DATE3        /*납기내금액3         (22)*/ 
+               ,AFTPAYMENT_DATE3     /*납기후금액3         (22)*/ 
+               ,DUE_DT               /*납기일자            (8 )*/ 
+               ,DUE_F_DT             /*납기후납기일        (8 )*/ 
+               ,OCR_BD               /*OCR_BAND            (200)*/ 
+               ,SNTG                 /*납부상태            (1 )*/ 
+               ,CUD_OPT              /*등록구분(신규-변경-삭제 */
+               ,THAP_GBN             /*통합고지구분        (2 )*/ 
+               ,PAID_DATE            /*납기후납기일        (8 )*/ 
+               ,TAX_ITEM             /*세목코드            (6 )*/
+               )      
+
+        VALUES(                              
+                #TAX_NO#
+               ,#SGG_COD# 
+               ,#TAX_CNT#
+               ,#BUGWA_STAT#
+               ,#NATN_TAX#
+               ,#NATN_RATE#
+               ,#SIDO_TAX#
+               ,#SIDO_RATE#
+               ,#SIGUNGU_TAX#
+               ,#SIGUNGU_RATE#
+               ,#SUBJECT_NAME1#
+               ,#PAYMENT_DATE1#
+               ,#AFTPAYMENT_DATE1#
+               ,#SUBJECT_NAME2#
+               ,#PAYMENT_DATE2#
+               ,#AFTPAYMENT_DATE2#
+               ,#SUBJECT_NAME3#
+               ,#PAYMENT_DATE3#
+               ,#AFTPAYMENT_DATE3#
+               ,#DUE_DT#
+               ,#DUE_F_DT#
+               ,#OCR_BD#
+               ,#SNTG#
+               ,#CUD_OPT#
+               ,#THAP_GBN#
+               ,#PAID_DATE#
+               ,#TAX_ITEM#
+               )
+    ]]>           
+	</insert>	
+	
+	<!-- CYBER -->
+	<!-- 세외수입 중 버스전용차로, 주거지전용, 환경개선부담금을 제외한 표준세외수입과 
+	     교통유발부담금, 주정차위반과태료의 부과 자료.
+	     1.각 구청에서 발생된 자료가 취합
+	     2.삭제되는 자료 없이 누적되어 관리됨(삭제여부 속성 관리) 
+	     3.구청에서 오는 자료라 구조는 그대로 유지
+	     4.가산금 속성이 없고 국세, 시도세, 시군구세가 있고 각 요율이 있는데 각 금액과 요율을 곱하면 각 세금의 가산금이 계산됨
+	     5.부과상태의 사전고지는 주정차위반인 경우 서전에 납부하면 20%할인되므로 사전고지 상태가 있음
+	     6.현재 금액이 크지 않아 분납은 없음 -->
+    <!-- 표준세외수입 부과자료 입력  -->
+	<insert id="INSERT_PUB_SEOI_LEVY" parameterClass="mapForm">
+	<![CDATA[
+
+        INSERT INTO TX2111_TB_DAMO(
+                TAX_NO                   /*납세번호        (31) */
+               ,SGG_COD                  /*구청코드        (3 ) */
+               ,EPAY_NO                  /*전자납부번호    (19) */
+               ,TAX_NOTICE_TITLE         /*고지서제목      (80) */
+               ,PART_CODE                /*부서코드        (11) */
+               ,ORG_PART_CODE            /*기관부서코드명  (80) */
+               ,ACCOUNT_YEAR             /*회계년도        (4 ) */
+               ,ACCT_COD                 /*회계코드        (2 ) */
+               ,ACCOUNT_NAME             /*회계명          (20) */
+               ,TAX_ITEM                 /*과세목          (6 ) */
+               ,TAX_NM                   /*과세목명        (80) */
+               ,TAX_SNO                  /*과세번호1       (6 ) */
+               ,DIVIDED_PAYMENT_SEQNUM   /*과세번호2       (2 ) */
+               ,TAX_YM                   /*부과년월        (6 ) */
+               ,TAX_DIV                  /*기분            (1 ) */
+               ,REG_NM                   /*성명(법인명)    (40) */
+               ,REG_TEL                  /*납세자전화번호  (20) */
+               ,SEC_REG_NO                   /*주민법인번호    (13) */
+               ,REG_ZIPCD                /*납세자우편번호  (6 ) */
+               ,ADDRESS                  /*주소            (200)*/
+               ,TAX_GDS                  /*과세대상        (100)*/
+               ,LEVY_DETAIL1             /*물건내용1       (50) */
+               ,LEVY_DETAIL2             /*물건내용2       (50) */
+               ,LEVY_DETAIL3             /*물건내용3       (50) */
+               ,LEVY_DETAIL4             /*물건내용4       (50) */
+               ,LEVY_DETAIL5             /*물건내용5       (50) */
+               ,LEVY_DETAIL6             /*물건내용6       (50) */
+               ,BUGWA_BUSEONAME          /*부과부서명      (40) */
+               ,SUNAP_BUSEONAME          /*수납부서명      (40) */
+               ,USER_NAME                /*사용자명        (40) */
+               ,USER_TEL_NO              /*담당자전화번호  (20) */
+               ,TAX_GB                   /*세금구분        (1 ) */
+               ,ABKU                     /*압류구분        (2 ) */
+               ,BU_ADD_YN)               /*부가가치세구분  (1 ) */
+
+        VALUES(                              
+                #TAX_NO#                
+               ,#SGG_COD#               
+               ,#EPAY_NO#               
+               ,#TAX_NOTICE_TITLE#      
+               ,#PART_CODE#             
+               ,#ORG_PART_CODE#         
+               ,#ACCOUNT_YEAR#          
+               ,#ACCT_COD#              
+               ,#ACCOUNT_NAME#          
+               ,#TAX_ITEM#              
+               ,#TAX_NM#                
+               ,#TAX_SNO#               
+               ,#DIVIDED_PAYMENT_SEQNUM#
+               ,#TAX_YM#                
+               ,#TAX_DIV#               
+               ,#REG_NM#                
+               ,#REG_TEL#               
+               ,FC_DAMO(#REG_NO#)                
+               ,#REG_ZIPCD#             
+               ,#ADDRESS#               
+               ,#TAX_GDS#               
+               ,#LEVY_DETAIL1#
+               ,#LEVY_DETAIL2#
+               ,#LEVY_DETAIL3#
+               ,#LEVY_DETAIL4#
+               ,#LEVY_DETAIL5#
+               ,#LEVY_DETAIL6#
+               ,#BUGWA_BUSEONAME#
+               ,#SUNAP_BUSEONAME#
+               ,#USER_NAME#
+               ,#USER_TEL_NO#
+               ,#TAX_GB#
+               ,#ABKU#
+               ,#BU_ADD_YN#)
+
+    ]]>           
+	</insert>	
+	
+	<!-- 표준세외수입 부과상세 :: 표준세외수입 부과의 상세 금액 정보 업데이트  -->
+	<!-- CYBER -->
+	<update id="UPDATE_PUB_SEOI_LEVY_DETAIL" parameterClass="mapForm">
+    <![CDATA[
+    
+        UPDATE TX2112_TB
+        SET
+                SGG_COD          = #SGG_COD#            /*구청코드            (3 )*/
+               ,BUGWA_STAT       = #BUGWA_STAT#         /*부과상태            (2 )*/ 
+               ,NATN_TAX         = #NATN_TAX#           /*국세                (22)*/ 
+               ,NATN_RATE        = #NATN_RATE#          /*국세요율            (22)*/ 
+               ,SIDO_TAX         = #SIDO_TAX#           /*시도세              (22)*/ 
+               ,SIDO_RATE        = #SIDO_RATE#          /*시도세요율          (22)*/ 
+               ,SIGUNGU_TAX      = #SIGUNGU_TAX#        /*시군구세            (22)*/ 
+               ,SIGUNGU_RATE     = #SIGUNGU_RATE#       /*시군구세요율        (22)*/ 
+               ,SUBJECT_NAME1    = #SUBJECT_NAME1#      /*과목명칭1           (40)*/ 
+               ,PAYMENT_DATE1    = #PAYMENT_DATE1#      /*납기내금액1         (22)*/ 
+               ,AFTPAYMENT_DATE1 = #AFTPAYMENT_DATE1#   /*납기후금액1         (22)*/ 
+               ,SUBJECT_NAME2    = #SUBJECT_NAME2#      /*과목명칭2           (40)*/ 
+               ,PAYMENT_DATE2    = #PAYMENT_DATE2#      /*납기내금액2         (22)*/ 
+               ,AFTPAYMENT_DATE2 = #AFTPAYMENT_DATE2#   /*납기후금액2         (22)*/ 
+               ,SUBJECT_NAME3    = #SUBJECT_NAME3#      /*과목명칭3           (40)*/ 
+               ,PAYMENT_DATE3    = #PAYMENT_DATE3#      /*납기내금액3         (22)*/ 
+               ,AFTPAYMENT_DATE3 = #AFTPAYMENT_DATE3#   /*납기후금액3         (22)*/ 
+               ,DUE_DT           = #DUE_DT#             /*납기일자            (8 )*/ 
+               ,DUE_F_DT         = #DUE_F_DT#           /*납기후납기일        (8 )*/ 
+               ,OCR_BD           = #OCR_BD#
+               ,SNTG             = #SNTG#               /*납부상태            (1 )*/ 
+               ,CUD_OPT          = #CUD_OPT#            /*등록구분(신규-변경-삭제 */
+               ,THAP_GBN         = #THAP_GBN#           /*통합고지구분        (2 )*/ 
+               ,PAID_DATE        = #PAID_DATE#          /*납기후납기일        (8 )*/  
+               ,LAST_DTM         = SYSDATE              /*최종수정일시        (7 )*/
+               ,TAX_ITEM         = #TAX_ITEM#           /*세목코드            (6 )*/
+        WHERE TAX_NO             = #TAX_NO#             /*납세번호            (31) pk*/ 
+          AND TAX_CNT            = #TAX_CNT#            /*부과순번            (22) pk*/ 
+          AND SNTG               IN ('0', '9')
+    ]]>
+	</update>
+		
+	
+	<!-- 표준세외수입 부과자료 업데이트  -->
+	<!-- CYBER -->
+	<update id="UPDATE_PUB_SEOI_LEVY" parameterClass="mapForm">
+    <![CDATA[
+        UPDATE TX2111_TB
+        SET     SGG_COD                 = #SGG_COD#                /*구청코드        (3 ) */
+               ,EPAY_NO                 = #EPAY_NO#                /*전자납부번호    (19) */
+               ,TAX_NOTICE_TITLE        = #TAX_NOTICE_TITLE#       /*고지서제목      (80) */
+               ,PART_CODE               = #PART_CODE#              /*부서코드        (11) */
+               ,ORG_PART_CODE           = #ORG_PART_CODE#          /*기관부서코드명  (80) */
+               ,ACCOUNT_YEAR            = #ACCOUNT_YEAR#           /*회계년도        (4 ) */
+               ,ACCT_COD                = #ACCT_COD#               /*회계코드        (2 ) */
+               ,ACCOUNT_NAME            = #ACCOUNT_NAME#           /*회계명          (20) */
+               ,TAX_ITEM                = #TAX_ITEM#               /*과세목          (6 ) */
+               ,TAX_NM                  = #TAX_NM#                 /*과세목명        (80) */
+               ,TAX_SNO                 = #TAX_SNO#                /*과세번호1       (6 ) */
+               ,DIVIDED_PAYMENT_SEQNUM  = #DIVIDED_PAYMENT_SEQNUM# /*과세번호2       (2 ) */
+               ,TAX_YM                  = #TAX_YM#                 /*부과년월        (6 ) */
+               ,TAX_DIV                 = #TAX_DIV#                /*기분            (1 ) */
+               ,REG_NM                  = #REG_NM#                 /*성명(법인명)    (40) */
+               ,REG_TEL                 = #REG_TEL#                /*납세자전화번호  (20) */
+               ,SEC_REG_NO              = FC_DAMO(#REG_NO#)        /*주민법인번호    (13) */
+               ,REG_ZIPCD               = #REG_ZIPCD#              /*납세자우편번호  (6 ) */
+               ,ADDRESS                 = #ADDRESS#                /*주소            (200)*/
+               ,TAX_GDS                 = #TAX_GDS#                /*과세대상        (100)*/
+               ,LEVY_DETAIL1            = #LEVY_DETAIL1#           /*물건내용1       (50) */
+               ,LEVY_DETAIL2            = #LEVY_DETAIL2#           /*물건내용2       (50) */
+               ,LEVY_DETAIL3            = #LEVY_DETAIL3#           /*물건내용3       (50) */
+               ,LEVY_DETAIL4            = #LEVY_DETAIL4#           /*물건내용4       (50) */
+               ,LEVY_DETAIL5            = #LEVY_DETAIL5#           /*물건내용5       (50) */
+               ,LEVY_DETAIL6            = #LEVY_DETAIL6#           /*물건내용6       (50) */
+               ,BUGWA_BUSEONAME         = #BUGWA_BUSEONAME#        /*부과부서명      (40) */
+               ,SUNAP_BUSEONAME         = #SUNAP_BUSEONAME#        /*수납부서명      (40) */
+               ,USER_NAME               = #USER_NAME#              /*사용자명        (40) */
+               ,USER_TEL_NO             = #USER_TEL_NO#            /*담당자전화번호  (20) */
+               ,TAX_GB                  = #TAX_GB#                 /*세금구분        (1 ) */
+               ,ABKU                    = #ABKU#                   /*압류구분        (2 ) */
+               ,BU_ADD_YN               = #BU_ADD_YN#              /*부가가치세구분  (1 ) */
+               ,LAST_DTM                = SYSDATE                  /*최종수정일시         */
+        WHERE  TAX_NO                   = #TAX_NO#                  /*납세번호        (31) pk*/ 
+    ]]>
+	</update>
+	
+	
+	<!-- 부과내역중 수납된 납세번호 내역을 가져온다. -->
+	<!-- 표준세외수입 테이블에서 수납된 건을 삭제하기 위함. -->
+    <!-- NIS 해당 지자체 연결 -->
+	<select id="SELECT_LEVY_SUNAP_INFO" resultClass="mapForm">
+	    <![CDATA[
+	    SELECT 
+	        A.LVY_KEY
+	    FROM RISTNLVBOOK A
+	    WHERE A.LVY_KEY       IS NOT NULL
+	      AND A.ACC_GBN       <> '16'
+	      AND A.SEMOK_CODE    >= '201000' AND A.SEMOK_CODE < '300000'
+		]]>      
+        <isNotEmpty prepend = "AND" property="BS_NOT_IN_SEMOK">    
+             SUBSTR(A.SEMOK_CODE,1,3) NOT IN (#BS_NOT_IN_SEMOK#)   /*(중요) 사용하지 않는 과목은 가져오지 않는다...나중에 세외수입에서는 꼭 추가해야 함*/
+        </isNotEmpty>
+          AND (A.PAY_GBN       IN ('01','03')                        /*수납구분     01.수납 02.미수납 03.일부수납 */
+           OR A.LVY_DEL_GBN   = '01')                                /*부과취소구분 01.취소 02.미취소             */
+	
+	</select>
+	
+	<!-- 표준세외수입테이블에서 회계년을 추려낸다. -->
+	<!-- NIS 해당 지자체 연결 -->
+	<select id="SELECT_KEY_FOR_DEL" resultClass="mapForm">
+	    <![CDATA[
+        SELECT A.ACC_YEAR FROM RISTNLVBOOK A           
+        WHERE  LENGTH(A.ACC_YEAR) = 4                                                                                                                                                                    
+          AND  A.ACC_GBN       <> '16'                                   
+          AND  A.SEMOK_CODE    >= '201000' AND A.SEMOK_CODE < '300000'   
+          AND (A.PAY_GBN       IN ('01','03') OR A.LVY_DEL_GBN   = '01')
+          AND  A.ACC_YEAR      >= '1995'                                 
+        GROUP BY A.ACC_YEAR
+	    ]]>   
+	</select>
+	
+    <!-- 회계년도별 수납된 납세번호를 가져온다. -->
+	<!-- NIS 해당 지자체 연결 -->
+	<select id="SELECT_TAX_NO_FOR_DEL" resultClass="mapForm">
+	    <![CDATA[
+        SELECT
+               A.LVY_KEY
+        FROM RISTNLVBOOK A
+        WHERE  A.LVY_KEY       IS NOT NULL
+          AND  A.ACC_GBN       <> '16'
+          AND  A.SEMOK_CODE    >= '201000' AND A.SEMOK_CODE < '300000'
+        ]]>     
+        <isNotEmpty prepend = "AND" property="BS_NOT_IN_SEMOK">    
+             SUBSTR(A.SEMOK_CODE,1,3) NOT IN (#BS_NOT_IN_SEMOK#) 
+        </isNotEmpty>
+          AND (A.PAY_GBN      IN ('01','03') OR A.LVY_DEL_GBN   = '01')
+          AND  A.ACC_YEAR      = #ACC_YEAR#
+            
+	</select>
+	
+	<!-- 납세번호 페이지 나누기 -->
+	<select id="SELECT_TAX_NO_FOR_DEL_PAGE" resultClass="mapForm">
+	<![CDATA[
+	
+       SELECT 
+          LVY_KEY
+       FROM (   
+          SELECT 
+              T1.LVY_KEY, CEIL(ROWNUM / #cnt_per_page#) AS PAGE
+          FROM  
+           ( SELECT 
+                 LVY_KEY
+             FROM RISTNLVBOOK
+             
+             WHERE 
+                   LVY_KEY       IS NOT NULL
+               AND ACC_GBN       <> '16'
+               AND SEMOK_CODE    >= '201000' AND SEMOK_CODE < '300000'
+             ORDER BY 1  
+           ) T1
+        )
+        WHERE 
+          PAGE = #page#
+          
+    ]]>     
+	</select>	
+	
+	<!-- 구청의 수납된 자료를 삭제Flag 를 업데이트 한다.  -->
+	<!-- CYBER -->
+	<update id="UPDATE_DEL_INFO_DETAIL" parameterClass="mapForm">
+    <![CDATA[
+    
+        UPDATE TX2112_TB
+        SET DEL_YN        = 'Y'
+           ,LAST_DTM      = SYSDATE
+        WHERE TAX_NO      = #LVY_KEY#            /*납세번호            (31) pk*/ 
+          AND TAX_CNT     = 0
+          AND SNTG        IN ('0', '9')          /*납부여부 0:미수납, 1:수납처리중, 2:수납, 9:취소 :: 수납구분*/
+        
+    ]]>
+	</update>	
+	
+</sqlMap>

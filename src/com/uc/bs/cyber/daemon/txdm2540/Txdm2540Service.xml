@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXDM2540" >
+	
+	<!-- 위택스로 부터 수신한 회원정보를 업데이트한다.  -->
+	<update id="UPDATE_ME1101_TB_FOR_WETAX_MEMBER" parameterClass="mapForm">
+    <![CDATA[
+    
+    
+        UPDATE ME1101_TB_DAMO
+        SET
+               MEM_NM     = NVL(#sname#, MEM_NM)
+              ,PLGN       = #plgn#
+              ,ZIP_CD     = #zip_no#
+              ,ADDRESS    = #addr1#
+              ,SGG_COD    = #sgg_cod#
+              ,SADR       = #addr2#
+              ,E_MAIL     = #email#
+              ,TEL_NO     = #tel_no#
+              ,CEL_NO     = #mo_tel#
+              ,CPNM       = #comp_nm#
+              ,SEC_DJMO   = FC_DAMO(#tpr_no2#)
+              ,LCHG_DTM   = SYSDATE
+              ,CMP_NM     = #crp_nm#
+        WHERE SEC_REG_NO = FC_DAMO(#tpr_no#)       /*주민법인번호*/ 
+
+    ]]>
+	</update>	
+
+    <!-- 위택스로 부터 수신한 회원정보를 입력한다. -->
+	<insert id="INSERT_ME1101_TB_FOR_WETAX_MEMBER" parameterClass="mapForm">
+    <![CDATA[
+    
+        INSERT INTO ME1101_TB_DAMO (
+        
+               SEC_REG_NO            /*주민법인번호                             1*/
+              ,MEM_REG_CD        /*회원등록구분                             2*/
+              ,MEM_NM            /*회원명                                   3*/
+              ,PLGN              /*법인구분                                 4*/
+              ,ZIP_CD            /*우편번호                                 5*/
+              ,ADDRESS           /*주소                                     6*/
+              ,SGG_COD           /*구청코드                                 7*/
+              ,SADR              /*기타주소                                 8*/
+              ,E_MAIL            /*E-MAIL                                   9*/
+              ,TEL_NO            /*전화번호                                 10*/
+              ,CEL_NO            /*휴대전화번호                             11*/
+              ,FAX_NO            /*팩스번호                                 12*/
+              ,RMAIL             /*메일수신여부                             13*/
+              ,ENOTI             /*전자고지신청구분                         14*/
+              ,STAT_CD           /*상태코드                                 15*/
+              ,TR_TG             /*전송FLAG                                 16*/
+              ,EDI               /*EDI FLAG                                 17*/
+              ,CPNM              /*MEM_CPNM                                 18*/
+              ,LAW_YN            /*이용약관 및 개인정보보호정책 동의여부    19*/
+              ,WYN               /*위택스연계여부                           20*/
+              ,SEC_DJMO          /*대표자주민번호                           21*/
+              ,MILE_YN           /*마일리지자동환급신청유무                 22*/
+              ,LUSE_DTM          /*최종사용일자                             23*/
+              ,LCHG_DTM          /*최종수정일자                             24*/
+              ,ACT_YN            /*법인대행자여부                           25*/
+              ,CMP_NM            /*법인명                                   26*/
+              ,ACCEPT_DT         /*회원정보이용재동의일자                   27*/
+              ,SAUP_NO)          /*사업자등록번호                           28*/
+        VALUES(
+               FC_DAMO(#tpr_no#)
+              ,'2'          /*1: 사이버 2:위택스*/
+              ,#usr_nm#
+              ,#plgn#
+              ,#zip_no#
+              ,#addr1#
+              ,#sgg_cod#
+              ,#addr2#
+              ,#email#
+              ,#tel_no#
+              ,#mo_tel#
+              ,#FAX_NO#
+              ,#email_yn#
+              ,' '
+              ,'0'
+              ,'0'
+              ,'0'
+              ,#comp_nm#
+              ,'Y'
+              ,'N'
+              ,FC_DAMO(#tpr_no2#)
+              ,'N'
+              ,SYSDATE
+              ,SYSDATE
+              ,'N'
+              ,#crp_nm#
+              ,TO_CHAR(SYSDATE, 'YYYYMMDD')
+              ,#bz_no#
+       )
+
+    ]]>
+	</insert>	
+	
+	<!-- 등록된 사용자인지 체크하기 위함 -->
+	<select id="SELECT_MEMBER_INFO" parameterClass="String" resultClass="int">
+	
+	     SELECT COUNT(SEC_REG_NO) AS CNT 
+	        FROM ME1101_TB_DAMO
+	      WHERE SEC_REG_NO = FC_DAMO(#tpr_no#)
+	
+	</select>
+	
+</sqlMap>

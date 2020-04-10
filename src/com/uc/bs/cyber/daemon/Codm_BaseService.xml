@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="CODMBASE" >
+
+
+	<!-- 시스템별 프로세스상태정보 등록 -->	
+	<!-- 데몬 및 프로세스 관리 TABLE -->
+    <insert id="CODMSYSTInsert"  parameterClass="mapForm">
+    INSERT INTO CO5101_TB (
+                SGG_COD       /*PK 구청코드     */
+		      , PROCESS_ID    /*PK 프로세스ID  */
+		      , PROCESS_NM    /*프로세스명      */
+		      , THREAD_NM     /*스레드명        */
+		      , BIGO          /*설명            */
+		      , MANE_STAT     /*기동상태        */
+		      , MANAGE_CD     /*관리구분        */
+		      , STT_DT        /*시작일시        */
+		      , END_DT        /*종료일시        */
+		      , LAST_DTM      /*최종수정일시    */
+     ) VALUES ( #SGG_COD#
+		      , #PROCESS_ID#
+		      , #PROCESS_NM#
+		      , #THREAD_NM#
+		      , #BIGO#
+		      , #MANE_STAT#
+		      , #MANAGE_CD#
+		      , #STT_DT#
+		      , #END_DT#
+		      , SYSDATE
+    )
+    </insert>	
+	
+	
+	<!-- 시스템별 프로세스상태정보 UPDATE -->
+    <update id="CODMSYSTUpdate" parameterClass="mapForm">
+    UPDATE CO5101_TB
+       SET STT_DT      = NVL(#STT_DT#, STT_DT)                 /*시작일시    */
+         , END_DT      = NVL(#END_DT#, END_DT)                 /*종료일시    */
+         , PROCESS_NM  = NVL(#PROCESS_NM#, PROCESS_NM)         /*프로세스명  */
+         , THREAD_NM   = NVL(#THREAD_NM#, THREAD_NM)           /*스레드명    */
+         , MANE_STAT   = #MANE_STAT#                           /*기동상태    */
+         , MANAGE_CD   = #MANAGE_CD#                           /*관리구분    */
+         , BIGO        = NVL(#BIGO#, BIGO)                     /*설명        */
+         , LAST_DTM    = SYSDATE                               /*최종수정일시*/			       
+     WHERE SGG_COD     = #SGG_COD#
+       AND PROCESS_ID  = #PROCESS_ID#
+	</update>
+	
+	
+	<!-- 시스템별 프로세스상태정보 조회 (이중화 처리) -->
+    <select id="CODMSYSTSelect" parameterClass="mapForm" resultClass="mapForm">
+    SELECT STT_DT
+         , END_DT
+         , '50' AS LAST_TERM 
+         , MANE_STAT
+         , MANAGE_CD
+         , REG_DTM
+         , BIGO
+      FROM CO5101_TB
+     WHERE SGG_COD     = #SGG_COD#
+       AND PROCESS_ID  = #PROCESS_ID#
+	</select>
+
+
+	<!-- 시스템별 프로세스상태정보 조회 LOCK (이중화 처리) -->
+    <select id="CODMSYST_ForUpdate_Select" parameterClass="mapForm" resultClass="mapForm">
+    SELECT STT_DT
+         , END_DT
+         , SF_CO_TERM_SEC(TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS'), TO_CHAR(LAST_DTM, 'YYYYMMDDHH24MISS')) AS LAST_TERM 
+         , MANE_STAT
+         , MANAGE_CD
+         , REG_DTM
+         , BIGO
+      FROM CO5101_TB
+     WHERE SGG_COD     = #SGG_COD#
+       AND PROCESS_ID  = #PROCESS_ID#
+       FOR UPDATE WAIT 5
+	</select>	
+	
+	
+	<!-- 위택스 전문 수신로그  -->
+	<!-- 수신전문을 DB에 저장한다. -->
+    <insert id="CODM_JUNMUN_LOG_SAVE"  parameterClass="mapForm">
+    INSERT INTO CO4102_TB (
+		        CO_AGNUM   /*센터전문관리번호          */
+		      , CO_BKNUM   /*은행전문관리번호          */
+		      , TRN_CD     /*거래구분코드              */
+		      , EPAY_NO    /*전자납부번호(총괄납부번호)*/
+		      , PAY_DT     /*수납일                    */
+		      , MSG        /*전문내용                  */
+     ) VALUES ( NVL(#CO_AGNUM#, ' ')
+		      , #CO_BKNUM#
+		      , #CO_TRAN#
+		      , #EPAY_NO#
+		      , #PAY_DT#
+		      , #MSG# 
+    )
+	</insert>
+	
+	
+	<!-- 일련번호 채번... -->
+	<select id="CODM_GETSEQNO" parameterClass="String" resultClass="int">
+	SELECT SF_CO_JOB_SEQNO(#SEQ_GB#) FROM DUAL
+	</select>
+	
+	
+	<!-- 현재시간을 구한다. -->
+	<select id="CODM_CUR_TIMES" parameterClass="String" resultClass="String">
+	SELECT TO_CHAR(SYSDATE, #T_FORMAT#) FROM DUAL
+	</select>
+	
+	
+	<!-- 송수신전문을 모두 저장 -->
+    <insert id="CODM_JUNMUN_TXRX_INSERT2"  parameterClass="mapForm">
+    INSERT INTO CO5104_TB (
+                JOB_DT      /*거래일자                                                   */
+              , SEQ         /*일련번호                                                   */
+              , SYS_DSC     /*시스템구분 01:결제원, 02:부산은행, 03:위택스, 04:카드사 */
+              , MSG_ID      /*전문종별                                                   */
+              , RCV_MSG     /*수신전문                                                   */
+              , RTN_MSG     /*응답전문                                                   */
+              , RES_CD      /*처리결과                                                   */
+              , ERR_MSG     /*오류메시지                                                 */
+              , REG_DTM     /*등록일시                                                   */
+              , LAST_DTM    /*최종수정일시                                               */
+     ) VALUES ( TO_CHAR(SYSDATE, 'YYYYMMDD')
+		      , CO5104_SEQ.NEXTVAL
+		      , #SYS_DSC# 
+		      , #MSG_ID# 
+		      , #RCV_MSG# 
+		      , #RTN_MSG# 
+		      , #RES_CD# 
+		      , #ERR_MSG# 
+		      , SYSDATE
+		      , SYSDATE 
+    )
+	</insert>	
+	
+	
+	<!-- 송수신전문을 모두 저장 -->
+    <insert id="CODM_JUNMUN_TXRX_INSERT"  parameterClass="mapForm">
+    INSERT INTO CO5104_TB (
+                SEQ
+		      , SYS_DSC
+		      , MSG_ID
+		      , RCV_MSG
+		      , RTN_MSG
+		      , RES_CD
+		      , ERR_MSG
+		      , REG_DTM
+		      , LAST_DTM
+     ) VALUES ( CO5104_SEQ.NEXTVAL
+		      , #SYS_DSC#
+		      , #MSG_ID#
+		      , #RCV_MSG#
+		      , #RTN_MSG#
+		      , SUBSTRB(#RES_CD#, 1, 8)
+		      , #ERR_MSG#
+		      , TO_DATE(#REG_DTM#, 'YYYYMMDDHH24MISS')
+		      , TO_DATE(#LAST_DTM#, 'YYYYMMDDHH24MISS')
+    )	
+	</insert>		             
+	
+	<!-- cyber_ap6 송수신전문을 모두 저장 -->
+    <insert id="CODM_JUNMUN_TXRX_INSERT_CO5108"  parameterClass="mapForm">
+    INSERT INTO CO5108_TB (
+                SEQ
+              , SYS_DSC
+              , MSG_ID
+              , RCV_MSG
+              , RTN_MSG
+              , RES_CD
+              , ERR_MSG
+              , REG_DTM
+              , LAST_DTM
+     ) VALUES ( CO5108_SEQ.NEXTVAL
+              , #SYS_DSC#
+              , #MSG_ID#
+              , #RCV_MSG#
+              , #RTN_MSG#
+              , SUBSTRB(#RES_CD#, 1, 8)
+              , #ERR_MSG#
+              , TO_DATE(#REG_DTM#, 'YYYYMMDDHH24MISS')
+              , TO_DATE(#LAST_DTM#, 'YYYYMMDDHH24MISS')
+    )   
+    </insert>   
+    
+    <!-- cyber_ap1 송수신전문을 모두 저장 -->
+    <insert id="CODM_JUNMUN_TXRX_INSERT_CO5110"  parameterClass="mapForm">
+    INSERT INTO CO5110_TB (
+                SEQ
+              , SYS_DSC
+              , MSG_ID
+              , RCV_MSG
+              , RTN_MSG
+              , RES_CD
+              , ERR_MSG
+              , REG_DTM
+              , LAST_DTM
+     ) VALUES ( CO5110_SEQ.NEXTVAL
+              , #SYS_DSC#
+              , #MSG_ID#
+              , #RCV_MSG#
+              , #RTN_MSG#
+              , SUBSTRB(#RES_CD#, 1, 8)
+              , #ERR_MSG#
+              , TO_DATE(#REG_DTM#, 'YYYYMMDDHH24MISS')
+              , TO_DATE(#LAST_DTM#, 'YYYYMMDDHH24MISS')
+    )   
+    </insert>   
+    
+    <!-- cyber_ap4 송수신전문을 모두 저장 -->
+    <insert id="CODM_JUNMUN_TXRX_INSERT_CO5111"  parameterClass="mapForm">
+    INSERT INTO CO5111_TB (
+                SEQ
+              , SYS_DSC
+              , MSG_ID
+              , RCV_MSG
+              , RTN_MSG
+              , RES_CD
+              , ERR_MSG
+              , REG_DTM
+              , LAST_DTM
+     ) VALUES ( CO5111_SEQ.NEXTVAL
+              , #SYS_DSC#
+              , #MSG_ID#
+              , #RCV_MSG#
+              , #RTN_MSG#
+              , SUBSTRB(#RES_CD#, 1, 8)
+              , #ERR_MSG#
+              , TO_DATE(#REG_DTM#, 'YYYYMMDDHH24MISS')
+              , TO_DATE(#LAST_DTM#, 'YYYYMMDDHH24MISS')
+    )   
+    </insert>   
+    
+    
+	<!-- 수납 메시지 전송 프로시저 호출 -->
+	<procedure id="SMSCALL" parameterClass="mapForm">
+	{CALL SP_TX_SEND_SMS(#REG_NO#, #TAX_ITEM#, #SUM_RCP#) } 
+	</procedure>
+	
+	
+	<!-- 세외수입시 가져와서는 안될 과목 -->
+    <select id="NOSEOI" parameterClass="mapForm" resultClass="mapForm">
+    SELECT GUBUN_CD AS SEMOK 
+      FROM CO3102_TB
+     WHERE GUBUN_ID = 'NOSEOI'
+       AND USE_YN   = 'Y'
+    </select>
+    
+    
+    <!-- 지로번호로 세금구분하기 -->
+    <select id="GIRO_FOR_TAX" parameterClass="mapForm" resultClass="String">
+    SELECT CHAR2 AS TAX_GUBUN 
+      FROM CO3102_TB
+     WHERE GUBUN_ID = 'GIRO_NO'
+       AND USE_YN   = 'Y'
+       AND GUBUN_CD = #GJIRO_NO#
+    </select>     
+    
+    
+    <!-- DAEMON SGGCOD PROCESCC CHECK -->
+    <insert id="InsertDaemonProcessCheck"  parameterClass="mapForm">
+    INSERT INTO CO5107_TB (
+                DAEMON
+		      , SGG_COD
+		      , TOTAL_CNT
+		      , INSERT_CNT
+		      , UPDATE_CNT
+		      , DELETE_CNT
+		      , ERROR_CNT
+		      , DAEMON_NM
+     ) VALUES ( #DAEMON#
+		      , #SGG_COD#
+		      , #TOTAL_CNT#
+		      , #INSERT_CNT#
+		      , #UPDATE_CNT#
+		      , #DELETE_CNT#
+		      , #ERROR_CNT#
+		      , #DAEMON_NM#
+    )	
+	</insert>
+	
+	
+</sqlMap>

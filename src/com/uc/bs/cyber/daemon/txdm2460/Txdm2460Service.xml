@@ -1,0 +1,576 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXDM2460" >
+
+
+    <!-- DBLINK : ROAD   -->
+    <!-- 연계 -->
+    <!-- 환경개선부담금 부과내역을 가져온다. -->
+	<select id="SELECT_ENV_LEVY_LIST" resultClass="mapForm">
+    SELECT *
+      FROM 
+           (SELECT ENV_SGCD                                           AS SGG_COD      /* 구군(구청) 코드    */
+                 , ENV_ACKU		                                      AS ACCT_COD     /* 회계코드           */
+                 , ENV_SMCD		                                      AS TAX_ITEM     /* (과)세목코드       */
+                 , ENV_BYYY		                                      AS TAX_YY       /* 부과년도           */
+                 , ENV_BNGI		                                      AS TAX_MM       /* 부과월             */
+				 , CASE WHEN ENV_GIBN='0' THEN '3' ELSE ENV_GIBN END  AS TAX_DIV      /* 기분               */
+                 , ENV_GIBN		          						      AS TAX_DIV_ORG  /* 기분               */
+                 , ENV_HACD		                                      AS HACD         /* 행정동             */
+                 , TO_CHAR(ENV_NPNO, 'FM099999')                      AS TAX_SNO      /* 과세번호           */
+                 , ENV_NPNO                                           AS ENV_NPNO     /* 과세번호(ORI)      */
+                 , ENV_SENO		                                      AS TAX_CNT      /* 일련번호(분납순번) */
+                 , ENV_INFO1		                                  AS MLGN_IF1     /* 부과관련정보1      */
+                 , ENV_INFO2		                                  AS MLGN_IF2     /* 부과관련정보2      */  
+                 , ENV_INFO3		                                  AS MLGN_IF3     /* 부과관련정보3      */
+                 , ENV_INFO4		                                  AS MLGN_IF4     /* 부과관련정보4      */
+                 , ENV_INFO5		                                  AS MLGN_IF5     /* 부과관련정보5      */
+                 , REPLACE(FC_CMM_DEC(ENV_JMO,'ROT','1','T'),' ','') AS REG_NO       /* 주민번호       */ 
+                 , TRIM(ENV_NAME)                                     AS REG_NM       /* 성명               */	
+                 , ENV_ZIP			                                  AS REG_ZIPCD    /* 우편번호           */
+                 , ENV_ADDR		                                      AS ADDRESS      /* 주소               */
+                 , ENV_AMT			                                  AS BUTT         /* 부담금(부과금액)   */
+                 , ENV_MI_AMT		                                  AS MI_AMT       /* 미수금액           */
+                 , ENV_ADD_AMT		                                  AS ADD_AMT      /* 부담금가산금       */
+                 , ENV_MIADD_AMT	                                  AS MIADD_AMT    /* 미수가산금         */
+                 , ENV_CNAP_AMT	                                      AS CNAP_AMT     /* 기존체납금액       */
+                 , ENV_SYMD		                                                      /* 수납일자           */
+                 , ENV_BYMD		                                      AS TAX_DT       /* 부과일자           */
+                 , ENV_GYMD		                                      AS DUE_DT       /* 납기내일자         */
+                 , ENV_GGYM		                                      AS DUE_F_DT     /* 납기후일자         */
+                 , ENV_GRNO     	                                  AS EPAY_NO      /* 전자납부번호       */
+                 , ENV_SNTG		                                      AS SNTG         /* 납부상태           */
+                 , ENV_TRTG                                           AS ENV_TRTG     /* 전송상태           */
+                 , ENV_SNTG                                           AS ENV_SNTG     /* 납부상태           */
+                 , ENV_CNAPG		                                  AS DLQ_DIV      /* 체납여부           */
+                 , ENV_CNAPG		                                                  /* 체납여부           */
+                 , CASE WHEN ENV_CNAPG = '1' THEN '00000000' 
+                        ELSE ENV_GGYM END                             AS DEADLINE_DT  /* 납기후납기일       */
+                 , CEIL(ROWNUM / #PAGE_PER_CNT#)                      AS PAGE         /* 페이지당  갯수     */ 
+                 , REPLACE(ENV_ACC_NO,'-','')                                         AS ENV_ACC_NO   /* 가상계좌번호       */  
+		      FROM ENVTNA2BCR_ETAX			 					
+             WHERE ENV_SNTG              = '0'					                      /* 납부상태 : 미납부  */		
+               AND ENV_TRTG              = '0'					                      /* 전송상태 : 미전송  */
+               AND ENV_NPNO              >  0	                                      /* 과세번호 > 0       */
+               AND TRIM(ENV_GRNO)        IS NOT NULL				                      
+               AND ENV_GGYM              IS NOT NULL			
+               AND ENV_GYMD              IS NOT NULL			
+               AND ENV_AMT + ENV_ADD_AMT > 0	
+               AND ROWNUM      <![CDATA[ <= ]]> 10000
+             ORDER BY 1, 2, 3, 4, 5, 6, 7, 9
+           ) T1
+     WHERE T1.PAGE = #PAGE#       
+	</select>
+
+	<!-- 페이지 작업 필요함... -->
+	<select id="SELECT_ENV_LEVY_PAGE_CNT" parameterClass="mapForm" resultClass="int">
+    SELECT CEIL(COUNT(*) / #PAGE_PER_CNT#)  AS PAGE
+      FROM ENVTNA2BCR_ETAX			 					
+     WHERE ENV_SNTG  = '0'					/*납부상태 : 미납부*/		
+       AND ENV_TRTG  = '0'					/*전송상태 : 미전송*/
+       AND ENV_NPNO  >  0					/*과세번호 > 0 */
+       AND TRIM(ENV_GRNO) IS NOT NULL
+       AND ENV_GGYM       IS NOT NULL			
+       AND ENV_GYMD       IS NOT NULL			
+       AND ENV_AMT + ENV_ADD_AMT > 0	
+       AND ROWNUM <![CDATA[ <= ]]> 10000
+	</select>
+	
+	<select id="SELECT_ENV_LEVY_CNT" parameterClass="mapForm" resultClass="int">
+    SELECT COUNT(*) CNT
+      FROM ENVTNA2BCR_ETAX			 					
+     WHERE ENV_SNTG  = '0'					/*납부상태 : 미납부*/		
+       AND ENV_TRTG  = '0'					/*전송상태 : 미전송*/
+       AND ENV_NPNO  >  0					/*과세번호 > 0 */
+       AND TRIM(ENV_GRNO) IS NOT NULL
+       AND ENV_GGYM       IS NOT NULL			
+       AND ENV_GYMD       IS NOT NULL			
+       AND ENV_AMT + ENV_ADD_AMT > 0	
+       AND ROWNUM <![CDATA[ <= ]]> 5000                  
+	</select>	
+	
+    <!-- 연계 -->
+    <!-- 환경개선부담금 부과 삭제키를 가져온다. -->
+	<select id="SELECT_ENV_LEVY_DEL_INFOKEY" resultClass="mapForm">
+	SELECT *
+      FROM
+           (SELECT ENV_SGCD      SGG_COD     /*구군(구청) 코드*/
+                 , ENV_ACKU      ACCT_COD    /*회계코드*/
+                 , ENV_SMCD      TAX_ITEM    /*(과)세목코드*/
+                 , ENV_BYYY      TAX_YY      /*부과년도*/
+                 , ENV_BNGI      TAX_MM      /*부과월*/
+                 , ENV_GIBN      TAX_DIV     /*기분*/
+                 , ENV_HACD      HACD        /*행정동*/
+                 , LPAD(ENV_NPNO, 6, '0') TAX_SNO     /*과세번호*/
+                 , ENV_SENO      TAX_CNT     /*일련번호(분납순번)*/
+                 , ENV_TRTG      SGG_TR_TG   /*전송상태*/
+                 , ENV_SNTG      SNTG        /*납부상태*/
+                 , CEIL(ROWNUM / #PAGE_PER_CNT#) AS PAGE  /*페이지당  갯수*/
+                 , ENV_AMT			   BUTT       /*부담금(부과금액)*/
+                 , ENV_ADD_AMT		   ADD_AMT    /*부담금가산금*/
+  		      FROM ENVTNA2BCR_ETAX	
+             WHERE ((ENV_SNTG IN ('8','9')) OR (ENV_AMT + ENV_ADD_AMT = 0) )
+               AND ENV_TRTG='0'					
+      	       AND ROWNUM <![CDATA[ <= ]]> 10000
+      	     ORDER BY 1, 2, 3, 4, 5, 6, 7, 8
+           )T1
+     WHERE T1.PAGE = #PAGE# 	  	 
+	</select>
+	
+	<!-- 연계 -->
+    <!-- 환경개선부담금 수납및 삭제 자료 -->
+	<select id="getEnvTaxSunapDataAndDeleteData" resultClass="mapForm">
+	SELECT *
+      FROM
+           (SELECT ENV_SGCD                                                                 AS SGG_COD
+                 , ENV_ACKU                                                                 AS ACCT_COD
+                 , ENV_SMCD                                                                 AS TAX_ITEM
+                 , ENV_BYYY                                                                 AS TAX_YY
+                 , ENV_BNGI                                                                 AS TAX_MM
+                 , CASE WHEN ENV_GIBN='0' THEN '3' ELSE ENV_GIBN END 						AS TAX_DIV
+                 , ENV_GIBN		          						      						AS TAX_DIV_ORG
+                 , ENV_HACD                                                                 AS HACD
+                 , LPAD(ENV_NPNO, 6, 0)                                                     AS TAX_SNO         
+                 , ENV_SENO                                                                 AS TAX_CNT
+                 , ENV_INFO1                                                                AS MLGN_IF1
+                 , ENV_INFO2                                                                AS MLGN_IF2
+                 , ENV_INFO3                                                                AS MLGN_IF3
+                 , ENV_INFO4                                                                AS MLGN_IF4
+                 , ENV_INFO5                                                                AS MLGN_IF5
+                 , TRIM(FC_CMM_DEC(ENV_JMO,'ROT','1','T'))                             AS REG_NO
+                 , TRIM(ENV_NAME)                                                           AS REG_NM
+                 , ENV_ZIP                                                                  AS REG_ZIPCD
+                 , ENV_ADDR                                                                 AS ADDRESS
+                 , ENV_AMT                                                                  AS BUTT
+                 , ENV_MI_AMT                                                               AS MI_AMT
+                 , ENV_ADD_AMT                                                              AS ADD_AMT
+                 , ENV_MIADD_AMT                                                            AS MIADD_AMT
+                 , ENV_CNAP_AMT                                                             AS CNAP_AMT
+                 , TRIM(ENV_SYMD)                                                           AS PAY_DT
+                 , ENV_BYMD                                                                 AS TAX_DT
+                 , ENV_GYMD                                                                 AS DUE_DT
+                 , ENV_GGYM                                                                 AS DUE_F_DT
+                 , ENV_OCR1                                                                 AS ENV_OCR1
+                 , ENV_OCR2                                                                 AS ENV_OCR2
+                 , TRIM(ENV_OCR1) || TRIM(ENV_OCR2)                                         AS OCR_BD
+                 , ENV_GRNO                                                                 AS EPAY_NO   
+                 , ENV_SNTG                                                                 AS SNTG
+                 , ENV_TRTG                                                                 AS TRTG
+                 , ENV_TRTG                                                                 AS SGG_TR_TG   
+                 , ENV_CNAPG                                                                AS DLQ_DIV
+                 , CASE WHEN ENV_CNAPG='1' THEN '00000000' ELSE ENV_GGYM END				AS DEADLINE_DT
+                 , ENV_RAMT                                                                 AS SUM_RCP
+                 , CASE WHEN ENV_RGBN IN ('1','4','5','6','7','8','Z') OR TRIM(ENV_RGBN) IS NULL 
+                        THEN 'DEL' ELSE '1' END                                             AS SNSU
+                 , CEIL(ROWNUM/#PAGE_PER_CNT#)                                              AS PAGE
+              FROM ENVTNA2BCR_ETAX
+             WHERE 1 = 1
+               AND ENV_TRTG = '0'
+               AND (ENV_SNTG IN ('8','9') OR (ENV_AMT + ENV_ADD_AMT = 0))
+               AND ROWNUM <![CDATA[ <= ]]> 1000
+               AND ENV_SYSDATE <![CDATA[ <= ]]> (SYSDATE - INTERVAL '05' MINUTE)
+           ) X
+     WHERE 1 = 1
+       AND X.PAGE = #PAGE#
+    </select>
+    
+    <!-- 부과자료 확인 및 전문에 의한 수납처리여부 확인 -->
+    <select id="getBugaDataAndSunapResult" parameterClass="mapForm" resultClass="mapForm">
+	SELECT NVL(MIN(A.DEL_YN), 'NOT')         AS DEL_YN
+	     , NVL(MAX(B.PAY_CNT) + 1, 0)        AS PAY_CNT
+	     , CASE WHEN MIN(B.SNSU)='1' THEN '1' ELSE 'NOT' END AS SNSU
+  	  FROM TX2132_TB A
+  	     , TX2231_TB B	
+     WHERE 1 = 1
+       AND A.SGG_COD  = B.SGG_COD(+)
+       AND A.ACCT_COD = B.ACCT_COD(+)
+       AND A.TAX_ITEM = B.TAX_ITEM(+)
+       AND A.TAX_YY   = B.TAX_YY(+)
+       AND A.TAX_MM   = B.TAX_MM(+)
+       AND A.TAX_DIV  = B.TAX_DIV(+)
+       AND A.HACD     = B.HACD(+)
+       AND A.TAX_SNO  = B.TAX_SNO(+)
+       AND A.TAX_CNT  = B.TAX_CNT(+)
+       AND A.SGG_COD  = #SGG_COD#
+       AND A.ACCT_COD = #ACCT_COD#
+       AND A.TAX_ITEM = #TAX_ITEM#
+       AND A.TAX_YY   = #TAX_YY#
+       AND A.TAX_MM   = #TAX_MM#
+       AND A.TAX_DIV  = #TAX_DIV#
+       AND A.HACD     = #HACD#
+       AND A.TAX_SNO  = #TAX_SNO#
+       AND A.TAX_CNT  = #TAX_CNT# 
+	</select>   
+  
+	
+	<select id="SELECT_ENV_LEVY_DEL_PAGE_CNT" parameterClass="mapForm" resultClass="int">
+	SELECT CEIL(COUNT(*) / #PAGE_PER_CNT#) PAGE
+  	  FROM ENVTNA2BCR_ETAX	
+     WHERE ENV_SNTG IN ('8','9')
+       AND ENV_TRTG='0'					
+       AND ROWNUM <![CDATA[ <= ]]> 10000
+	</select>	
+	
+	
+	<select id="getEnvTaxSunapAndDeleteDataCount" parameterClass="mapForm" resultClass="int">
+	SELECT CEIL(COUNT(*) / #PAGE_PER_CNT#) PAGE
+  	  FROM ENVTNA2BCR_ETAX	
+     WHERE 1 = 1
+       AND (ENV_SNTG IN ('8','9') OR (ENV_AMT + ENV_ADD_AMT = 0))
+       AND ENV_TRTG='0'					
+       AND ROWNUM <![CDATA[ <= ]]> 10000
+       AND ENV_SYSDATE <![CDATA[ <= ]]> (SYSDATE - INTERVAL '05' MINUTE)
+	</select>	
+	
+	
+	<select id="SELECT_ENV_LEVY_DEL_CNT" parameterClass="mapForm" resultClass="int">
+	SELECT COUNT(*) CNT
+  	  FROM ENVTNA2BCR_ETAX	
+     WHERE ENV_SNTG IN ('8','9')
+       AND ENV_TRTG = '0'					
+       AND ROWNUM <![CDATA[ <= ]]> 5000	
+	</select>
+		
+    <!-- 사이버 -->
+    <!-- 환경개선부담금 납기후 납기일을 기준으로 체납분(독촉분)을 구분하기위함. -->
+	<select id="SELECT_ENV_PENALTY_INFO" resultClass="mapForm">
+    SELECT B.BUTT + B.ADD_AMT AS ENV_AMT
+         , B.DUE_DT           AS DUE_DT         /*납기내일자*/
+         , B.DUE_F_DT         AS DUE_F_DT       /*납기후일자*/
+         , B.DEADLINE_DT      AS DEADLINE_DT    /*납기후납기일*/
+         , B.DLQ_DIV          AS ENV_CNAPG      /*체납구분*/
+         , TRIM(A.REG_NM)     AS REG_NM
+      FROM TX2131_TB A        /*환경개선부담금 부과 TBL*/
+         , TX2132_TB B        /*환경개선부담금 부과상세 TBL*/
+     WHERE A.SGG_COD  = B.SGG_COD
+       AND A.ACCT_COD = B.ACCT_COD
+       AND A.TAX_ITEM = B.TAX_ITEM
+       AND A.TAX_YY   = B.TAX_YY
+       AND A.TAX_MM   = B.TAX_MM
+       AND A.TAX_DIV  = B.TAX_DIV
+       AND A.HACD     = B.HACD
+       AND A.TAX_SNO  = B.TAX_SNO
+       AND A.SGG_COD  = #SGG_COD#
+       AND A.ACCT_COD = #ACCT_COD#
+       AND A.TAX_ITEM = #TAX_ITEM#
+       AND A.TAX_YY   = #TAX_YY#
+       AND A.TAX_MM   = #TAX_MM#
+       AND A.TAX_DIV  = #TAX_DIV#
+       AND A.HACD     = #HACD#
+       AND A.TAX_SNO  = #TAX_SNO#
+       AND B.TAX_CNT  = #TAX_CNT#  
+	</select>
+
+    <!-- CYBER -->
+    <!-- 환경개선부담금 부과자료 입력  -->
+	<insert id="INSERT_ENV_H_LEVY" parameterClass="mapForm">
+	INSERT INTO TX2131_TB (
+                SGG_COD         /*구청코드       */
+              , ACCT_COD        /*회계코드       */
+              , TAX_ITEM        /*과세목         */
+              , TAX_YY          /*부과년도       */
+              , TAX_MM          /*부과월         */
+              , TAX_DIV         /*기분           */
+              , HACD            /*행정동코드     */
+              , TAX_SNO         /*과세번호       */
+              , MLGN_IF1        /*물건정보1      */
+              , MLGN_IF2        /*물건정보2      */
+              , MLGN_IF3        /*물건정보3      */
+              , MLGN_IF4        /*물건정보4      */
+              , MLGN_IF5        /*물건정보5      */
+              , REG_NO          /*주민법인번호   */
+              , REG_NM          /*납세자이름     */
+              , REG_ZIPCD       /*납세자우편번호 */
+              , ADDRESS         /*주소           */
+     ) VALUES ( #SGG_COD#
+              , #ACCT_COD#
+              , #TAX_ITEM#
+              , #TAX_YY#
+              , #TAX_MM#
+              , #TAX_DIV#
+              , #HACD#
+              , #TAX_SNO#
+              , #MLGN_IF1#
+              , #MLGN_IF2#
+              , #MLGN_IF3#
+              , #MLGN_IF4#
+              , #MLGN_IF5#
+              , #REG_NO#
+              , #REG_NM#
+              , #REG_ZIPCD#
+              , #ADDRESS#
+    )
+	</insert>	
+	
+	<!-- 구청원장테이블에 가상계좌수납여부를 업데이트한다.  -->
+	<!-- 연계 -->
+	<update id="UPDATE_ENV_H_LEVY" parameterClass="mapForm">
+    UPDATE TX2131_TB
+       SET SGG_COD    = #SGG_COD#      /*구청코드        */
+         , ACCT_COD   = #ACCT_COD#     /*회계코드        */
+         , TAX_ITEM   = #TAX_ITEM#     /*과세목          */
+         , TAX_YY     = #TAX_YY#       /*부과년도        */
+         , TAX_MM     = #TAX_MM#       /*부과월          */
+         , TAX_DIV    = #TAX_DIV#      /*기분            */
+         , HACD       = #HACD#         /*행정동코드      */
+         , TAX_SNO    = #TAX_SNO#      /*과세번호        */
+         , MLGN_IF1   = #MLGN_IF1#     /*물건정보1       */
+         , MLGN_IF2   = #MLGN_IF2#     /*물건정보2       */
+         , MLGN_IF3   = #MLGN_IF3#     /*물건정보3       */
+         , MLGN_IF4   = #MLGN_IF4#     /*물건정보4       */
+         , MLGN_IF5   = #MLGN_IF5#     /*물건정보5       */
+         , REG_NO     = #REG_NO#       /*주민법인번호    */
+         , REG_NM     = #REG_NM#       /*납세자이름      */
+         , REG_ZIPCD  = #REG_ZIPCD#    /*납세자우편번호  */
+         , ADDRESS    = #ADDRESS#      /*주소            */
+         , LAST_DTM   = SYSDATE
+     WHERE SGG_COD    = #SGG_COD# 
+       AND ACCT_COD   = #ACCT_COD#
+       AND TAX_ITEM   = #TAX_ITEM#
+       AND TAX_YY     = #TAX_YY#  
+       AND TAX_MM     = #TAX_MM#  
+       AND TAX_DIV    = #TAX_DIV# 
+       AND HACD       = #HACD#    
+       AND TAX_SNO    = #TAX_SNO#            
+	</update>	
+      	  
+    <!-- CYBER -->
+    <!-- 환경개선부담금 부과상세자료 입력  -->
+	<insert id="INSERT_ENV_H_LEVY_DESC" parameterClass="mapForm">
+    INSERT INTO TX2132_TB (
+                SGG_COD            /*구청코드             */
+              , ACCT_COD           /*회계코드             */
+              , TAX_ITEM           /*과세목               */
+              , TAX_YY             /*부과년도             */
+              , TAX_MM             /*부과월               */
+              , TAX_DIV            /*기분                 */
+              , HACD               /*행정동               */
+              , TAX_SNO            /*과세번호             */
+              , TAX_CNT            /*부과순번             */
+              , DLQ_DIV            /*체납여부             */
+              , BUTT               /*부과금액             */
+              , MI_AMT             /*ENV_MI_AMT           */
+              , ADD_AMT            /*가산금               */
+              , MIADD_AMT          /*ENV_MIADD_AMT        */
+              , CNAP_AMT           /*ENV_CNAP_AMT         */
+              , TAX_DT             /*부과일자             */
+              , DUE_DT             /*납기일자             */
+              , DUE_F_DT           /*납기후납기일         */
+              , EPAY_NO            /*전자납부번호         */
+              , SNTG               /*납부상태             */
+              , PROC_CLS           /*가상계좌체번구분     */
+              , CUD_OPT            /*처리구분코드         */
+              , DEADLINE_DT        /*납기후일자           */
+              , VIR_ACC_NO         /*가상계좌번호         */
+              , SGG_TR_TG          /*구청전송처리구분코드 */
+              , DEL_YN             /*삭제여부             */
+              , DEL_DT             /*삭제일시             */
+     ) VALUES ( #SGG_COD#
+              , #ACCT_COD#
+              , #TAX_ITEM#
+              , #TAX_YY#
+              , #TAX_MM#
+              , #TAX_DIV#
+              , #HACD#
+              , #TAX_SNO#
+              , #TAX_CNT#
+              , #DLQ_DIV#
+              , #BUTT#
+              , #MI_AMT#
+              , #ADD_AMT#
+              , #MIADD_AMT#
+              , #CNAP_AMT#
+              , #TAX_DT#
+              , #DUE_DT#
+              , #DUE_F_DT#
+              , #EPAY_NO#
+              , #SNTG#
+              , #PROC_CLS#
+              , #CUD_OPT#
+              , #DEADLINE_DT#
+              , #VIR_ACC_NO#
+              , #SGG_TR_TG#
+              , #DEL_YN#
+              , #DEL_DT#
+    )         
+	</insert>	      	  
+      	  
+	<!-- 구청원장테이블에 가상계좌수납여부를 업데이트한다.  -->
+	<!-- 구청 -->
+	<update id="UPDATE_ENV_H_LEVY_DESC" parameterClass="mapForm">               
+    UPDATE TX2132_TB
+       SET SGG_COD      = #SGG_COD#                                                                /*구청코드             */
+         , ACCT_COD     = #ACCT_COD#                                                               /*회계코드             */
+         , TAX_ITEM     = #TAX_ITEM#                                                               /*과세목               */
+         , TAX_YY       = #TAX_YY#                                                                 /*부과년도             */
+         , TAX_MM       = #TAX_MM#                                                                 /*부과월               */
+         , TAX_DIV      = #TAX_DIV#                                                                /*기분                 */
+         , HACD         = #HACD#                                                                   /*행정동               */
+         , TAX_SNO      = #TAX_SNO#                                                                /*과세번호             */
+         , TAX_CNT      = #TAX_CNT#                                                                /*부과순번             */
+         , DLQ_DIV      = #DLQ_DIV#                                                                /*체납여부             */
+         , BUTT         = #BUTT#                                                                   /*부과금액             */
+         , MI_AMT       = #MI_AMT#                                                                 /*ENV_MI_AMT           */
+         , ADD_AMT      = #ADD_AMT#                                                                /*가산금               */
+         , MIADD_AMT    = #MIADD_AMT#                                                              /*ENV_MIADD_AMT        */
+         , CNAP_AMT     = #CNAP_AMT#                                                               /*ENV_CNAP_AMT         */
+         , TAX_DT       = #TAX_DT#                                                                 /*부과일자             */
+         , DUE_DT       = #DUE_DT#                                                                 /*납기일자             */
+         , DUE_F_DT     = #DUE_F_DT#                                                               /*납기후납기일         */
+         , EPAY_NO      = #EPAY_NO#                                                                /*전자납부번호         */
+         , SNTG         = #SNTG#                                                                   /*납부상태             */
+         , CUD_OPT      = CASE WHEN CUD_OPT='2' THEN '2' ELSE CASE WHEN SGG_TR_TG='1' THEN '2' ELSE '1' END END /*처리구분코드*/
+         , DEADLINE_DT  = #DEADLINE_DT#                                                            /*납기후일자           */
+         <isEqual property="AMTEQ" compareValue="N">
+         , PROC_CLS     = #PROC_CLS#                                                               /*가상계좌체번구분     */
+         , SGG_TR_TG    = CASE WHEN #ENV_ACC_NO# IS NULL THEN '0' ELSE SGG_TR_TG END               /*구청전송처리구분코드 */
+         , VIR_ACC_NO   = #ENV_ACC_NO#                                                         
+         </isEqual>
+         , DEL_YN       = #DEL_YN#
+         , LAST_DTM     = SYSDATE
+     WHERE SGG_COD      = #SGG_COD#   
+       AND ACCT_COD     = #ACCT_COD#  
+       AND TAX_ITEM     = #TAX_ITEM#  
+       AND TAX_YY       = #TAX_YY#    
+       AND TAX_MM       = #TAX_MM#    
+       AND TAX_DIV      = #TAX_DIV#   
+       AND HACD         = #HACD#      
+       AND TAX_SNO      = #TAX_SNO#   
+       AND TAX_CNT      = #TAX_CNT#   
+       AND SNTG         IN ('0' ,'9')         
+	</update>
+	
+	<!-- OCR밴드 Update -->
+	<update id="UPDATE_ENV_H_LEVY_OCRBD" parameterClass="mapForm">
+	UPDATE TX2132_TB 
+       SET OCR_BD    = F_CREATE_ENOCR(#SGG_COD#,#ACCT_COD#,#TAX_ITEM#,#TAX_YY#,#TAX_MM#,#TAX_DIV#,#HACD#,#TAX_SNO#,#TAX_CNT#)
+	 WHERE SGG_COD   = #SGG_COD#   
+       AND ACCT_COD  = #ACCT_COD#  
+       AND TAX_ITEM  = #TAX_ITEM#  
+       AND TAX_YY    = #TAX_YY#    
+       AND TAX_MM    = #TAX_MM#    
+       AND TAX_DIV   = #TAX_DIV#   
+       AND HACD      = #HACD#      
+       AND TAX_SNO   = #TAX_SNO#
+       AND TAX_CNT   = #TAX_CNT#   
+	</update>
+	
+	<!-- 사이버원장테이블에 삭제처리 Flag   -->
+	<!-- 사이버 -->
+	<update id="UPDATE_DEL_H_LEVY_DESC" parameterClass="mapForm">
+    UPDATE TX2132_TB
+       SET DEL_YN    = 'Y'
+         , LAST_DTM  = SYSDATE
+     WHERE SGG_COD   = #SGG_COD#   
+       AND ACCT_COD  = #ACCT_COD#  
+       AND TAX_ITEM  = #TAX_ITEM#  
+       AND TAX_YY    = #TAX_YY#    
+       AND TAX_MM    = #TAX_MM#    
+       AND TAX_DIV   = #TAX_DIV#   
+       AND HACD      = #HACD#      
+       AND TAX_SNO   = #TAX_SNO#   
+       AND TAX_CNT   = #TAX_CNT#   
+       AND SNTG     IN ('0' ,'9')
+	</update>	
+	
+	<!-- 구청원장테이블에 전송완료 Flag 처리   -->
+	<!-- 연계 -->
+	<update id="UPDATE_TR_ENVTAX_TAB" parameterClass="mapForm">
+    UPDATE ENVTNA2BCR_ETAX
+       SET ENV_TRTG = '1'
+     WHERE ENV_SGCD = #SGG_COD#    /* 구군(구청) 코드    */
+       AND ENV_ACKU	= #ACCT_COD#   /* 회계코드           */
+       AND ENV_SMCD	= #TAX_ITEM#   /* (과)세목코드       */
+       AND ENV_BYYY	= #TAX_YY#     /* 부과년도           */
+       AND ENV_BNGI	= #TAX_MM#     /* 부과월             */
+       AND ENV_GIBN	= #TAX_DIV_ORG#    /* 기분               */
+       AND ENV_HACD	= #HACD#       /* 행정동             */
+       AND ENV_NPNO = #ENV_NPNO#   /* 과세번호           */
+       AND ENV_SENO	= #TAX_CNT#    /* 일련번호(분납순번) */
+	</update>	
+	
+			
+	<insert id="insertGandanENapbuSunap" parameterClass="mapForm">
+	INSERT INTO TX2231_TB (
+                SGG_COD
+              , ACCT_COD
+              , TAX_ITEM
+              , TAX_YY
+              , TAX_MM
+              , TAX_DIV
+              , HACD
+              , TAX_SNO
+              , TAX_CNT
+              , PAY_CNT
+              , SUM_RCP
+              , PAY_DT
+              , SNTG
+              , SNSU
+              , BANK_CD
+              , BRC_NO
+              , OCR_BD
+              , TRTG
+              , RSN_YN
+              , REG_DTM
+              , LAST_DTM
+	 ) VALUES ( #SGG_COD#
+              , #ACCT_COD#
+              , #TAX_ITEM#
+              , #TAX_YY#
+              , #TAX_MM#
+              , #TAX_DIV#
+              , #HACD#
+              , #TAX_SNO#
+              , #TAX_CNT#
+              , #PAY_CNT#
+              , #SUM_RCP#
+              , #PAY_DT#
+              , #SNTG#
+              , #SNSU#
+              , #BANK_CD#
+              , #BRC_NO#
+              , #OCR_BD#
+              , #TRTG#
+              , 'N'
+              , SYSDATE
+              , SYSDATE	
+	)
+	</insert>	
+	
+	
+	<update id="updateBugaDataSntgAndDelyn" parameterClass="mapForm">
+    UPDATE TX2132_TB
+       SET DEL_YN    = #DEL_YN#
+         , SNTG      = #SNTG#
+         , LAST_DTM  = SYSDATE
+     WHERE SGG_COD   = #SGG_COD#   
+       AND ACCT_COD  = #ACCT_COD#  
+       AND TAX_ITEM  = #TAX_ITEM#  
+       AND TAX_YY    = #TAX_YY#    
+       AND TAX_MM    = #TAX_MM#    
+       AND TAX_DIV   = #TAX_DIV#   
+       AND HACD      = #HACD#      
+       AND TAX_SNO   = #TAX_SNO#   
+       AND TAX_CNT   = #TAX_CNT#
+	</update>	
+	
+
+
+    <update id="UPDATE_TR_DEL_ENVTAX_TAB" parameterClass="mapForm">
+    UPDATE ENVTNA2BCR_ETAX
+       SET ENV_TRTG  = '1'
+     WHERE ENV_SNTG  IN ('8','9','0','1')			
+       AND ENV_SGCD  = #SGG_COD#    /* 구군(구청) 코드    */
+       AND ENV_ACKU	 = #ACCT_COD#   /* 회계코드           */
+       AND ENV_SMCD	 = #TAX_ITEM#   /* (과)세목코드       */
+       AND ENV_BYYY	 = #TAX_YY#     /* 부과년도           */
+       AND ENV_BNGI	 = #TAX_MM#     /* 부과월             */
+       AND ENV_GIBN	 = #TAX_DIV_ORG# /* 기분               */
+       AND ENV_HACD	 = #HACD#       /* 행정동             */
+       AND ENV_NPNO  = #TAX_SNO#    /* 과세번호           */
+       AND ENV_SENO	 = #TAX_CNT#    /* 일련번호(분납순번) */  
+    </update>		  	   
+    
+    
+</sqlMap>

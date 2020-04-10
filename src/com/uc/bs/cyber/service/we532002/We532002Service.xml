@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="WE532002" >
+
+    <!-- 지방세일괄 및 통합상세 TAB을 조회한다(지방세통합번호)... -->
+	<select id="TX1302_TB_Select" parameterClass="mapForm" resultClass="mapForm">
+	<![CDATA[
+        
+        SELECT 
+             A.TONG_NO   AS TONG_NO,   /*전자납부번호(총괄납부고유번호)*/
+             A.SGG_COD   AS SGG_COD,
+             A.ACCT_COD  AS ACCT_COD,
+             A.TAX_ITEM  AS TAX_ITEM,
+             A.TAX_YY    AS TAX_YY,
+             A.TAX_MM    AS TAX_MM,
+             A.TAX_DIV   AS TAX_DIV,
+             A.HACD      AS HACD,
+             A.TAX_SNO   AS TAX_SNO,
+             A.RCP_CNT   AS RCP_CNT
+             
+        FROM TX1302_TB A   /* A :지방세일괄 및 통합상세 */
+        WHERE A.TONG_NO   = #TOTPAY_NO#
+
+          
+	]]>
+	</select>
+	
+	
+	<!-- 전자수납분에 대해 수납순번을 구한다. -->
+	<!-- 중복수납이 존재하므로... -->
+	<select id="TX1201_TB_MaxPayCnt" parameterClass="mapForm" resultClass="int">
+	<![CDATA[
+	    
+	    SELECT NVL(MAX(A.PAY_CNT) + 1, 0) AS MAX_PAY_CNT FROM TX1201_TB A
+	    WHERE A.SGG_COD   = #SGG_COD#
+          AND A.ACCT_COD  = #ACCT_COD#
+          AND A.TAX_ITEM  = #TAX_ITEM#
+          AND A.TAX_YY    = #TAX_YY#
+          AND A.TAX_MM    = #TAX_MM#
+          AND A.TAX_DIV   = #TAX_DIV#
+          AND A.HACD      = #HACD#
+          AND A.TAX_SNO   = #TAX_SNO#
+          AND A.RCP_CNT   = #RCP_CNT# 
+	]]>
+	</select>
+
+
+	<!-- 전자수납테이블 INSERT -->
+    <update id="TX1201_TB_Insert"  parameterClass="mapForm">
+    <![CDATA[
+    
+        INSERT INTO TX1201_TB(     /*지방세전자수납*/
+	          SGG_COD     /*1.구청코드*/
+	         ,ACCT_COD    /*2.회계코드*/
+	         ,TAX_ITEM    /*3.과세목*/
+	         ,TAX_YY      /*4.부과년도*/
+	         ,TAX_MM      /*5.부과월*/
+	         ,TAX_DIV     /*6.기분*/
+	         ,HACD        /*7.행정동*/
+	         ,TAX_SNO     /*8.과세번호*/
+	         ,RCP_CNT     /*9.분납순번*/
+	         ,PAY_CNT     /*10.수납순번  :: 여기까지 PK */ 
+	         ,SNTG        /*11.수납FLAG*/
+	         ,SUM_RCP     /*12.수납금액*/
+	         ,PAY_DT      /*13.납부일자*/
+	         ,SNSU        /*14.수납수단*/
+	         ,BANK_CD     /*15.납부기관*/
+	         ,BRC_NO      /*16*/
+	         ,TMSG_NO     /*출금은행_전문관리번호      */      
+	         ,OCR_BD      /*17.OCR밴드*/
+	         ,RSN_YN      /*예약납부처리여부*/
+	         ,PAY_SYSTEM /*  납부 이용 시스템 */
+	         ,TRTG )      /*18.자료전송상태*/
+	       SELECT 
+	          A.SGG_COD            /*1*/
+	         ,A.ACCT_COD           /*2*/
+	         ,A.TAX_ITEM           /*3*/
+	         ,A.TAX_YY             /*4*/
+	         ,A.TAX_MM             /*5*/
+	         ,A.TAX_DIV            /*6*/
+	         ,A.HACD               /*7*/
+	         ,A.TAX_SNO            /*8*/
+	         ,A.RCP_CNT            /*9*/
+	         ,(SELECT NVL(MAX(C.PAY_CNT) + 1, 0) AS MAX_PAY_CNT FROM TX1201_TB C
+	           WHERE C.SGG_COD   = A.SGG_COD
+                 AND C.ACCT_COD  = A.ACCT_COD
+                 AND C.TAX_ITEM  = A.TAX_ITEM
+                 AND C.TAX_YY    = A.TAX_YY
+                 AND C.TAX_MM    = A.TAX_MM
+                 AND C.TAX_DIV   = A.TAX_DIV
+                 AND C.HACD      = A.HACD
+                 AND C.TAX_SNO   = A.TAX_SNO
+                 AND C.RCP_CNT   = A.RCP_CNT
+              )                  /*10 : 취소된건에 대해 중복수납이 가능하다고 함. */
+	         ,'2'                /*11*/
+	         ,CASE WHEN F_GET_GYMD(DUE_DT) >= TO_CHAR(SYSDATE, 'YYYYMMDD') THEN B.SUM_B_AMT ELSE DECODE(NVL(B.SUM_F_AMT, 0), 0, B.SUM_B_AMT, NVL(B.SUM_F_AMT, 0)) END     /*12*/
+	         ,#PAY_DT#           /*13*/
+	         ,'1'                /*14*/
+	         ,#BNK_CD#           /*15*/
+	         ,#BANK_COD#         /*16*/
+	         ,#CO_BKNUM#
+	         ,B.OCR_BD           /*17*/
+	         ,#RSN_YN#           /*예약납부처리여부*/
+	         ,#PAY_SYSTEM# /*  납부 이용 시스템 */
+	         ,'0'                /*18*/
+	       FROM TX1302_TB A, TX1101_VW_ALL B   /*지방세일괄및통합상세 TBL, 지방세부과상세(금액땜시)*/
+	       WHERE A.SGG_COD  = B.SGG_COD
+             AND A.ACCT_COD = B.ACCT_COD
+             AND A.TAX_ITEM = B.TAX_ITEM
+             AND A.TAX_YY   = B.TAX_YY
+             AND A.TAX_MM   = B.TAX_MM
+             AND A.TAX_DIV  = B.TAX_DIV
+             AND A.HACD     = B.HACD
+             AND A.TAX_SNO  = B.TAX_SNO
+             AND A.RCP_CNT  = B.RCP_CNT
+             /*조건*/
+	         AND A.TONG_NO  = #TOTPAY_NO#
+
+    
+    ]]>
+    </update>
+
+
+    <!-- 지방세 부과상세정보 수납처리한다. (수납FLAG) -->
+    <update id="TX1102_TB_Update" parameterClass="mapForm">
+    <![CDATA[
+    
+        UPDATE TX1102_TB 
+            SET SNTG     = '2'
+               ,DEL_YN='N'
+               ,LAST_DTM = SYSDATE 
+	    WHERE SGG_COD   = #SGG_COD#
+          AND ACCT_COD  = #ACCT_COD#
+          AND TAX_ITEM  = #TAX_ITEM#
+          AND TAX_YY    = #TAX_YY#
+          AND TAX_MM    = #TAX_MM#
+          AND TAX_DIV   = #TAX_DIV#
+          AND HACD      = #HACD#
+          AND TAX_SNO   = #TAX_SNO#
+          AND RCP_CNT   = #RCP_CNT# 
+
+    
+    ]]>
+    </update>
+    
+    <!-- 일괄납부 테이블 -->
+    <update id="TX1301_TB_Update" parameterClass="mapForm">
+    <![CDATA[
+         UPDATE TX1301_TB SET DATA_GB='2' ,LAST_DTM = SYSDATE WHERE TONG_NO=#TOTPAY_NO#
+
+    ]]>
+    </update>
+
+    <!-- 지방소득세종합소득전자신고분. -->
+    <update id="ES1121_TB_Update" parameterClass="mapForm">
+    <![CDATA[
+    
+         UPDATE ES1121_TB 
+            SET SNTG = '2'
+               ,PAY_DT = TO_CHAR(SYSDATE, 'YYYYMMDD')
+               ,LAST_DTM = SYSDATE 
+         WHERE TAX_YY   = #TAX_YY#
+           AND TAX_MM   = #TAX_MM#
+           AND HACD     = #HACD#
+           AND SGG_COD  = #SGG_COD#
+           AND TAX_SNO  = #TAX_SNO#   
+           AND SNTG     = '0'
+    
+    ]]>
+    </update>    
+    
+    <!-- 지방소득세양도소득전자신고분. -->
+    <update id="ES1131_TB_Update" parameterClass="mapForm">
+    <![CDATA[
+    
+         UPDATE ES1131_TB 
+            SET SNTG = '2'
+               ,PAY_DT = TO_CHAR(SYSDATE, 'YYYYMMDD')
+               ,LAST_DTM = SYSDATE 
+         WHERE TAX_YY   = #TAX_YY#
+           AND TAX_MM   = #TAX_MM#
+           AND SGG_COD  = #SGG_COD#
+           AND TAX_SNO  = #TAX_SNO#   
+           AND SNTG     = '0'
+    
+    ]]>
+    </update>      
+    
+    <!-- 지방소득세법인세전자신고분. -->
+    <update id="ES1141_TB_Update" parameterClass="mapForm">
+    <![CDATA[
+    
+         UPDATE ES1141_TB 
+            SET SNTG = '2'
+               ,PAY_DT = TO_CHAR(SYSDATE, 'YYYYMMDD')
+               ,LAST_DTM = SYSDATE 
+         WHERE TAX_YY   = #TAX_YY#
+           AND TAX_MM   = #TAX_MM#
+           AND SGG_COD  = #SGG_COD#
+           AND TAX_SNO  = #TAX_SNO#   
+           AND SNTG     = '0'
+    
+    ]]>
+    </update>   
+    
+    <!-- 지방소득세법인세전자신고분. NEW -->
+    <update id="ES5001_TB_Update" parameterClass="mapForm">
+    <![CDATA[
+    
+         UPDATE ES5001_TB 
+            SET STATUS   = '2'
+               ,SUNAP_DT = TO_CHAR(SYSDATE, 'YYYYMMDD')
+         WHERE EPAY_NO   = #EPAY_NO#
+           AND STATUS    = '0'
+    
+    ]]>
+    </update>   
+    
+    <!-- 지방소득세종업원, 주민세재산 전자신고분. -->
+    <update id="ES1151_TB_Update" parameterClass="mapForm">
+    <![CDATA[
+    
+         UPDATE ES1151_TB 
+            SET SNTG = '2'
+               ,PAY_DT = TO_CHAR(SYSDATE, 'YYYYMMDD')
+               ,LAST_DTM = SYSDATE 
+         WHERE TAX_YY   = #TAX_YY#
+           AND TAX_MM   = #TAX_MM#
+           AND TAX_ITEM = #TAX_ITEM#
+           AND HACD     = #HACD#
+           AND SGG_COD  = #SGG_COD#
+           AND TAX_SNO  = #TAX_SNO#   
+           AND SNTG     = '0'
+    
+    ]]>
+    </update>  
+    
+    <!-- 지방소득세등록면허세전자신고분. -->
+    <update id="ES1161_TB_Update" parameterClass="mapForm">
+    <![CDATA[
+    
+         UPDATE ES1161_TB 
+            SET SNTG = '2'
+               ,PAY_DT = TO_CHAR(SYSDATE, 'YYYYMMDD')
+               ,LAST_DTM = SYSDATE 
+         WHERE TAX_YY   = #TAX_YY#
+           AND TAX_MM   = #TAX_MM#
+           AND TAX_ITEM = #TAX_ITEM#
+           AND HACD     = #HACD#
+           AND SGG_COD  = #SGG_COD#
+           AND TAX_SNO  = #TAX_SNO#   
+           AND SNTG     = '0'
+    
+    ]]>
+    </update>   
+    
+    <!-- 레저세. -->
+    <update id="ES1171_TB_Update" parameterClass="mapForm">
+    <![CDATA[
+    
+         UPDATE ES1171_TB 
+            SET SNTG = '2'
+               ,PAY_DT = TO_CHAR(SYSDATE, 'YYYYMMDD')
+               ,LAST_DTM = SYSDATE 
+         WHERE TAX_YY   = #TAX_YY#
+           AND TAX_MM   = #TAX_MM#
+           AND HACD     = #HACD#
+           AND SGG_COD  = #SGG_COD#
+           AND TAX_SNO  = #TAX_SNO#   
+           AND SNTG     = '0'
+    
+    ]]>
+    </update>   
+    
+    
+    <!-- 지방소득세 지역자원개발세 전자신고분. -->
+    <update id="ES1181_TB_Update" parameterClass="mapForm">
+    <![CDATA[
+    
+         UPDATE ES1181_TB 
+            SET SNTG = '2'
+               ,PAY_DT = TO_CHAR(SYSDATE, 'YYYYMMDD')
+               ,LAST_DTM = SYSDATE 
+         WHERE TAX_YY   = #TAX_YY#
+           AND TAX_MM   = #TAX_MM#
+           AND HACD     = #HACD#
+           AND SGG_COD  = #SGG_COD#
+           AND TAX_SNO  = #TAX_SNO#   
+           AND SNTG     = '0'
+    
+    ]]>
+    </update>   
+
+</sqlMap>

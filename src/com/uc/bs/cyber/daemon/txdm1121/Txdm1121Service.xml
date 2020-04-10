@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXDM1121" >
+
+    <!-- 가상계좌채번자료 리스트  -->
+	<select id="SELECT_VIR_LIST"  resultClass="mapForm"  parameterClass="mapForm">
+	<![CDATA[   	 
+		SELECT '26'||NVL(B.SGG_COD,' ')     AS C_SLF_ORG     	            /* 시군구코드 */                               
+		     , NVL(B.TAX_ITEM,' ')          AS C_SSEMOK           			/* 세목코드 */                                   
+		     , NVL(B.TAX_YY,' ')            AS YY_GWASE             		/* 부과년도 */                                     
+		     , NVL(B.TAX_MM,' ')            AS MM_GWASE             		/* 부과월 */                                       
+		     , NVL(B.TAX_DIV,' ')           AS V_GWASE             			/* 부과구분 */                                     
+		     , NVL(B.HACD,' ')              AS C_DONG                 	    /* 행정동 */                                       
+		     , NVL(B.TAX_SNO,' ')           AS S_GWASE             			/* 과세번호 */                                     
+		     , NVL(B.RCP_CNT,0)             AS RCP_CNT            			/* 분납순번 */                                   
+		     , SUBSTR(B.VIR_ACC_NO, 1, 3)||'-'||SUBSTR(B.VIR_ACC_NO, 4, 2)||'-'||SUBSTR(B.VIR_ACC_NO,6,6)||'-'||SUBSTR(B.VIR_ACC_NO,12,1) AS VIR_ACC
+		     , '00000'                      AS PRIORIT                		/* 우선순위 */                                      
+		     , '부산은행'                   AS VIR_COM            			/* 은행명 */                                         
+		     , TO_CHAR(SYSDATE, 'YYYYMMDD') AS CRE_DT 	                    /* 생성일자 */                               
+		     , TO_CHAR(SYSDATE, 'YYYYMMDD') AS UPD_DT                       /* 변경일자 */                               
+		     , 'txsv3121'                   AS UPD_USR            			/* 변경자 */                                         
+		     , NVL(B.ACCT_COD,' ')          AS ACCT_COD        				/* 회계코드 */
+		     , '99991231'                   AS END_DT            			/* 만료일자 */
+		     , B.SGG_COD                    AS SGG_COD                      /* 구청코드 */
+		     , SUBSTR(REPLACE(REPLACE(NVL(A.REG_NM||' '||(SELECT DISTINCT TAX_NM FROM CO3301_TB WHERE TAX_GB = 'R' AND TAX_ITEM = A.TAX_ITEM), ' '),CHR(10),''),CHR(13),''),0,20) AS ACC_OWNER                    /* 예금주명 */
+		  FROM TX1101_TB A
+		     , TX1102_TB B                                                                          
+		 WHERE 1=1
+		   AND A.SGG_COD  = B.SGG_COD
+           AND A.ACCT_COD = B.ACCT_COD
+           AND A.TAX_ITEM = B.TAX_ITEM
+           AND A.TAX_YY   = B.TAX_YY
+           AND A.TAX_DIV  = B.TAX_DIV
+           AND A.HACD     = B.HACD
+           AND A.TAX_SNO  = B.TAX_SNO
+		   AND B.SGG_COD   = #SGG_COD#                		        /* 시군구코드 */                                        
+		   AND B.SGG_TR_TG IN ('0', '8', '9')            			    /* 구청전송구분 */                                    
+		   AND B.PROC_CLS  = '3'           							/* 가상계좌채번구분 */                                 
+		   AND B.DEL_YN    = 'N'            							/* 삭제안된것 */
+		   AND B.SNTG = '0'
+		   AND B.ACCT_COD <> '39'                          
+	 
+	]]>	   
+	</select>
+	
+	<!-- 가상계좌채번자료 리스트  -->
+	<select id="SELECT_VIR_LIST_SIDO"  resultClass="mapForm"  parameterClass="mapForm">
+	<![CDATA[   	 
+		SELECT '26'||NVL(B.SGG_COD,' ')       AS C_SLF_ORG     	            /* 시군구코드 */                               
+		     , NVL(B.TAX_ITEM,' ')            AS C_SSEMOK           	    /* 세목코드 */                                   
+		     , NVL(B.TAX_YY,' ')              AS YY_GWASE             		/* 부과년도 */                                     
+		     , NVL(B.TAX_MM,' ')              AS MM_GWASE             	    /* 부과월 */                                       
+		     , NVL(B.TAX_DIV,' ')             AS V_GWASE             		/* 부과구분 */                                     
+		     , NVL(B.HACD,' ')                AS C_DONG                     /* 행정동 */                                       
+		     , NVL(B.TAX_SNO,' ')             AS S_GWASE             	    /* 과세번호 */                                     
+		     , NVL(B.RCP_CNT,0)               AS RCP_CNT            	    /* 분납순번 */                                   
+		     , SUBSTR(B.VIR_ACC_NO, 1, 3)||'-'||SUBSTR(B.VIR_ACC_NO, 4, 2)||'-'||SUBSTR(B.VIR_ACC_NO,6,6)||'-'||SUBSTR(B.VIR_ACC_NO,12,1) AS  VIR_ACC
+		     , '00000'                        AS PRIORIT                    /* 우선순위 */                                      
+		     , '부산은행'                     AS VIR_COM            		/* 은행명 */                                         
+		     , TO_CHAR(SYSDATE, 'YYYYMMDD')   AS CRE_DT 	                /* 생성일자 */                               
+		     , TO_CHAR(SYSDATE, 'YYYYMMDD')   AS UPD_DT                     /* 변경일자 */                               
+		     , 'txsv3121'                     AS UPD_USR            		/* 변경자 */                                         
+		     , NVL(B.ACCT_COD,' ')            AS ACCT_COD        			/* 회계코드 */
+		     , '99991231'                     AS END_DT            			/* 만료일자 */
+		     , B.SGG_COD                      AS SGG_COD                    /* 구청코드*/
+		     , SUBSTR(REPLACE(REPLACE(NVL(A.REG_NM||' '||(SELECT DISTINCT TAX_NM FROM CO3301_TB WHERE TAX_GB = 'R' AND TAX_ITEM = A.TAX_ITEM), ' '),CHR(10),''),CHR(13),''),0,20) AS ACC_OWNER                  /* 예금주명 */
+		  FROM TX1101_TB A
+		     , TX1102_TB B                                                                          
+		 WHERE 1=1
+		   AND A.SGG_COD  = B.SGG_COD
+           AND A.ACCT_COD = B.ACCT_COD
+           AND A.TAX_ITEM = B.TAX_ITEM
+           AND A.TAX_YY   = B.TAX_YY
+           AND A.TAX_DIV  = B.TAX_DIV
+           AND A.HACD     = B.HACD
+           AND A.TAX_SNO  = B.TAX_SNO
+		   AND (B.SGG_COD = #SGG_COD# OR B.ACCT_COD = '39' )              		        /* 시군구코드 */                                        
+		   AND B.SGG_TR_TG IN ('0', '8', '9')            			    /* 구청전송구분 */                                    
+		   AND B.PROC_CLS  = '3'           							/* 가상계좌채번구분 */                                 
+		   AND B.DEL_YN    = 'N'            							/* 삭제안된것 */
+		   AND B.SNTG = '0'
+		                                           
+	 
+	]]>	   
+	</select>
+	
+	
+	<!-- 가상계좌채번자료 건수 구하기 -->
+	<select id="SELECT_VIR_COUNT" parameterClass="mapForm" resultClass="int">
+	<![CDATA[	
+		SELECT COUNT(*) CNT
+		  FROM TX1102_TB                		/* 지방세부과상세 */
+		 WHERE SGG_COD   = #SGG_COD#	        /* 구청코드 */
+		   AND SGG_TR_TG IN ('0', '8', '9')	    /* 구청전송처리구분코드 */
+		   AND PROC_CLS  = '3'            		/* 가상계좌채번구분 */
+		   AND DEL_YN    = 'N'             		/* 삭제안된 */
+		   AND SNTG = '0'
+		   AND ACCT_COD <> '39'	      
+	]]>
+	</select>
+	
+	<!-- 가상계좌채번자료 건수 구하기 -->
+	<select id="SELECT_VIR_COUNT_SIDO" parameterClass="mapForm" resultClass="int">
+	<![CDATA[	
+		SELECT COUNT(*) CNT
+		  FROM TX1102_TB                		/* 지방세부과상세 */
+		 WHERE (SGG_COD   = #SGG_COD# OR ACCT_COD = '39' )	        /* 구청코드 */
+		   AND SGG_TR_TG IN ('0', '8', '9')	    /* 구청전송처리구분코드 */
+		   AND PROC_CLS  = '3'            		/* 가상계좌채번구분 */
+		   AND DEL_YN    = 'N'             		/* 삭제안된 */
+		   AND SNTG = '0'		      
+	]]>
+	</select>
+	
+
+	<!-- 전송된 가상계좌  건수 구하기 -->
+	<select id="SELECT_SEND_VIR_COUNT" parameterClass="mapForm" resultClass="int">
+	<![CDATA[	
+		SELECT COUNT(*) CNT
+		FROM LTIS.SCON604               		/* 지방세부과상세 */
+		WHERE C_SLF_ORG = #C_SLF_ORG#	    /* 자치단체(5) */                                                       
+			AND C_SSEMOK  = #C_SSEMOK#  	    /* 세목코드(6)  */                                                  
+			AND YY_GWASE  = #YY_GWASE#  	    /* 과세년도 */                                                      
+			AND MM_GWASE  = #MM_GWASE#       /* 과세월 */                                                        
+			AND V_GWASE   = #V_GWASE#   	    /* 기분 */                                                          
+			AND C_DONG    = #C_DONG#   		/* 행정동 */                                                        
+			AND S_GWASE   = #S_GWASE#  		/* 과세번호  */     
+	]]>
+	</select>
+	
+	
+	<insert id="VIRACC_INSERT" parameterClass="mapForm">
+	<![CDATA[
+	INSERT INTO LTIS.SCON604 (             /* 가상계좌연계 테이블 */ 
+                C_SLF_ORG                  /* 자치단체(5) */
+              , C_SSEMOK                   /* 세목코드(6)  */
+              , YY_GWASE                   /* 과세년도 */
+              , MM_GWASE                   /* 과세월 */
+              , V_GWASE                    /* 기분 */
+              , C_DONG                     /* 행정동 */
+              , S_GWASE                    /* 과세번호 */
+              , VIR_ACC                    /* 가상계좌번호 */
+              , PRIORIT                    /* 우선순위 */
+              , VIR_COM                    /* 은행명 */
+              , CRE_DT                     /* 생성일시 */
+              , CRE_USR                    /* 생성자 */
+              , UPD_DT                     /* 변경일시 */
+              , UPD_USR                    /* 변경자 */
+              , ACCT_COD                   /* 회계코드 */            
+              , END_DT                     /* 종료일자 */
+              , TPR_NO                     /* 번호 */
+              , ACC_OWNER                  /* 예금주명 */
+     ) VALUES ( #C_SLF_ORG#                /* 자치단체(5) */
+              , #C_SSEMOK#                 /* 세목코드(6)  */
+              , #YY_GWASE#                 /* 과세년도 */
+              , #MM_GWASE#                 /* 과세월 */
+              , #V_GWASE#                  /* 기분 */
+              , #C_DONG#                   /* 행정동 */
+              , #S_GWASE#                  /* 과세번호 */
+              , #VIR_ACC#                  /* 가상계좌번호 */
+              , #PRIORIT#                  /* 우선순위 */
+              , #VIR_COM#                  /* 은행명 */
+              , #CRE_DT#                   /* 생성일시 */
+              , #UPD_USR#                  /* 생성자 */
+              , ''                         /* 변경일시 */
+              , ''                         /* 변경자 */
+              , #ACCT_COD#                 /* 회계코드 */            
+              , #END_DT#                   /* 종료일자 */
+              , ''
+              , #ACC_OWNER#  
+    )
+    ]]>       
+    </insert>  
+      
+	
+	<update id="VIRACC_UPDATE" parameterClass="mapForm">
+    <![CDATA[
+	UPDATE LTIS.SCON604     			/* 가상계좌연계 테이블 */                                                   
+	   SET VIR_ACC   = #VIR_ACC#  		/* 가상계좌번호 */                                                      
+	     , PRIORIT   = #PRIORIT#  		/* 우선순위 */                                                          
+	     , VIR_COM   = #VIR_COM#   		/* 은행명 */                                                            
+	     , UPD_DT    = #UPD_DT#    		/* 변경일시 */                                                          
+	     , UPD_USR   = #UPD_USR#  	    /* 변경자 */                                                            
+	     , ACCT_COD  = #ACCT_COD# 	    /* 회계코드 */                                                          
+	     , END_DT    = #END_DT#   		/* 종료일자 */                                                          
+	     , TPR_NO    = '' 			    /* 번호 */                                                           
+	 WHERE C_SLF_ORG = #C_SLF_ORG#	    /* 자치단체(5) */                                                       
+	   AND C_SSEMOK  = #C_SSEMOK#  	    /* 세목코드(6)  */                                                  
+	   AND YY_GWASE  = #YY_GWASE#  	    /* 과세년도 */                                                      
+	   AND MM_GWASE  = #MM_GWASE#       /* 과세월 */                                                        
+	   AND V_GWASE   = #V_GWASE#   	    /* 기분 */                                                          
+	   AND C_DONG    = #C_DONG#   		/* 행정동 */                                                        
+	   AND S_GWASE   = #S_GWASE#  		/* 과세번호  */     
+    ]]>
+	</update>
+	
+	
+	<insert id="VIRACC_INSERT_SIDO" parameterClass="mapForm">
+	<![CDATA[
+	INSERT INTO LTIS.SCON604 (       /* 가상계좌연계 테이블 */ 
+                C_SLF_ORG            /* 자치단체(5) */
+              , C_SSEMOK             /* 세목코드(6)  */
+              , YY_GWASE             /* 과세년도 */
+              , MM_GWASE             /* 과세월 */
+              , V_GWASE              /* 기분 */
+              , C_DONG               /* 행정동 */
+              , S_GWASE              /* 과세번호 */
+              , VIR_ACC              /* 가상계좌번호 */
+              , PRIORIT              /* 우선순위 */
+              , VIR_COM              /* 은행명 */
+              , CRE_DT               /* 생성일시 */
+              , CRE_USR              /* 생성자 */
+              , UPD_DT               /* 변경일시 */
+              , UPD_USR              /* 변경자 */
+              , ACCT_COD             /* 회계코드 */            
+     ) VALUES ( #C_SLF_ORG#          /* 자치단체(5) */
+              , #C_SSEMOK#           /* 세목코드(6)  */
+              , #YY_GWASE#           /* 과세년도 */
+              , #MM_GWASE#           /* 과세월 */
+              , #V_GWASE#            /* 기분 */
+              , #C_DONG#             /* 행정동 */
+              , #S_GWASE#            /* 과세번호 */
+              , #VIR_ACC#            /* 가상계좌번호 */
+              , ''
+              , #VIR_COM#            /* 은행명 */
+              , #CRE_DT#             /* 생성일시 */
+              , #UPD_USR#            /* 생성자 */
+              , ''                   /* 변경일시 */
+              , ''                   /* 변경자 */
+              , #ACCT_COD#           /* 회계코드 */          
+    )
+    ]]>       
+    </insert>    
+	
+	<update id="VIRACC_UPDATE_SIDO" parameterClass="mapForm">
+    <![CDATA[
+	UPDATE LTIS.SCON604     		/* 가상계좌연계 테이블 */                                                   
+	   SET VIR_ACC   = #VIR_ACC#   	/* 가상계좌번호 */                                                                                                              
+	     , VIR_COM   = #VIR_COM#  	/* 은행명 */                                                            
+	     , UPD_DT    = #UPD_DT#   	/* 변경일시 */                                                          
+	     , UPD_USR   = #UPD_USR#   	/* 변경자 */                                                            
+	     , ACCT_COD  = #ACCT_COD# 	/* 회계코드 */                                                                                                                                                                              
+	 WHERE C_SSEMOK  = #C_SSEMOK#  	/* 세목코드(6)  */                                                  
+	   AND YY_GWASE  = #YY_GWASE#  	/* 과세년도 */                                                      
+	   AND MM_GWASE  = #MM_GWASE#   /* 과세월 */                                                        
+	   AND V_GWASE   = #V_GWASE#   	/* 기분 */                                                          
+	   AND C_DONG    = #C_DONG#   	/* 행정동 */                                                        
+	   AND S_GWASE   = #S_GWASE#  	/* 과세번호  */     
+    ]]>
+	</update>	
+		
+	
+	<!-- 표준세외수입 부과자료 업데이트  -->
+	<!-- CYBER -->
+	<update id="UPDATE_COMPLETE"  parameterClass="mapForm">
+    <![CDATA[
+    UPDATE TX1102_TB                	    /* 지방세부과상세 */
+       SET SGG_TR_TG = '1'
+     WHERE SGG_COD   = #SGG_COD#		    /* 시군구코드 */
+       AND ACCT_COD  = #ACCT_COD#   	    /* 회계코드 */
+       AND TAX_ITEM  = #C_SSEMOK#     	    /* 세목코드 */
+       AND TAX_YY    = #YY_GWASE#      	    /* 부과년도 */
+       AND TAX_MM    = #MM_GWASE#    	    /* 부과월 */
+       AND TAX_DIV   = #V_GWASE#         	/* 부과구분 */
+       AND HACD      = #C_DONG#             /* 행정동코드 */
+       AND TAX_SNO   = #S_GWASE#    		/* 과세번호 */
+       AND RCP_CNT   = #RCP_CNT#        	/* 분납순번 */
+       AND SGG_TR_TG IN ('0', '8', '9') 	/* 구청전송구분 */
+       AND PROC_CLS  = '3'            		/* 가상계좌채번구분 */
+       AND DEL_YN    = 'N'            		/* 삭제안된것 */     
+    ]]>
+	</update>      	
+	
+	
+	<!--  기장군 가상계좌 전송 추가 -->
+	 <!-- 가상계좌채번자료 리스트(604) -->
+	<select id="SELECT_VIR_LIST_604"  resultClass="mapForm"  parameterClass="mapForm">
+	<![CDATA[   
+	 
+		SELECT C_SLF_ORG     	            /* 시군구코드 */                               
+		     , C_SSEMOK           			/* 세목코드 */                                   
+		     , YY_GWASE             		/* 부과년도 */                                     
+		     , MM_GWASE             		/* 부과월 */                                       
+		     , V_GWASE             			/* 부과구분 */                                     
+		     , C_DONG                 		/* 행정동 */                                       
+		     , S_GWASE             			/* 과세번호 */	    /*, SUBSTR(VIR_ACC, 1, 3)||'-'||SUBSTR(VIR_ACC, 4, 2)||'-'||SUBSTR(VIR_ACC,6,6)||'-'||SUBSTR(VIR_ACC,12,1) VIR_ACC_modi*/                       
+     	     , '00000' PRIORIT              /* 우선순위 */                                      
+		     , VIR_COM            			/* 은행명 */                                         
+		     , CRE_DT 	                    /* 생성일자 */                               
+		     , UPD_DT                       /* 변경일자 */                               
+		     , UPD_USR            			/* 변경자 */                                         
+		     , ACCT_COD        				/* 회계코드 */                                   
+		     , END_DT                       /* 만료일자 */
+		     , VIR_ACC_2                    /* 가상계좌*/
+		     , CRE_DT_2                     /* 생성일시 2*/
+		     , CRE_USR_2                    /* 생성자 2 */
+		     , UPD_DT_2                     /* 변경일시 2 */
+		     , UPD_USR_2                    /* 변경자 2 */ 
+		     , END_DT_2                     /* 만료일자 2*/ 
+		     , VIR_COM_2                    /* 은행명2 */		   
+		  FROM LTIS.SCON604                                                                           
+		 WHERE C_SLF_ORG = #C_SLF_ORG#      /* 시군구코드 */       
+		   AND C_SSEMOK  = #C_SSEMOK#       /* 세목코드 */                                   
+		   AND YY_GWASE  = #YY_GWASE#       /* 부과년도 */                                     
+		   AND MM_GWASE  = #MM_GWASE#       /* 부과월 */                                       
+		   AND V_GWASE   = #V_GWASE#        /* 부과구분 */                                     
+		   AND C_DONG    = #C_DONG#         /* 행정동 */                                       
+		   AND S_GWASE   = #S_GWASE#        /* 과세번호 */                         
+	 
+	]]>	   
+	</select>
+	
+	<update id="VIRACC2_UPDATE_FIRST" parameterClass="mapForm">
+    <![CDATA[
+    
+	     UPDATE LTIS.SCON604     			/* 가상계좌연계 테이블 */                                                   
+	        SET VIR_ACC_2 = #VIR_ACC#   	/* 새롭게 생성된 가상계좌번호 */    
+              , CRE_DT_2  = #CRE_DT#        /* 생성일자 2  */  	          
+              , CRE_USR_2 = 'etax'			/* 생성자 2  */                      
+              , UPD_DT_2  = #CRE_DT#        /* 수정일자 2  */ 
+              , UPD_USR_2 = 'etax'          /* 수정자2  */
+              , END_DT_2  = #END_DT#		/* 서비스만료일자 2 */                                       
+              , VIR_COM_2 = #VIR_COM#  		/* 가상계좌은행2 */  
+	      WHERE C_SLF_ORG = #C_SLF_ORG#	    /* 자치단체(5) */                                                       
+	        AND C_SSEMOK  = #C_SSEMOK#      /* 세목코드(6)  */                                                  
+	        AND YY_GWASE  = #YY_GWASE#     	/* 과세년도 */                                                      
+	        AND MM_GWASE  = #MM_GWASE#      /* 과세월 */                                                        
+	        AND V_GWASE   = #V_GWASE#       /* 기분 */                                                          
+	        AND C_DONG    = #C_DONG#   		/* 행정동 */                                                        
+	        AND S_GWASE   = #S_GWASE#  		/* 과세번호  */    
+        
+    ]]>
+	</update>
+	
+	<update id="VIRACC2_UPDATE_NOT_FIRST" parameterClass="mapForm">
+    <![CDATA[
+    
+	     UPDATE LTIS.SCON604     			/* 가상계좌연계 테이블 */                                                   
+	        SET VIR_ACC_2 = #VIR_ACC#   	/* 새롭게 생성된 가상계좌번호 */                   
+              , UPD_DT_2  = #UPD_DT#		/* 수정일자 2  */  
+              , UPD_USR_2 = 'etax'			/* 수정자2 */  
+              , END_DT_2  = #END_DT#		/* 서비스만료일자 2 */  
+              , VIR_COM_2 = '부산은행'		/* 가상계좌은행2 */                                                            
+	      WHERE C_SLF_ORG = #C_SLF_ORG#	    /* 자치단체(5) */                                                       
+	        AND C_SSEMOK  = #C_SSEMOK#      /* 세목코드(6)  */                                                  
+	        AND YY_GWASE  = #YY_GWASE#      /* 과세년도 */                                                    
+	        AND MM_GWASE  = #MM_GWASE#      /* 과세월 */                                                        
+	        AND V_GWASE   = #V_GWASE#       /* 기분 */                                                          
+	        AND C_DONG    = #C_DONG#   		/* 행정동 */                                                        
+	        AND S_GWASE   = #S_GWASE#  		/* 과세번호  */
+	            
+     ]]>    
+	</update>
+	
+</sqlMap>

@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXDM2450" >
+
+    <!-- 연계 -->
+    <!-- 구세외수입 일괄가상계좌 수납자료를 조회한다  -->
+	<select id="TX1202_SELECT" resultClass="mapForm">
+	<![CDATA[    
+		    SELECT PAY_DT, ACC_DT, FILE_NO, SEQ
+		           , TO_CHAR(SYSDATE, 'YYMMDDHH24MISS')  TRDATE
+		           , '0'                                ORFLAG
+		           , '1000685'                          ORGIRO
+		           , SN.SUM_RCP                         PAYAMT
+		           , SN.PAY_DT                          PAYDATE
+		           , '321404'                           DRBKCO
+		           , BD.REG_NM                          PAYNAME
+		           , SN.VIR_ACC_NO                      OUT_DRACCN
+		           , ''                                 IN_DRACCN
+		           , '2'                                RECPT_CODE
+		           , SN.OCR1||SN.OCR2                   OCR_BAND
+		           , '99'                               GUBUN
+		        FROM  TX1202_TB  SN
+		           ,  TX1301_TB  BD
+		        WHERE  SN.PAY_DT =TO_CHAR(SYSDATE, 'YYYYMMDD')
+		           AND SN.TR_TG   = '0'
+		           AND SN.VIR_ACC_NO = BD.TONG_NO
+		           AND BD.JOB_GB     = '2'
+		           AND BD.RGSYS_DSC  = '2'		           
+		           AND ROWNUM <= 1000
+    ]]>  
+	</select>
+	
+	<!-- 표준세외수입 일괄가상계좌 수납내역을 조회한다 -->
+	<select id="TX2201_SELECT" resultClass="mapForm">
+	<![CDATA[    
+		    SELECT PAY_DT, ACC_DT, FILE_NO, SEQ
+		           , TO_CHAR(SYSDATE, 'YYMMDDHH24MISS')  TRDATE
+		           , '0'                                ORFLAG
+		           , '1000685'                          ORGIRO
+		           , SN.SUM_RCP                         PAYAMT
+		           , SN.PAY_DT                          PAYDATE
+		           , '321404'                           DRBKCO
+		           , BD.REG_NM                          PAYNAME
+		           , SN.VIR_ACC_NO                      OUT_DRACCN
+		           , ''                                 IN_DRACCN
+		           , '2'                                RECPT_CODE
+		           , SN.OCR1||SN.OCR2                   OCR_BAND
+		           , '99'                               GUBUN
+		        FROM  TX2201_TB  SN
+		           ,  TX1301_TB  BD
+		        WHERE  SN.PAY_DT =TO_CHAR(SYSDATE, 'YYYYMMDD')
+		           AND SN.TRN_YN_UC   = '0'
+		           AND SN.VIR_ACC_NO = BD.TONG_NO
+		           AND BD.JOB_GB     = '2'
+		           AND BD.RGSYS_DSC  = '2'
+		           AND ROWNUM <= 1000
+    ]]>  
+	</select>
+	
+	<!-- 부산은행 구청계좌 이체 수납내역을 조회한다 -->
+	<select id="ET2101_SELECT" resultClass="mapForm">
+	<![CDATA[    
+		    SELECT TRDATE    U_TRDATE
+		           , BGRNO   U_BGRNO
+		           , TO_CHAR(SYSDATE, 'YYMMDDHH24MISS')  TRDATE
+		           , '0'                                ORFLAG
+		           , '1000685'                          ORGIRO
+		           , SUM_RCP                            PAYAMT
+		           , PAY_DT                             PAYDATE
+		           , SUBSTR(DRBKCO, 2)                  DRBKCO
+		           , REG_NM                             PAYNAME
+		           , OUT_DRACCN                         OUT_DRACCN
+		           , IN_DRACCN                          IN_DRACCN
+		           , '2'                                RECPT_CODE
+		           , ''                                 OCR_BAND
+		           , GUBUN                              GUBUN
+		    FROM  ET2101_TB
+		    WHERE PAY_DT = TO_CHAR(SYSDATE, 'YYYYMMDD')
+		      AND TR_TG   = '0'
+		      AND ROWNUM <= 1000
+    ]]>  
+	</select>
+      	  
+
+	<!-- 주거지 서버에 기수납내역을 조회한다 -->
+	<select id="OFFRECIP_SELECT_CNT" parameterClass="mapForm" resultClass="int">
+	<![CDATA[    
+		    SELECT COUNT(*) CNT
+		    FROM OFFRECIP_TAB
+		        WHERE PAYDATE=#PAYDATE#
+		           AND OUT_DRACCN=#OUT_DRACCN#
+		           AND OCR_BAND=#OCR_BAND#
+    ]]>  
+	</select>
+	
+      	  
+    <!-- 주거지 서버에 수납내역을 등록한다  -->
+	<insert id="OFFRECIP_INSERT" parameterClass="mapForm">
+	<![CDATA[
+	        INSERT INTO OFFRECIP_TAB(
+	                            TRDATE
+	                          , BGRNO
+	                          , PAYAMT
+	                          , PAYDATE
+	                          , PAYNAME                          
+	                          , OUT_DRACCN
+	                          , IN_DRACCN
+	                          , RECPT_CODE
+	                          , OCR_BAND
+	                          , ORFLAG  
+	                          , GUBUN
+	                          , ORGIRO
+	                          , ORSPCO
+	                    )
+	                    VALUES (
+	                            #TRDATE#
+	                          , LPAD(OFFRECIP_SEQ.NEXTVAL, 10, '0')
+	                          , #PAYAMT#
+	                          , #PAYDATE#
+	                          , #PAYNAME#
+	                          , #OUT_DRACCN#
+	                          , #IN_DRACCN#
+	                          , #RECPT_CODE#
+	                          , #OCR_BAND#
+	                          , #ORFLAG#
+	                          , #GUBUN#
+	                          , #ORGIRO#
+	                          , '26'
+	                    ) 
+    ]]>           
+	</insert>	      	  
+      	  
+	
+	<!-- 구세외수입 수납 전송완료 Flag 처리   -->
+	<update id="TX1202_UPDATE" parameterClass="mapForm">
+		UPDATE TX1202_TB SET TR_TG='1', LAST_DTM=SYSDATE
+			WHERE   PAY_DT = #PAY_DT#
+				AND ACC_DT = #ACC_DT#
+				AND FILE_NO= #FILE_NO#
+				AND SEQ    = #SEQ#
+	</update>
+
+	<!-- 표준세외수입 수납 전송완료 Flag 처리 -->
+	<update id="TX2201_UPDATE" parameterClass="mapForm">
+		UPDATE TX2201_TB SET TRN_YN_UC='1', LAST_DTM=SYSDATE
+			WHERE   PAY_DT = #PAY_DT#
+				AND ACC_DT = #ACC_DT#
+				AND FILE_NO= #FILE_NO#
+				AND SEQ    = #SEQ#
+	</update>
+
+	<!-- 부산은행 구청계죄이체 전송완료 Flag 처리 -->
+	<update id="ET2101_UPDATE" parameterClass="mapForm">
+          UPDATE ET2101_TB SET TR_TG='1', LAST_DTM=SYSDATE
+          	WHERE  TRDATE = #U_TRDATE#
+		       AND BGRNO  = #U_BGRNO#
+	</update>
+
+</sqlMap>
+

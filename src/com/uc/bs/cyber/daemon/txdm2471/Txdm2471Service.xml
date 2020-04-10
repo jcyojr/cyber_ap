@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXDM2471" >
+
+    <!-- 사이버 -->
+    <!-- WORKTIME 테이블에 업데이트할 시간구하기 -->  
+    <!-- YYYYMMDDHH24MISS / YYYY-MM-DD HH24:MI:SS -->
+    <select id="GET_UPDATE_DATE" resultClass="mapForm">
+    <![CDATA[
+          SELECT TO_CHAR(SYSDATE ,#DATEFORM#) AS V_DATE FROM DUAL
+    ]]>        
+    </select>
+    
+	<!-- 주정차위반과태료 가상계좌 채번내역 가져온다. -->
+	<!-- 사이버 -->
+	<select id="SELECT_VIRTUAL_ACCT_PARKFINE_LIST" parameterClass="mapForm" resultClass="mapForm">
+    <![CDATA[
+    SELECT * FROM (
+        SELECT
+           A.TAX_NO        LVY_KEY
+          ,A.SGG_COD       TRANS_SGCD
+          ,'22804125'      TAX_CD      
+          ,A.TAX_YM ||substr(B.BUGWA_STAT,2,1)||
+           CASE
+				WHEN A.SGG_COD='325' THEN '26110530'
+				WHEN A.SGG_COD='326' THEN '26140640'
+				WHEN A.SGG_COD='327' THEN '26170640'
+				WHEN A.SGG_COD='328' THEN '26200630'
+				WHEN A.SGG_COD='329' THEN '26230640'
+				WHEN A.SGG_COD='330' THEN '26260520'
+				WHEN A.SGG_COD='331' THEN '26290510'
+				WHEN A.SGG_COD='332' THEN '26320510'
+				WHEN A.SGG_COD='333' THEN '26350530'
+				WHEN A.SGG_COD='334' THEN '26380550'
+				WHEN A.SGG_COD='335' THEN '26410590'
+				WHEN A.SGG_COD='336' THEN '26440510'
+				WHEN A.SGG_COD='337' THEN '26470650'
+				WHEN A.SGG_COD='338' THEN '26500660'
+				WHEN A.SGG_COD='339' THEN '26530645'
+				WHEN A.SGG_COD='340' THEN '26710250'
+			END
+           ||TAX_SNO  LVY_NO 
+           ,A.DIVIDED_PAYMENT_SEQNUM
+           ,B.THAP_GBN
+           ,(CASE WHEN B.BUGWA_STAT = '03' AND (A.DIVIDED_PAYMENT_SEQNUM <> '00' AND A.DIVIDED_PAYMENT_SEQNUM <> '98') THEN '1' ELSE '2' END) LVY_GBN     
+           ,FC_DAMO(A.SEC_REG_NO) AS  RLNO
+           ,B.VIR_ACC_NO     
+           ,'부산은행' BNK_NM
+           ,TO_CHAR(SYSDATE, 'YYYYMMDD') CUR_YMD
+           ,B.CUD_OPT                    DEAL_GBN 
+           ,NVL(B.VIOL_YM,(CASE WHEN A.LEVY_DETAIL5 IS NULL OR A.LEVY_DETAIL5='' THEN (CASE WHEN B.BUGWA_STAT = '03' AND (A.DIVIDED_PAYMENT_SEQNUM <> '00' AND A.DIVIDED_PAYMENT_SEQNUM <> '98') THEN A.TAX_YM ELSE '' END) ELSE SUBSTR(A.LEVY_DETAIL5,1,6) END)) VIOL_YM  
+		   ,NVL(B.VIOL_MAN_SNO,(CASE WHEN A.LEVY_DETAIL5 IS NULL OR A.LEVY_DETAIL5='' THEN (CASE WHEN B.BUGWA_STAT = '03' AND (A.DIVIDED_PAYMENT_SEQNUM <> '00' AND A.DIVIDED_PAYMENT_SEQNUM <> '98') THEN '1'||A.TAX_SNO ELSE '' END) ELSE SUBSTR(A.LEVY_DETAIL5,7,7) END)) VIOL_SNO
+        FROM  TX2111_TB_DAMO A, TX2112_TB B     /*A:표준세외수입(주정차포함) 부과, B:표준세외수입(주정차포함) 부과상세 */
+        WHERE A.TAX_NO     =  B.TAX_NO
+          AND A.SGG_COD    = B.SGG_COD
+          AND A.SGG_COD    = #SGG_COD#
+          AND A.TAX_ITEM   = '288125'      /*주정차위반과태료 */
+          AND B.VIR_ACC_NO IS NOT NULL      
+          AND B.PROC_CLS   = '3'     
+          AND B.DEL_YN = 'N'
+          AND (B.SNTG = '0' OR SNTG IS NULL)
+          AND B.SGG_TR_TG  IN ('0', '7')
+          ORDER BY A.TAX_YM DESC
+      ) WHERE ROWNUM <= 1000
+
+    ]]>
+	</select>
+
+	
+	<!-- 구청전송여부를 업데이트 한다.  -->
+	<!-- CYBER -->
+	<update id="UPDATE_TRANS_PARK_DETAIL" parameterClass="mapForm">
+    <![CDATA[
+    
+        UPDATE TX2112_TB
+        SET
+             SGG_TR_TG    =   #SGG_TR_TG#  /*구청전송처리여부*/
+            ,LAST_DTM     =   SYSDATE      /*최종수정일시*/
+        WHERE TAX_NO      = #LVY_KEY#       /*가상계좌번호 (19) pk*/ 
+
+
+    ]]>
+	</update>	
+
+</sqlMap>

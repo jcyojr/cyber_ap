@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="txdm1174">
+
+
+	<!-- 수기입력용 등록세 정보 송신 -->
+	<select id="txdm1174_select_count_page" resultClass="int">
+			SELECT
+				CEIL(COUNT(*) / #PAGE_PER_CNT#) PAGE
+			FROM
+				V_SCONRES1
+			WHERE
+				부과일자 >= TO_CHAR(SYSDATE,'YYYYMMDD')	/* */	
+	</select>
+
+	<select id="txdm1174_select_list" resultClass="mapForm">
+		 <![CDATA[
+			SELECT
+				SUBSTR(시군구코드,3,3)	SGG_COD, 
+				세목코드		TAX_ITEM,
+				세목명 		   TAX_NM,  
+				과세년월		TAX_YM,  
+				과세구분		TAX_DIVNM,
+				과세번호		TAX_SNO, 
+				REPLACE(납세자번호,' ','') REG_NO,  
+				납세자명		REG_NM,  
+				납기			DUE_DT,  
+				납부일 		   PAY_DT,  
+				시군구코드 	   WARD_COD, 
+				NVL(감액유무, ' ')		CUT_YN,  
+				NVL(부과취소유무, ' ')		CANC_YN, 
+				본세			MNTX,	
+				부과일자		TAX_DT,  
+				귀속년도		RVSN_YY, 
+				과세물건		MGLN,	
+				미납액 		   ARTX,	
+				과세구분코드		TAX_DIV, 
+				행정동 		   HACD,	
+				NVL(전자납부번호, ' ')		EPAY_NO, 
+				납부여부		SN_YN,  
+				부과자ID		INPUT_ID 
+			FROM
+				(
+					SELECT
+		]]>
+						T1.*, CEIL(ROWNUM / #PAGE_PER_CNT#) AS PAGE
+					FROM 
+						(
+							SELECT
+								*
+							FROM
+								V_SCONRES1
+							WHERE
+								부과일자 >= TO_CHAR(SYSDATE,'YYYYMMDD')	/* */	
+						) T1
+				)
+			WHERE
+				PAGE =  #PAGE#
+
+	</select>
+		
+	<!-- 수기입력용 사업장 정보 수신 -->
+	<insert id="txdm1174_insert_tx1604_tb" parameterClass="mapForm">
+	    <![CDATA[
+	        INSERT INTO
+	        TX1604_TB_DAMO    /* 수기 납세자정보 구축 */
+	        (
+		        SGG_COD,    /* 구청코드 */
+		        TAX_YM,        /* 과세년월 */
+		        HACD,        /* 행정동 */
+		        TAX_DIV,    /* 과세구분 */
+		        TAX_SNO,    /* 과세번호 */
+		        SEC_REG_NO,        /* 납세자실명번호 */
+		        REG_NM,        /* 납세자명 */
+		        WARD_COD,    /* 자치단체코드 */
+		        RVSN_YY,    /* 귀속년도 */
+		        EPAY_NO,    /* 전자납부번호 */
+		        DUE_DT,        /* 납기 */
+		        MNTX,        /* 본세 */
+		        INPUT_ID,    /* 부과자ID */
+		        SN_YN,        /* 납부여부 */
+		        CANC_YN,    /* 부과취소여부 */
+		        REG_DTM,    /* 등록일시 */
+		        LAST_DTM    /* 최종수정일시 */
+	        ) VALUES (
+	    ]]>
+	            #SGG_COD#  
+				,#TAX_YM#  
+				,#HACD#    
+				,#TAX_DIV# 
+				,#TAX_SNO# 
+				,FC_DAMO(#REG_NO#)  
+				,#REG_NM#  
+				,#WARD_COD#
+				,#RVSN_YY# 
+				,#EPAY_NO# 
+				,#DUE_DT#  
+				,#MNTX#    
+				,#INPUT_ID#
+				,#SN_YN#   
+				,#CANC_YN# 
+				,SYSDATE
+	 			,SYSDATE
+	
+	        )
+	</insert>
+	
+	<update id="txdm1174_update_tx1604_tb" parameterClass="mapForm">
+	        UPDATE
+	        TX1604_TB_DAMO       /* 수기 납세자정보 구축 */
+	        SET
+		        SEC_REG_NO = FC_DAMO(#REG_NO#),        /* 납세자실명번호 */
+		        REG_NM = #REG_NM#,        /* 납세자명 */
+		        WARD_COD = #WARD_COD#,        /* 자치단체코드 */
+		        RVSN_YY = #RVSN_YY#,        /* 귀속년도 */
+		        EPAY_NO = #EPAY_NO#,        /* 전자납부번호 */
+		        DUE_DT = #DUE_DT#,        /* 납기 */
+		        MNTX = #MNTX#,        /* 본세 */
+		        INPUT_ID = #INPUT_ID#,        /* 부과자ID */
+		        SN_YN = #SN_YN#,        /* 납부여부 */
+		        CANC_YN = #CANC_YN#,        /* 부과취소여부 */
+		        LAST_DTM = SYSDATE    /* 최종수정일시 */
+	        WHERE
+		        SGG_COD = #SGG_COD#        /* 구청코드 */
+		        AND    TAX_YM = #TAX_YM#    /* 과세년월 */
+		        AND    HACD = #HACD#    /* 행정동 */
+		        AND    TAX_DIV = #TAX_DIV#    /* 과세구분 */
+		        AND    TAX_SNO = #TAX_SNO#    /* 과세번호 */
+	</update>
+
+
+</sqlMap>
+	

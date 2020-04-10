@@ -1,0 +1,335 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="BS502001" >
+
+ 	<!-- 지방세 전자수납분에 대해 수납순번을 구한다. -->
+	<!-- 중복수납이 존재하므로... -->
+	<select id="TX1201_TB_MaxPayCnt" parameterClass="mapForm" resultClass="int">
+	<![CDATA[
+	    
+		SELECT NVL(MAX(PAY_CNT) +1, 0) AS MAX_PAY_CNT 
+		   FROM TX2221_TB
+		 WHERE 1=1
+			  AND SGG_COD   = #SGG_COD#
+			  AND ACCT_COD  = #ACCT_COD#
+			  AND TAX_ITEM  = #TAX_ITEM#
+			  AND TAX_YY    = #TAX_YY#
+			  AND TAX_MM    = #TAX_MM#
+			  AND HACD      = #HACD#
+			  AND TAX_SNO   = #TAX_SNO#
+			  AND TAX_CNT   = #RCP_CNT#
+
+          
+	]]>
+	</select> 
+	
+	<!-- 버스, 주거지 전자수납분에 대해 수납순번을 구한다. -->
+	<!-- 중복수납이 존재하므로... -->
+	<select id="TX2221_TB_MaxPayCnt" parameterClass="mapForm" resultClass="int">
+	<![CDATA[
+	    
+		SELECT NVL(MAX(PAY_CNT) +1, 0) AS MAX_PAY_CNT 
+		   FROM TX2221_TB 
+		 WHERE 1=1
+			  AND SGG_COD   = #SGG_COD#
+			  AND ACCT_COD  = #ACCT_COD#
+			  AND TAX_ITEM  = #TAX_ITEM#
+			  AND TAX_YY    = #TAX_YY#
+			  AND TAX_MM    = #TAX_MM#
+			  AND HACD      = #HACD#
+			  AND TAX_SNO   = #TAX_SNO#
+			  AND TAX_CNT   = #RCP_CNT#
+			  
+	]]>
+	</select>  
+	
+ 	
+	<!-- 지방세 수납내역확인 -->
+	<!-- 20110831 -->
+	<select id="TX1201_TB_PAY" parameterClass="mapForm" resultClass="int">
+	<![CDATA[
+	    
+		SELECT NVL(MAX(PAY_CNT) + 1, 0) AS PAY_CNT
+		   FROM TX1201_TB 
+			WHERE SGG_COD  = #SGG_COD#
+			  AND ACCT_COD = #ACCT_COD#
+			  AND TAX_ITEM = #TAX_ITEM#
+			  AND TAX_YY   = #TAX_YY#
+			  AND TAX_MM   = #TAX_MM#
+			  AND HACD     = #HACD#
+			  AND TAX_SNO  = #TAX_SNO#
+			  AND RCP_CNT  = #RCP_CNT#
+			  /*수납수단 3: 부산은행 1: 금결원 2:카드*/
+			  /*
+			  AND SNSU     = '3'  
+              */
+	]]>
+	</select> 
+
+
+	<!-- 버스, 주거지 수납내역확인 -->
+	<!-- 20110831 -->
+	<select id="TX2221_TB_PAY" parameterClass="mapForm" resultClass="int">
+	<![CDATA[
+	    
+		SELECT NVL(MAX(PAY_CNT) +1, 0) AS PAY_CNT
+		   FROM TX2221_TB 
+		 WHERE 1=1
+			  AND SGG_COD = #SGG_COD#
+			  AND ACCT_COD = #ACCT_COD#
+			  AND TAX_ITEM = #TAX_ITEM#
+			  AND TAX_YY = #TAX_YY#
+			  AND TAX_MM = #TAX_MM#
+			  AND HACD = #HACD#
+			  AND TAX_SNO = #TAX_SNO#
+			  AND TAX_CNT = #RCP_CNT#
+			  /*수납수단 3: 부산은행 1: 금결원 2:카드*/
+			  /*
+			  AND SNSU      = '3' 
+			  */ 
+	]]>
+	</select>  	
+
+
+
+    <!-- 지방세 상세내역 가져온다. -->
+	<select id="SELECT_TAX_SEARCH_LIST" resultClass="mapForm" parameterClass="mapForm">
+		   
+		SELECT   '2' TAX_GBN
+			       , SGG_COD
+			       , ACCT_COD
+			       , TAX_ITEM
+			       , TAX_YY
+				   , TAX_MM
+			       , TAX_DIV
+			       , TAX_SNO
+			       , TAX_CNT AS RCP_CNT
+			       , FC_DAMO(REG_NO) REG_NO
+			       , REG_NM
+			       , TAX_GDS MLGN
+			       , '' GIRO_SGG
+			       , '1' DLQ_DIV
+			       , 0 MNTX
+			       , 0 MNTX_ADTX
+			       , 0 CPTX
+			       , 0 CPTX_ADTX
+			       , 0 CFTX
+			       , 0 CFTX_ADTX
+			       , 0 LETX
+			       , 0 LETX_ADTX
+			       , 0 ASTX
+			       , 0 ASTX_ADTX 
+			       , DUE_DT
+			       , DUE_F_DT 
+			       , BUTT SUM_B_AMT
+			       , BUTT SUM_F_AMT
+			       , EPAY_NO
+			       , SUBSTR(OCR_BD, 3, 29) TAXNO
+			       , TAX_DT
+			       , 0 TAX_STD
+			       , HACD
+			       , OCR_BD
+			       , 'N' AUTO_TRNF_YN
+    	FROM TX2121_VW_OCR 
+	    WHERE SNTG     IN ('0', '9')  								/*납부상태 미수납 및 취소*/
+		   AND REG_NO   = FC_DAMO(#JUMIN_NO#)
+		   AND SGG_COD  = #SGG_COD#
+		   AND ACCT_COD = #ACCT_COD#
+		   AND TAX_ITEM = #TAX_ITEM#
+		   AND TAX_YY   = #TAX_YY#
+		   AND TAX_MM   = #TAX_MM#
+		   AND TAX_DIV  = #TAX_DIV#
+		   AND HACD     = #HACD#
+		   AND TAX_SNO  = #TAX_SNO#  
+	    
+	    UNION ALL
+	    
+	    /*지방세 */
+	  	SELECT   '1' TAX_GBN     
+	  			   , SGG_COD
+			       , ACCT_COD
+			       , TAX_ITEM
+			       , TAX_YY
+				   , TAX_MM
+			       , TAX_DIV
+			       , TAX_SNO
+			       , RCP_CNT
+			       , FC_DAMO(REG_NO) REG_NO
+			       , REG_NM
+			       , MLGN
+			       , GIRO_SGG
+			       , DLQ_DIV
+			       , MNTX
+			       , MNTX_ADTX
+			       , CPTX
+			       , CPTX_ADTX
+			       , CFTX
+			       , CFTX_ADTX
+			       , LETX
+			       , LETX_ADTX
+			       , ASTX
+			       , ASTX_ADTX 
+			       , F_GET_GYMD(DUE_DT) AS DUE_DT
+			       , F_GET_GYMD(GGYM) AS DUE_F_DT 
+			       , SUM_B_AMT
+			       , SUM_F_AMT
+			       , EPAY_NO
+			       , SUBSTR(TAX_NO, 3, 29) TAXNO
+			       , TAX_DT
+			       , TAX_STD 
+			       , HACD 
+			       , OCR_BD
+			       , AUTO_TRNF_YN
+	    FROM TX1101_VW_OCR
+	    WHERE SNTG     IN ('0', '9')  								/*납부상태 미수납 및 취소*/
+		   AND REG_NO    = FC_DAMO(#JUMIN_NO#)
+		   AND SGG_COD   = #SGG_COD#
+		   AND ACCT_COD  = #ACCT_COD#
+		   AND TAX_ITEM  = #TAX_ITEM#
+		   AND TAX_YY    = #TAX_YY#
+		   AND TAX_MM    = #TAX_MM#
+		   AND TAX_DIV   = #TAX_DIV#
+		   AND HACD      = #HACD#
+		   AND TAX_SNO   = #TAX_SNO#  
+
+	</select>
+	
+	<!--지방세 전자수납테이블 INSERT -->
+    <insert id="INSERT_TX1201_TB_EPAY"  parameterClass="mapForm">
+	
+		INSERT INTO TX1201_TB (
+		    SGG_COD    	        /*구청코드 */     
+		    ,ACCT_COD     	    /*회계코드 */   
+		    ,TAX_ITEM   		/*과세목   */  
+		    ,TAX_YY     		/*부과년도 */    
+		    ,TAX_MM     		/*부과월   */  
+		    ,TAX_DIV    		/*기분     */ 
+		    ,HACD       		/*행정동   */ 
+		    ,TAX_SNO    		/*과세번호 */   
+		    ,RCP_CNT    	    /*분납순번 */   
+		    ,PAY_CNT    		/*수납순번 */   
+		    ,SNTG       		/*수납FLAG */    
+		    ,SUM_RCP   		    /*수납금액 */   
+		    ,PAY_DT     		/*납부일자 */     
+		    ,SNSU       		/*수납수단 */     
+		    ,BANK_CD    		/*납부기관 */     
+		    ,BRC_NO     		/*수납기관코드    */  
+		    ,TMSG_NO    	    /*출금은행_전문관리번호      */      
+		    ,OCR_BD    		    /*OCR밴드        */ 
+		    ,RSN_YN             /*예약납부처리여부*/
+		    ,REG_DTM    	    /*등록일시       */      
+		    ,LAST_DTM   	    /*최종수정일시   */
+		) VALUES (
+		     #SGG_COD#    	    /*구청코드 */     
+		    ,#ACCT_COD#   	    /*회계코드 */   
+		    ,#TAX_ITEM#   		/*과세목   */  
+		    ,#TAX_YY#     		/*부과년도 */    
+		    ,#TAX_MM#    		/*부과월   */  
+		    ,#TAX_DIV#    		/*기분     */ 
+		    ,#HACD#       		/*행정동   */ 
+		    ,#TAX_SNO#    		/*과세번호 */   
+		    ,#RCP_CNT#    	    /*분납순번 */   
+		    ,#PAY_CNT#    		/*수납순번 */   
+		    ,#SNTG#       		/*수납FLAG */    
+		    ,#SUM_RCP#    	    /*수납금액 */   
+		    ,#PAY_DT#     		/*납부일자 */     
+		    ,#SNSU#       		/*수납수단 */     
+		    ,#BANK_CD#    		/*납부기관 */     
+		    ,#BRC_NO#     		/*수납기관코드    */  
+		    ,#TMSG_NO#    	    /*출금은행_전문관리번호      */      
+		    ,#OCR_BD# 			/*OCR밴드        */ 
+		    ,#RSN_YN#           /*예약납부처리여부*/
+		    ,SYSDATE   			/*등록일시       */      
+		    ,SYSDATE   			/*최종수정일시   */
+		)    	
+	</insert>
+	
+	
+	<!--버스, 주거지 전자수납테이블 INSERT -->
+    <insert id="INSERT_TX2221_TB_EPAY"  parameterClass="mapForm">
+	
+		INSERT INTO TX2221_TB (
+		    SGG_COD    	        /*구청코드 */     
+		    ,ACCT_COD   	    /*회계코드 */   
+		    ,TAX_ITEM   		/*과세목   */  
+		    ,TAX_YY     		/*부과년도 */    
+		    ,TAX_MM     		/*부과월   */  
+		    ,TAX_DIV    		/*기분     */ 
+		    ,HACD       		/*행정동   */ 
+		    ,TAX_SNO    		/*과세번호 */   
+		    ,TAX_CNT    	    /*부과순번 */   
+		    ,PAY_CNT    		/*수납순번 */   
+		    ,SNTG       		/*수납FLAG */    
+		    ,SUM_RCP   		    /*수납금액 */   
+		    ,PAY_DT     		/*납부일자 */     
+		    ,SNSU       		/*수납수단 */     
+		    ,BANK_CD    		/*납부기관 */     
+		    ,BRC_NO     		/*수납기관코드*/  
+		    ,TMSG_NO    	    /*출금은행_전문관리번호*/      
+		    ,OCR_BD    		    /*OCR밴드        */ 
+		    ,REG_DTM    	    /*등록일시       */      
+		    ,LAST_DTM   	    /*최종수정일시   */
+		) VALUES (
+		     #SGG_COD#    	    /*구청코드 */     
+		    ,#ACCT_COD#   	    /*회계코드 */   
+		    ,#TAX_ITEM#   		/*과세목   */  
+		    ,#TAX_YY#     		/*부과년도 */    
+		    ,#TAX_MM#    		/*부과월   */  
+		    ,#TAX_DIV#    		/*기분     */ 
+		    ,#HACD#       		/*행정동   */ 
+		    ,#TAX_SNO#    		/*과세번호 */   
+		    ,#RCP_CNT#    	    /*부과순번 */   
+		    ,#PAY_CNT#    		/*수납순번 */   
+		    ,#SNTG#       		/*수납FLAG */    
+		    ,#SUM_RCP#    	    /*수납금액 */   
+		    ,#PAY_DT#     		/*납부일자 */     
+		    ,#SNSU#       		/*수납수단 */     
+		    ,#BANK_CD#    		/*납부기관 */     
+		    ,#BRC_NO#     		/*수납기관코드    */  
+		    ,#TMSG_NO#    	    /*출금은행_전문관리번호      */      
+		    ,#OCR_BD#  			/*OCR밴드        */ 
+		    ,SYSDATE   			/*등록일시       */      
+		    ,SYSDATE   			/*최종수정일시   */
+		)    	
+	</insert>	
+	
+    <!-- 지방세 수납처리한다. (수납FLAG) -->
+    <update id="UPDATE_TX1102_TB_NAPBU_INFO" parameterClass="mapForm">
+    <![CDATA[
+    
+        UPDATE TX1102_TB
+           SET SNTG = '1'
+              ,LAST_DTM = SYSDATE
+	     WHERE SGG_COD = #SGG_COD#
+		   AND ACCT_COD = #ACCT_COD#
+		   AND TAX_ITEM = #TAX_ITEM#
+		   AND TAX_YY = #TAX_YY#
+		   AND TAX_MM = #TAX_MM#
+		   AND HACD   = #HACD#
+		   AND TAX_SNO = #TAX_SNO#
+		   AND RCP_CNT = #RCP_CNT#
+
+    ]]>
+    </update>    	
+    
+    <!-- 버스 주거지 수납처리한다. (수납FLAG) -->
+    <update id="UPDATE_TX2122_TB_NAPBU_INFO" parameterClass="mapForm">
+    <![CDATA[
+    
+        UPDATE TX2122_TB
+           SET SNTG = '1'
+              ,LAST_DTM = SYSDATE
+	     WHERE SGG_COD = #SGG_COD#
+		   AND ACCT_COD = #ACCT_COD#
+		   AND TAX_ITEM = #TAX_ITEM#
+		   AND TAX_YY = #TAX_YY#
+		   AND TAX_MM = #TAX_MM#
+		   AND HACD   = #HACD#
+		   AND TAX_SNO = #TAX_SNO#
+		   AND TAX_CNT = #RCP_CNT#
+    ]]>
+    </update>       
+	
+
+	
+</sqlMap>

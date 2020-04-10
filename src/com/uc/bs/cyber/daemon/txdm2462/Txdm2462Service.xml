@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+
+<sqlMap namespace="TXDM2462" >
+
+
+    <!-- 환경개선부담금 실시간 수납 전송대기 건수 -->
+    <select id="getSunapDataCount" parameterClass="mapForm" resultClass="Integer">
+    SELECT CEIL(COUNT(*) / #PAGE_PER_CNT#) PAGE 
+      FROM TX2131_TB_DAMO A
+         , TX2132_TB B
+         , TX2231_TB C
+     WHERE 1 = 1
+       AND A.SGG_COD        = B.SGG_COD 
+       AND A.ACCT_COD       = B.ACCT_COD 
+       AND A.TAX_ITEM       = B.TAX_ITEM 
+       AND A.TAX_YY         = B.TAX_YY 
+       AND A.TAX_MM         = B.TAX_MM 
+       AND A.TAX_DIV        = B.TAX_DIV 
+       AND A.HACD           = B.HACD 
+       AND A.TAX_SNO        = B.TAX_SNO 
+       AND B.SGG_COD        = C.SGG_COD 
+       AND B.ACCT_COD       = C.ACCT_COD 
+       AND B.TAX_ITEM       = C.TAX_ITEM 
+       AND B.TAX_YY         = C.TAX_YY 
+       AND B.TAX_MM         = C.TAX_MM 
+       AND B.TAX_DIV        = C.TAX_DIV
+       AND B.HACD           = C.HACD 
+       AND B.TAX_SNO        = C.TAX_SNO  
+       AND B.TAX_CNT        = C.TAX_CNT
+      <!-- AND B.DEL_YN         = 'N' --> 
+       AND C.SNSU           NOT IN ('1','6')
+       AND C.TRTG <![CDATA[ <> ]]> #TRTG#
+       AND A.SGG_COD        = #SGG_COD#
+       AND C.PAY_DT         >= TO_CHAR(SYSDATE-11,'YYYYMMDD')
+    </select>
+    
+    <!-- 환경개선부담금 수납 실시간 자료 -->
+    <select id="notusedgetSunapDataList" parameterClass="mapForm" resultClass="mapForm">
+    SELECT TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS')                                       AS IN_APPLY_YMD
+    	 , CASE
+				WHEN A.SGG_COD='110' THEN '325'
+				WHEN A.SGG_COD='140' THEN '326'
+				WHEN A.SGG_COD='170' THEN '327'
+				WHEN A.SGG_COD='200' THEN '328'
+				WHEN A.SGG_COD='230' THEN '329'
+				WHEN A.SGG_COD='260' THEN '330'
+				WHEN A.SGG_COD='290' THEN '331'
+				WHEN A.SGG_COD='320' THEN '332'
+				WHEN A.SGG_COD='350' THEN '333'
+				WHEN A.SGG_COD='380' THEN '334'
+				WHEN A.SGG_COD='410' THEN '335'
+				WHEN A.SGG_COD='440' THEN '336'
+				WHEN A.SGG_COD='470' THEN '337'
+				WHEN A.SGG_COD='500' THEN '338'
+				WHEN A.SGG_COD='530' THEN '339'
+				WHEN A.SGG_COD='710' THEN '340'
+		   ELSE A.SGG_COD
+		   END || '0000'                                               				 AS IN_SF_TEAM_CODE
+         , CASE WHEN A.TAX_ITEM='281024' THEN '12595921' ELSE '12595922' END		 AS IN_TAX_CODE
+         , A.TAX_YY||'0'||CASE WHEN A.TAX_DIV='3' THEN '0' ELSE A.TAX_DIV END
+           ||'126'||A.SGG_COD||A.HACD||A.TAX_SNO									 AS IN_LVY_NO
+         , B.TAX_CNT                                                                 AS IN_ANC_CHASU
+         , C.PAY_DT                                                                  AS IN_RECPT_YMD
+         , C.SUM_RCP                                                                 AS IN_RECPT_AMT
+         , A.TAX_YY||DECODE(A.TAX_DIV,'3','0',A.TAX_DIV)                                                      AS IN_PERD
+         , FC_DAMO(A.SEC_REG_NO)                                                     AS IN_OWNR_SID
+         , (SELECT CASE WHEN LENGTH(GUBUN_NM) > 15 THEN SUBSTR(GUBUN_NM,0,14) ELSE GUBUN_NM END 
+              FROM CO3102_TB 
+             WHERE GUBUN_ID IN ('BNK_CD', 'CARD_CO') 
+               AND GUBUN_CD = CASE WHEN TRIM(C.BANK_CD)='99' THEN '032' ELSE TRIM(C.BANK_CD) END
+			)																		 AS IN_RECPT_BANK_NM
+         , CASE WHEN TRIM(C.BANK_CD)='99' THEN '032' ELSE TRIM(C.BANK_CD) END        AS IN_BANK_CODE
+         , F_GET_ICHEYMD(C.PAY_DT, TRIM(C.BANK_CD))                                  AS IN_TRANSFER_YMD
+         , FC_GET_WDT(C.PAY_DT,'1')                                                  AS IN_ACCT_YMD
+         , CASE
+				WHEN C.SNSU='2' THEN '7'
+				WHEN C.SNSU='4' THEN '6'
+				WHEN C.SNSU='5' THEN '8'
+				WHEN C.SNSU='7' THEN '4'
+				WHEN C.SNSU='8' THEN '7'
+		   ELSE '4'
+		   END																		 AS IN_RECPT_GBN
+		 , CASE WHEN C.SNTG='9' THEN '2' ELSE '1' END								 AS IN_RECPT_GUBUN
+		 , CASE WHEN C.SNTG='9' THEN C.PAY_DT ELSE ' ' END							 AS IN_RECPT_CANCEL_YMD
+		 , CASE WHEN C.SNTG='9' THEN C.SUM_RCP ELSE 0 END							 AS IN_RECPT_CANCEL_AMT
+         , ''                                                                        AS IN_LAST_MOD_TS
+         , ''                                                                        AS IN_RFLT_STATE_CODE
+         , ''                                                                        AS IN_RECPT_ERR_CODE
+         , C.SGG_COD                                                                 AS SGG_COD
+         , C.ACCT_COD                                                                AS ACCT_COD
+         , C.TAX_ITEM                                                                AS TAX_ITEM
+         , C.TAX_YY                                                                  AS TAX_YY
+         , C.TAX_MM                                                                  AS TAX_MM
+         , C.TAX_DIV                                                                 AS TAX_DIV
+         , C.HACD                                                                    AS HACD
+         , C.TAX_SNO                                                                 AS TAX_SNO
+         , C.TAX_CNT                                                                 AS TAX_CNT
+         , C.PAY_CNT                                                                 AS PAY_CNT
+      FROM TX2131_TB_DAMO A
+         , TX2132_TB B
+         , TX2231_TB C
+     WHERE 1 = 1
+       AND A.SGG_COD        = B.SGG_COD 
+       AND A.ACCT_COD       = B.ACCT_COD 
+       AND A.TAX_ITEM       = B.TAX_ITEM 
+       AND A.TAX_YY         = B.TAX_YY 
+       AND A.TAX_MM         = B.TAX_MM 
+       AND A.TAX_DIV        = B.TAX_DIV 
+       AND A.HACD           = B.HACD 
+       AND A.TAX_SNO        = B.TAX_SNO 
+       AND B.SGG_COD        = C.SGG_COD 
+       AND B.ACCT_COD       = C.ACCT_COD 
+       AND B.TAX_ITEM       = C.TAX_ITEM 
+       AND B.TAX_YY         = C.TAX_YY 
+       AND B.TAX_MM         = C.TAX_MM 
+       AND B.TAX_DIV        = C.TAX_DIV
+       AND B.HACD           = C.HACD 
+       AND B.TAX_SNO        = C.TAX_SNO  
+       AND B.TAX_CNT        = C.TAX_CNT
+    <!-- AND B.DEL_YN         = 'N' -->   
+       AND C.SNSU           NOT IN ('1','6')
+       AND ROWNUM <![CDATA[ <= ]]> 1000
+       AND C.TRTG <![CDATA[ <> ]]> #TRTG#
+       AND A.SGG_COD        = #SGG_COD#
+       AND C.PAY_DT         >= TO_CHAR(SYSDATE-11,'YYYYMMDD')
+    </select>
+    
+    
+    <!-- 환경개선부담금 수납 실시간 자료 -->
+    <select id="getSunapDataList" parameterClass="mapForm" resultClass="mapForm">
+    SELECT TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS')                                       AS IN_APPLY_YMD
+    	 , CASE
+				WHEN A.SGG_COD='110' THEN '325'
+				WHEN A.SGG_COD='140' THEN '326'
+				WHEN A.SGG_COD='170' THEN '327'
+				WHEN A.SGG_COD='200' THEN '328'
+				WHEN A.SGG_COD='230' THEN '329'
+				WHEN A.SGG_COD='260' THEN '330'
+				WHEN A.SGG_COD='290' THEN '331'
+				WHEN A.SGG_COD='320' THEN '332'
+				WHEN A.SGG_COD='350' THEN '333'
+				WHEN A.SGG_COD='380' THEN '334'
+				WHEN A.SGG_COD='410' THEN '335'
+				WHEN A.SGG_COD='440' THEN '336'
+				WHEN A.SGG_COD='470' THEN '337'
+				WHEN A.SGG_COD='500' THEN '338'
+				WHEN A.SGG_COD='530' THEN '339'
+				WHEN A.SGG_COD='710' THEN '340'
+		   ELSE A.SGG_COD
+		   END || '0000'                                               				 AS IN_SF_TEAM_CODE
+         , CASE WHEN A.TAX_ITEM='281024' THEN '12595921' ELSE '12595922' END         AS IN_TAX_CODE
+         , C.TAX_YY||'0'||CASE WHEN A.TAX_DIV='3' THEN '0' ELSE A.TAX_DIV END
+           ||'126'||C.SGG_COD||C.HACD||C.TAX_SNO             						 AS IN_LVY_NO
+         , (SELECT NVL(MAX(B.TAX_CNT), C.TAX_CNT) FROM TX2132_TB B 
+             WHERE 1 = 1
+               AND A.SGG_COD        = B.SGG_COD 
+               AND A.ACCT_COD       = B.ACCT_COD 
+               AND A.TAX_ITEM       = B.TAX_ITEM 
+               AND A.TAX_YY         = B.TAX_YY 
+               AND A.TAX_MM         = B.TAX_MM        
+               AND A.TAX_DIV        = B.TAX_DIV        
+               AND A.HACD           = B.HACD 
+               AND A.TAX_SNO        = B.TAX_SNO
+               AND (CASE WHEN F_GET_GYMD(B.DUE_DT) >= C.PAY_DT THEN B.BUTT ELSE B.BUTT + B.ADD_AMT END) =  C.SUM_RCP)     AS IN_ANC_CHASU
+         , C.PAY_DT                                                                  AS IN_RECPT_YMD
+         , C.SUM_RCP                                                                 AS IN_RECPT_AMT
+         , C.TAX_YY||CASE WHEN C.TAX_DIV='3' THEN '0' ELSE C.TAX_DIV END             AS IN_PERD
+         , FC_DAMO(A.SEC_REG_NO)                                                     AS IN_OWNR_SID
+         , (SELECT CASE WHEN LENGTH(GUBUN_NM) > 15 THEN SUBSTR(GUBUN_NM,0,14) ELSE GUBUN_NM END 
+              FROM CO3102_TB 
+             WHERE GUBUN_ID IN ('BNK_CD', 'CARD_CO') 
+               AND GUBUN_CD = CASE WHEN TRIM(C.BANK_CD)='99' THEN '032' ELSE TRIM(C.BANK_CD) END
+           )																		 AS IN_RECPT_BANK_NM
+         , CASE WHEN TRIM(C.BANK_CD)='99' THEN '032' ELSE TRIM(C.BANK_CD) END		 AS IN_BANK_CODE
+         , F_GET_ICHEYMD(C.PAY_DT, TRIM(C.BANK_CD))                                  AS IN_TRANSFER_YMD
+         , FC_GET_WDT(C.PAY_DT,'1')                                                  AS IN_ACCT_YMD
+         , CASE
+				WHEN C.SNSU='2' THEN '7'
+				WHEN C.SNSU='4' THEN '6'
+				WHEN C.SNSU='5' THEN '8'
+				WHEN C.SNSU='7' THEN '4'
+				WHEN C.SNSU='8' THEN '7'
+		   ELSE '4'
+		   END																		 AS IN_RECPT_GBN
+		 , CASE WHEN C.SNTG='9' THEN '2' ELSE '1' END								 AS IN_RECPT_GUBUN
+		 , CASE WHEN C.SNTG='9' THEN C.PAY_DT ELSE ' ' END							 AS IN_RECPT_CANCEL_YMD
+		 , CASE WHEN C.SNTG='9' THEN C.SUM_RCP ELSE 0 END							 AS IN_RECPT_CANCEL_AMT
+         , ''                                                                        AS IN_LAST_MOD_TS
+         , ''                                                                        AS IN_RFLT_STATE_CODE
+         , ''                                                                        AS IN_RECPT_ERR_CODE
+         , C.SGG_COD                                                                 AS SGG_COD
+         , C.ACCT_COD                                                                AS ACCT_COD
+         , C.TAX_ITEM                                                                AS TAX_ITEM
+         , C.TAX_YY                                                                  AS TAX_YY
+         , C.TAX_MM                                                                  AS TAX_MM
+         , C.TAX_DIV                                                                 AS TAX_DIV
+         , C.HACD                                                                    AS HACD
+         , C.TAX_SNO                                                                 AS TAX_SNO
+         , C.TAX_CNT                                                                 AS TAX_CNT
+         , C.PAY_CNT                                                                 AS PAY_CNT
+      FROM TX2131_TB_DAMO A
+         , TX2231_TB C
+     WHERE 1 = 1
+       AND A.SGG_COD        = C.SGG_COD 
+       AND A.ACCT_COD       = C.ACCT_COD 
+       AND A.TAX_ITEM       = C.TAX_ITEM 
+       AND A.TAX_YY         = C.TAX_YY 
+       AND A.TAX_MM         = C.TAX_MM 
+       AND A.TAX_DIV        = C.TAX_DIV 
+       AND A.HACD           = C.HACD 
+       AND A.TAX_SNO        = C.TAX_SNO    
+       AND C.SNSU           NOT IN ('1','6')
+       AND ROWNUM <![CDATA[ <= ]]> 1000
+       AND C.TRTG <![CDATA[ <> ]]> #TRTG#
+       AND C.SGG_COD        = #SGG_COD#
+       AND C.PAY_DT         >= TO_CHAR(SYSDATE-11,'YYYYMMDD')
+    </select>
+    
+    
+    <!-- 전송완료 상태 변경 -->
+	<update id="updateWsdlTrtgData" parameterClass="mapForm">
+	UPDATE TX2231_TB
+	   SET TRTG      = #TRTG#
+	     , LAST_DTM  = SYSDATE
+	 WHERE 1 = 1
+	   AND SGG_COD   = #SGG_COD#
+	   AND ACCT_COD  = #ACCT_COD#
+	   AND TAX_ITEM  = #TAX_ITEM#
+	   AND TAX_YY    = #TAX_YY#
+	   AND TAX_MM    = #TAX_MM#
+	   AND TAX_DIV   = #TAX_DIV#
+	   AND HACD      = #HACD#
+	   AND TAX_SNO   = #TAX_SNO#
+	   AND TAX_CNT   = #TAX_CNT#
+	   AND PAY_CNT   = #PAY_CNT#
+	   AND TRTG <![CDATA[ <> ]]> '1'
+	</update>
+	
+
+</sqlMap>

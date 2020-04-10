@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXBT5001" >
+
+	<select id="SELECT_TX4111" resultClass="mapForm">
+    <![CDATA[	
+		SELECT C_BANK 
+		     		, PAY_DT
+		     		, ICHE_DT
+		     		, ACC_DT
+		     		, OCR1
+		     		, OCR2
+		      		, OVERPAY_NO
+		      		, EPAY_NO
+		      		, GWASE_NO	      
+		      		, SGG_COD
+		  FROM TX4111_TB
+		WHERE TRN_YN = '0'
+		 
+    ]]>		   
+	</select>
+
+	<update id="UPDATE_TX4111" parameterClass="mapForm">
+    <![CDATA[
+		UPDATE TX4111_TB
+		      SET TRN_YN = '1',
+		              LAST_DT = SYSDATE
+		 WHERE EPAY_NO = #EPAY_NO#
+		      AND OVERPAY_NO = #OVERPAY_NO#
+		      AND TRN_YN = '0'
+    ]]>	
+	</update>
+
+</sqlMap>

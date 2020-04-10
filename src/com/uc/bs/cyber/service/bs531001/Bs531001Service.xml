@@ -1,0 +1,454 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="BS531001" >
+
+    <!-- 상수도 수납 처리 목록  -->
+	<select id="getSudoSunapList" resultClass="mapForm" parameterClass="mapForm">
+	<![CDATA[ 
+	SELECT GUBUN
+         , TAX_YY
+         , TAX_MM
+         , PRT_NPNO
+         , SUM_AMT
+      FROM 
+         ( SELECT '1' GUBUN
+                , TAX_YY
+                , TAX_MM
+                , PRT_NPNO
+                , CASE WHEN F_GET_GYMD(DUE_DT) >= TO_CHAR(SYSDATE,'YYYYMMDD') THEN SUM_B_AMT
+                       WHEN F_GET_GYMD(DUE_DT) <  TO_CHAR(SYSDATE,'YYYYMMDD') AND F_GET_GYMD(DUE_F_DT) >= TO_CHAR(SYSDATE,'YYYYMMDD') THEN SUM_F_AMT
+                  ELSE 0 END SUM_AMT 
+             FROM TX3111_TB
+            WHERE 1 = 1
+              AND VIR_ACC_NO = #VIR_ACC_NO#
+              AND F_GET_GYMD(DUE_F_DT) >= TO_CHAR(SYSDATE,'YYYYMMDD')
+              AND GUBUN = '2'
+              AND DEL_YN = 'N'
+              AND SNTG IN ('0','9')
+            UNION ALL
+           SELECT '2' GUBUN
+                , TAX_YY
+                , TAX_MM
+                , PRT_NPNO
+                , CASE WHEN F_GET_GYMD(DUE_DT) >= TO_CHAR(SYSDATE,'YYYYMMDD') THEN SUM_B_AMT
+                       WHEN F_GET_GYMD(DUE_DT) <  TO_CHAR(SYSDATE,'YYYYMMDD') AND F_GET_GYMD(DUE_F_DT) >= TO_CHAR(SYSDATE,'YYYYMMDD') THEN SUM_F_AMT
+                  ELSE 0 END SUM_AMT 
+             FROM TX3111_TB
+            WHERE 1 = 1
+              AND VIR_ACC_NO = #VIR_ACC_NO#
+              AND F_GET_GYMD(DUE_F_DT) >= TO_CHAR(SYSDATE,'YYYYMMDD')
+              AND GUBUN = '1'
+              AND DEL_YN = 'N'
+              AND SNTG IN ('0','9')
+            UNION ALL
+           SELECT '3' AS GUBUN
+                , TO_CHAR(SYSDATE,'YYYY') AS TAX_YY
+                , TO_CHAR(SYSDATE, 'MM')  AS TAX_MM
+                , 99999999 AS PRT_NPNO
+                , NVL(SUM(CASE WHEN F_GET_GYMD(DUE_DT) >= TO_CHAR(SYSDATE,'YYYYMMDD') THEN SUM_B_AMT
+                           WHEN F_GET_GYMD(DUE_DT) <  TO_CHAR(SYSDATE,'YYYYMMDD') AND F_GET_GYMD(DUE_F_DT) >= TO_CHAR(SYSDATE,'YYYYMMDD') THEN SUM_F_AMT
+                      ELSE 0 END),0) AS SUM_AMT
+             FROM TX3111_TB
+            WHERE 1 = 1
+              AND VIR_ACC_NO = #VIR_ACC_NO#
+              AND F_GET_GYMD(DUE_F_DT) >= TO_CHAR(SYSDATE,'YYYYMMDD')
+              AND DEL_YN = 'N'
+              AND SNTG IN ('0','9')
+              AND GUBUN IN ('1','2')
+            UNION ALL
+           SELECT '4' GUBUN
+                , TAX_YY
+                , TAX_MM
+                , PRT_NPNO
+                , CASE WHEN F_GET_GYMD(DUE_DT) >= TO_CHAR(SYSDATE,'YYYYMMDD') THEN SUM_B_AMT
+                       WHEN F_GET_GYMD(DUE_DT) <  TO_CHAR(SYSDATE,'YYYYMMDD') AND F_GET_GYMD(DUE_F_DT) >= TO_CHAR(SYSDATE,'YYYYMMDD') THEN SUM_F_AMT
+                  ELSE 0 END SUM_AMT 
+             FROM TX3111_TB
+            WHERE 1 = 1
+              AND VIR_ACC_NO = #VIR_ACC_NO#
+              AND F_GET_GYMD(DUE_F_DT) >= TO_CHAR(SYSDATE,'YYYYMMDD')
+              AND GUBUN = '3'
+              AND DEL_YN = 'N'
+              AND SNTG IN ('0','9')
+         )
+     WHERE 1 = 1
+     ORDER BY GUBUN, TAX_YY, TAX_MM 
+    ]]>
+	</select>
+	
+	
+	<!-- 열요금 수납 처리 목록 -->
+	<select id="getEtcSunapList" resultClass="mapForm" parameterClass="mapForm">
+	SELECT GUBUN
+	     , TAX_NO
+	     , TAX_CNT
+	     , SUM_AMT
+	  FROM 
+	     ( SELECT '5' GUBUN
+                , B.TAX_NO 
+                , B.TAX_CNT 
+                , A.TAX_YM
+                , B.PAYMENT_DATE1 AS SUM_AMT  
+	         FROM TX2111_TB_DAMO A
+                , TX2112_TB B
+	        WHERE 1 = 1
+             AND B.VIR_ACC_NO = #VIR_ACC_NO#
+             AND A.TAX_NO = B.TAX_NO
+             AND A.TAX_ITEM = B.TAX_ITEM
+             AND A.TAX_ITEM IN ('211000','281000','202099')
+             AND A.ACCT_COD = '55'
+             AND B.DEL_YN = 'N'
+             AND B.SNTG IN ('0','9')
+	       UNION ALL
+	        SELECT '6'                     AS GUBUN
+                 , '9999999'               AS TAX_NO
+                 , COUNT(*)                AS TAX_CNT
+                 , TO_CHAR(SYSDATE,'YYYY') AS TAX_YM
+                 , NVL(SUM(B.PAYMENT_DATE1),0)   AS SUM_AMT
+	         FROM TX2111_TB_DAMO A
+                , TX2112_TB B
+	        WHERE 1 = 1
+             AND B.VIR_ACC_NO = #VIR_ACC_NO#
+             AND A.TAX_NO = B.TAX_NO
+             AND A.TAX_ITEM = B.TAX_ITEM
+             AND A.TAX_ITEM IN ('211000','281000','202099')
+             AND A.ACCT_COD = '55'
+             AND B.DEL_YN = 'N'
+             AND B.SNTG IN ('0','9')
+	     )
+	 WHERE 1 = 1
+	 ORDER BY GUBUN, TAX_YM DESC
+	</select>
+	
+	
+	<!-- 상수도 모든 미 수납건 수납처리 -->
+	<insert id="insertSudoAllSunapProc" parameterClass="mapForm">
+	<![CDATA[ 
+	INSERT INTO TX3211_TB (
+                TAX_YY
+              , TAX_MM
+              , PRT_NPNO
+              , GUBUN
+              , PAY_CNT
+              , SUM_RCP 
+              , PAY_DT
+              , SNSU
+              , BANK_CD
+              , BRC_NO
+              , TMSG_NO
+              , SNTG
+              , RSN_YN
+              , REG_DTM
+              , LAST_DTM
+              , SR_FLAG
+              , RGSYS_DSC
+              , BS_TRANS_NO
+       ) SELECT TAX_YY
+              , TAX_MM
+              , PRT_NPNO
+              , GUBUN
+              , (SELECT NVL(MAX(PAY_CNT) + 1, 0) FROM TX3211_TB WHERE TAX_YY = A.TAX_YY AND TAX_MM = A.TAX_MM AND PRT_NPNO = A.PRT_NPNO) AS PAY_CNT
+              , CASE WHEN F_GET_GYMD(DUE_DT) >= TO_CHAR(SYSDATE,'YYYYMMDD') THEN SUM_B_AMT
+                     WHEN F_GET_GYMD(DUE_DT) <  TO_CHAR(SYSDATE,'YYYYMMDD') AND F_GET_GYMD(DUE_F_DT) >= TO_CHAR(SYSDATE,'YYYYMMDD') THEN SUM_F_AMT
+                ELSE 0 END AS SUM_AMT 
+              , TO_CHAR(SYSDATE,'YYYYMMDD') AS PAY_DT
+              , '4'            AS SNSU
+              , '99'           AS BANK_CD
+              , '0321404'      AS BRC_NO
+              , ''             AS TMSG_NO
+              , '1'            AS SNTG
+              , 'N'            AS RSN_YN
+              , SYSDATE        AS REG_DTM
+              , SYSDATE        AS LAST_DTM
+              , '0'            AS SR_FLAG
+              , '0'            AS RGSYS_DSC
+              , #BS_TRANS_NO#  AS BS_TRANS_NO
+           FROM TX3111_TB A
+          WHERE 1 = 1
+            AND F_GET_GYMD(DUE_F_DT) >= TO_CHAR(SYSDATE,'YYYYMMDD')
+            AND DEL_YN = 'N'
+            AND SNTG IN ('0','9')
+            AND VIR_ACC_NO = #VIR_ACC_NO#
+    ]]>
+	</insert>
+	
+	
+	<!-- 상수도 단건 수납처리 -->
+	<insert id="insertSudoSunapData" parameterClass="mapForm">
+	<![CDATA[ 
+	INSERT INTO TX3211_TB (
+                TAX_YY
+              , TAX_MM
+              , PRT_NPNO
+              , GUBUN
+              , PAY_CNT
+              , SUM_RCP 
+              , PAY_DT
+              , SNSU
+              , BANK_CD
+              , BRC_NO
+              , TMSG_NO
+              , SNTG
+              , RSN_YN
+              , REG_DTM
+              , LAST_DTM
+              , SR_FLAG
+              , RGSYS_DSC
+              , BS_TRANS_NO
+       ) SELECT TAX_YY
+              , TAX_MM
+              , PRT_NPNO
+              , GUBUN
+              , (SELECT NVL(MAX(PAY_CNT) + 1, 0) FROM TX3211_TB WHERE TAX_YY = A.TAX_YY AND TAX_MM = A.TAX_MM AND PRT_NPNO = A.PRT_NPNO) 
+              , CASE WHEN F_GET_GYMD(DUE_DT) >= TO_CHAR(SYSDATE,'YYYYMMDD') THEN SUM_B_AMT
+                     WHEN F_GET_GYMD(DUE_DT) <  TO_CHAR(SYSDATE,'YYYYMMDD') AND F_GET_GYMD(DUE_F_DT) >= TO_CHAR(SYSDATE,'YYYYMMDD') THEN SUM_F_AMT
+                ELSE 0 END  
+              , TO_CHAR(SYSDATE,'YYYYMMDD') 
+              , '4'  
+              , '99'  
+              , '0321404'   
+              , ''      
+              , '1'     
+              , 'N'    
+              , SYSDATE   
+              , SYSDATE   
+              , '0'      
+              , '0'       
+              , #BS_TRANS_NO#  
+           FROM TX3111_TB A
+          WHERE 1 = 1
+            AND TAX_YY     = #TAX_YY#
+            AND TAX_MM     = #TAX_MM#
+            AND PRT_NPNO   = #PRT_NPNO#
+            AND VIR_ACC_NO = #VIR_ACC_NO#
+    ]]>
+	</insert>
+	
+	
+	<!-- 상수도 부과상세 전체 수납처리 -->	
+	<update id="updateSudoAllBugwaSunapProc" parameterClass="mapForm">
+	UPDATE TX3111_TB
+	   SET SNTG     = '1'
+	     , LAST_DTM = SYSDATE
+	 WHERE 1 = 1
+	   AND F_GET_GYMD(DUE_F_DT) >= TO_CHAR(SYSDATE,'YYYYMMDD')
+       AND DEL_YN = 'N'
+       AND SNTG IN ('0','9')
+       AND VIR_ACC_NO = #VIR_ACC_NO#
+	</update>
+	
+	
+	<!-- 상수도 부과상세 단건 수납처리 -->
+	<update id="updateSudoBugwaSunapData" parameterClass="mapForm">
+	UPDATE TX3111_TB
+	   SET SNTG     = '1'
+	     , LAST_DTM = SYSDATE
+	 WHERE 1 = 1
+	   AND TAX_YY     = #TAX_YY#
+       AND TAX_MM     = #TAX_MM#
+       AND PRT_NPNO   = #PRT_NPNO#
+       AND VIR_ACC_NO = #VIR_ACC_NO#
+	</update>
+	
+  
+	<!-- 열요금 부과상세 단건 수납처리 -->
+	<update id="updateEtcBugwaSunap" parameterClass="mapForm">
+	UPDATE TX2112_TB
+	   SET SNTG     = '1'
+	     , LAST_DTM = SYSDATE
+	 WHERE 1 = 1
+	   AND TAX_NO       = #TAX_NO#
+       AND TAX_CNT      = #TAX_CNT#
+       AND VIR_ACC_NO   = #VIR_ACC_NO#
+       AND SNTG IN ('0','9')
+	</update>
+	
+	
+	<!-- 열요금 단건 수납처리 -->
+	<insert id="insertEtcSunap" parameterClass="mapForm">
+	INSERT INTO TX2211_TB (
+                TAX_NO
+              , TAX_CNT
+              , PAY_CNT
+              , SUM_RCP 
+              , PAY_DT
+              , SNSU
+              , BANK_CD
+              , BRC_NO
+              , SNTG
+              , TRTG
+              , OCR_BD
+              , BS_TRANS_NO
+              , REG_DTM
+              , LAST_DTM
+       ) SELECT TAX_NO
+              , TAX_CNT
+              , (SELECT NVL(MAX(PAY_CNT) + 1, 0) FROM TX2211_TB WHERE TAX_NO = A.TAX_NO AND TAX_CNT = A.TAX_CNT) 
+              , PAYMENT_DATE1
+              , TO_CHAR(SYSDATE,'YYYYMMDD') 
+              , '4'  
+              , '99'  
+              , '0321404'        
+              , '1'     
+              , '1'   
+              , OCR_BD 
+              , #BS_TRANS_NO#
+              , SYSDATE   
+              , SYSDATE     
+           FROM TX2112_TB A
+          WHERE 1 = 1
+            AND TAX_NO       = #TAX_NO#
+            AND TAX_CNT      = #TAX_CNT#
+            AND VIR_ACC_NO   = #VIR_ACC_NO#
+	</insert>
+
+		
+	<!-- 열요금 모든 미 수납건 수납처리 -->
+	<update id="insertEtcAllSunap" parameterClass="mapForm">
+	INSERT INTO TX2211_TB (
+                TAX_NO
+              , TAX_CNT
+              , PAY_CNT
+              , SUM_RCP 
+              , PAY_DT
+              , SNSU
+              , BANK_CD
+              , BRC_NO
+              , SNTG
+              , TRTG
+              , OCR_BD
+              , BS_TRANS_NO
+              , REG_DTM
+              , LAST_DTM
+       ) SELECT TAX_NO
+              , TAX_CNT
+              , (SELECT NVL(MAX(PAY_CNT) + 1, 0) FROM TX2211_TB WHERE TAX_NO = A.TAX_NO AND TAX_CNT = A.TAX_CNT) 
+              , PAYMENT_DATE1
+              , TO_CHAR(SYSDATE,'YYYYMMDD') 
+              , '4'  
+              , '99'  
+              , '0321404'        
+              , '1'     
+              , '1'   
+              , OCR_BD 
+              , #BS_TRANS_NO#
+              , SYSDATE   
+              , SYSDATE     
+           FROM TX2112_TB A
+          WHERE 1 = 1
+            AND DEL_YN = 'N'
+            AND SNTG IN ('0','9')
+            AND TAX_ITEM IN ('211000','281000','202099')
+            AND VIR_ACC_NO = #VIR_ACC_NO#
+	</update>	
+	
+	
+	<!-- 열요금 부과상세 전체 수납처리 -->	
+	<update id="updateEtcAllBugwaSunap" parameterClass="mapForm">
+	UPDATE TX2112_TB
+	   SET SNTG     = '1'
+	     , LAST_DTM = SYSDATE
+	 WHERE 1 = 1
+       AND DEL_YN     = 'N'
+       AND SNTG       IN ('0','9')
+       AND VIR_ACC_NO = #VIR_ACC_NO#
+       AND TAX_ITEM IN ('211000','281000','202099')
+	</update>				
+	
+	
+	 <!-- 상수도 수납 취소 전문  -->	
+	<select id="getSudoSunapCancelList" resultClass="mapForm" parameterClass="mapForm">
+	SELECT B.TAX_YY
+         , B.TAX_MM
+         , B.PRT_NPNO
+         , B.PAY_CNT
+         , B.GUBUN
+         , B.SUM_RCP
+         , B.PAY_DT
+      FROM (SELECT BS_TRANS_NO, SUM(SUM_RCP) AS SUM_RCP FROM TX3211_TB WHERE BS_TRANS_NO = #BS_TRANS_NO# AND SNTG IN ('1','2') AND SNSU='4' AND PAY_DT=TO_CHAR(SYSDATE,'YYYYMMDD') GROUP BY BS_TRANS_NO) A
+         , TX3211_TB B
+     WHERE A.BS_TRANS_NO = B.BS_TRANS_NO
+       AND A.SUM_RCP     = #SUM_RCP# 
+       AND B.SNTG        IN ('1','2')
+       AND B.SNSU        = '4'
+       AND B.PAY_DT = TO_CHAR(SYSDATE,'YYYYMMDD')
+    </select>
+
+
+    <!-- 상수도 부과상세 수납취소 -->
+	<update id="updateBugwaSunapCancel" parameterClass="mapForm">
+	UPDATE TX3111_TB
+	   SET SNTG     = '0'
+	     , LAST_DTM = SYSDATE
+	 WHERE 1 = 1
+	   AND TAX_YY   = #TAX_YY#
+	   AND TAX_MM   = #TAX_MM#
+	   AND PRT_NPNO = #PRT_NPNO#
+	   AND SNTG     IN ('1','2')
+	</update>
+	
+	
+	<!-- 상수도 수납자료 취소처리 -->
+	<update id="updateSunapCancel" parameterClass="mapForm">
+	UPDATE TX3211_TB
+	   SET SNTG        = '9'
+	     , LAST_DTM    = SYSDATE
+	     , SD_TRTG     = '0'
+	 WHERE 1 = 1
+	   AND TAX_YY   = #TAX_YY#
+	   AND TAX_MM   = #TAX_MM#
+	   AND PRT_NPNO = #PRT_NPNO#
+	   AND GUBUN    = #GUBUN#
+	   AND PAY_CNT  = #PAY_CNT#
+	   AND SNTG     IN ('1','2')
+	   AND SNSU     = '4'
+	   AND PAY_DT = TO_CHAR(SYSDATE,'YYYYMMDD')
+	</update>
+	
+	
+	<!-- 열요금 수납 취소 목록 -->
+	<select id="getEtcSunapCancelList" resultClass="mapForm" parameterClass="mapForm">
+	SELECT B.TAX_NO
+         , B.TAX_CNT
+         , B.PAY_CNT
+         , B.SUM_RCP
+         , B.PAY_DT
+      FROM (SELECT BS_TRANS_NO, SUM(SUM_RCP) AS SUM_RCP FROM TX2211_TB WHERE BS_TRANS_NO = #BS_TRANS_NO# AND SNTG IN ('1','2') AND SNSU='4' AND PAY_DT=TO_CHAR(SYSDATE,'YYYYMMDD') GROUP BY BS_TRANS_NO) A
+         , TX2211_TB B
+     WHERE A.BS_TRANS_NO = B.BS_TRANS_NO
+       AND A.SUM_RCP     = #SUM_RCP# 
+       AND B.SNTG        IN ('1','2')
+       AND B.SNSU        = '4'
+       AND B.PAY_DT = TO_CHAR(SYSDATE,'YYYYMMDD')
+    </select>
+
+							
+	<!-- 열요금 부과상세 수납취소 -->
+	<update id="updateEtcBugwaSunapCancel" parameterClass="mapForm">
+	UPDATE TX2112_TB
+	   SET SNTG     = '0'
+	     , LAST_DTM = SYSDATE
+	 WHERE 1 = 1
+	   AND TAX_NO   = #TAX_NO#
+	   AND TAX_CNT  = #TAX_CNT#
+	   AND SNTG     IN ('1','2')
+	</update>
+	
+	
+	<!-- 열요금 수납자료 취소처리 -->
+	<update id="updateEtcSunapCancel" parameterClass="mapForm">
+	UPDATE TX2211_TB
+	   SET SNTG        = '9'
+	     , LAST_DTM    = SYSDATE
+	     , BS_TRANS_NO = #TRANS_NO#
+	 WHERE 1 = 1
+	   AND TAX_NO   = #TAX_NO#
+	   AND TAX_CNT  = #TAX_CNT#
+	   AND PAY_CNT  = #PAY_CNT#
+	   AND SNTG     IN ('1','2')
+	   AND SNSU     = '4'
+	   AND PAY_DT   = TO_CHAR(SYSDATE,'YYYYMMDD')
+	</update>	
+	
+	
+</sqlMap>

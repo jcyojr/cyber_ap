@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXDM1272" >
+	
+	<!-- 지방소득세종합소득수기분 -->
+	<insert id="tx1612_man_insert_receipt" parameterClass="mapForm">
+    <![CDATA[
+     INSERT INTO
+        TX1612_TB_DAMO        /* 지방소득세종합소득수기분 */
+        (
+         PAY_DT,          /*1 납부일자 */
+         TAX_SNO,         /*2 과세번호 */
+         SIDO_COD,        /*3 시도코드 */
+         SGG_COD,         /*4 구청코드 */
+         ACCT_COD,        /*5 회계코드 */
+         TAX_ITEM,        /*6 과세목 */
+         TAX_YYMM,        /*7 과세년월 */
+         TAX_DIV,         /*8 과세구분 */
+         HACD,            /*9 행정동 */
+         TAX_DT,          /*10 신고일자 */
+         SEC_REG_NO,      /*11 주민법인번호 */
+         REG_NM,          /*12 성명(법인명) */
+         TPR_COD,         /*13 법인코드 */
+         REG_BUCD,        /*14 납세자법정동 */
+         ZIP_NO,          /*15 사업장/물건지우편번호 */
+         BIZ_ZIP_ADDR,    /*16 사업장/물건지우편주소 */
+         BIZ_ADDR,        /*17 사업장/물건지상세주소 */
+         CEL_NO,          /*18 휴대전화번호 */
+         BIZ_TEL,         /*19 사업자전화번호 */
+         SAUP_NO,         /*20 사업자등록번호 */
+         CMP_NM,          /*21 법인명 */
+         RVSN_YY,         /*22 귀속년도 */
+         C_REQ_DT,        /*23 수정신고일자 */
+         DUE_DT,          /*24 납기일자 */
+         REQ_DIV,         /*25 신고구분 */
+         INCTX,           /*26 종합소득세 */
+         RSTX_INC,        /*27 주민세 종합소득세할 */
+         RADTX,           /*28 신고불성실가산액 */
+         PADTX,           /*29 납부불성실가산액 */
+         TAX_RATE,        /*30 세율 */
+         ADTX_YN,         /*31 가산세유무 */
+         DLQ_CNT,         /*32 납부지연일수 */
+         TOT_ADTX,        /*33 가산세합계 */
+         TOT_AMT,         /*34 총납부금액 */
+         F_DUE_DT,        /*35 당초납기 */
+         PAY_YN,          /*36 수납여부(수기수납처리시) */
+         BRC_NO,          /*37 수납기관코드 */
+         TRS_DT,          /*38 이체일자 */
+         ACC_DT,          /*39 회계일자 */
+         TAX_NO_SCY,      /*40 연계과세번호 */
+         TR_TG,           /*41 전송구분 */
+         MASTER_BANK_COD, /*42 대표은행코드 */
+         REG_DTM,         /*43 등록일시 */
+         LAST_DTM         /*44 최종수정일시 */
+     ) VALUES (
+        #PAY_DT#,          /*1 납부일자 */                
+        #TAX_SNO#,         /*2 과세번호 */                
+        #SIDO_COD#,        /*3 시도코드 */                
+        #SGG_COD#,         /*4 구청코드 */                
+        #ACCT_COD#,        /*5 회계코드 */                
+        #TAX_ITEM#,        /*6 과세목 */                  
+        #TAX_YYMM#,        /*7 과세년월 */                
+        #TAX_DIV#,         /*8 과세구분 */                
+        #HACD#,            /*9 행정동 */                  
+        #TAX_DT#,          /*10 신고일자 */                
+        FC_DAMO(#REG_NO#), /*11 주민법인번호 */            
+        #REG_NM#,          /*12 성명(법인명) */            
+        #TPR_COD#,         /*13 법인코드 */                
+        #REG_BUCD#,        /*14 납세자법정동 */            
+        #ZIP_NO#,          /*15 사업장/물건지우편번호 */   
+        #BIZ_ZIP_ADDR#,    /*16 사업장/물건지우편주소 */   
+        #BIZ_ADDR#,        /*17 사업장/물건지상세주소 */   
+        #MO_TEL#,          /*18 휴대전화번호 */            
+        #BIZ_TEL#,         /*19 사업자전화번호 */          
+        #BIZ_NO#,          /*20 사업자등록번호 */          
+        #CMP_NM#,          /*21 법인명 */                  
+        #RVSN_YY#,         /*22 귀속년도 */                
+        #C_REQ_DT#,        /*23 수정신고일자 */            
+        #DUE_DT#,          /*24 납기일자 */                
+        #REQ_DIV#,         /*25 신고구분 */                
+        #INCTX#,           /*26 종합소득세 */              
+        #RSTX_INC#,        /*27 주민세 종합소득세할 */     
+        #RADTX#,           /*28 신고불성실가산액 */        
+        #PADTX#,           /*29 납부불성실가산액 */        
+        #TAX_RT#,          /*30 세율 */                    
+        #ADTX_YN#,         /*31 가산세유무 */              
+        #DLQ_CNT#,         /*32 납부지연일수 */            
+        #TOT_ADTX#,        /*33 가산세합계 */              
+        #TOT_AMT#,         /*34 총납부금액 */              
+        #F_DUE_DT#,        /*35 당초납기 */                
+        #PAY_YN#,          /*36 수납여부(수기수납처리시) */
+        #BRC_NO#,          /*37 수납기관코드 */            
+        #TRS_DT#,          /*38 이체일자 */                
+        #ACC_DT#,          /*39 회계일자 */                
+        #TAX_NO_SCY#,      /*40 연계과세번호 */            
+        #TR_TG#,           /*41 전송구분 */                
+        #MASTER_BANK_COD#, /*42 대표은행코드 */            
+        SYSDATE,           /*43 등록일시 */                
+        SYSDATE            /*44 최종수정일시 */
+     )
+    ]]>
+	</insert>	
+	
+	
+    <!-- 지방소득세종합소득수기분 사이버세청 페이지 건수-->
+    <select id="tx1612_tb_select_page_cnt" parameterClass="mapForm" resultClass="int">
+        <![CDATA[
+        
+            SELECT 
+                 CEIL(COUNT(*) / #PAGE_PER_CNT#) PAGE
+            FROM tx1612_tb   /* 지방소득세 특별징수 */
+            WHERE tr_tg    = #tr_tg#                
+              AND sido_cod = #sido_cod#             
+              AND sgg_cod  = #sgg_cod#
+              AND ROWNUM  <= #rowcnt#              
+        ]]>
+    </select>
+   
+    <!-- 지방소득세종합소득수기분 -->
+    <select id="tx1612_tb_select_list" parameterClass="mapForm">
+        <![CDATA[
+        SELECT 
+            *
+        FROM (
+            SELECT
+                NVL(pay_dt,' ')            PAY_DT,           /* 납부일자 */
+                NVL(tax_sno,' ')           TAX_SNO,          /* 과세번호 */
+                NVL(sido_cod,' ')          SIDO_COD,         /* 시도코드 */
+                NVL(sgg_cod,' ')           SGG_COD,          /* 구청코드 */
+                NVL(acct_cod,' ')          ACCT_COD,         /* 회계코드 */
+                NVL(tax_item,' ')          TAX_ITEM,         /* 과세목 */
+                NVL(tax_yymm,' ')          TAX_YYMM,         /* 과세년월 */
+                NVL(tax_div,' ')           TAX_DIV,          /* 과세구분 */
+                NVL(hacd,' ')              HACD,             /* 행정동 */
+                NVL(tax_dt,' ')            TAX_DT,           /* 신고일자 */
+                NVL(FC_DAMO(sec_reg_no),' ') REG_NO,         /* 주민법인번호 */
+                NVL(reg_nm,' ')            REG_NM,           /* 성명(법인명) */
+                NVL(tpr_cod,' ')           TPR_COD,          /* 법인코드 */
+                NVL(reg_bucd,' ')          REG_BUCD,         /* 납세자법정동 */
+                NVL(zip_no,' ')            BIZ_ZIP_NO,       /* 사업장/물건지우편번호 */
+                NVL(biz_zip_addr,' ')      BIZ_ZIP_ADDR,     /* 사업장/물건지우편주소 */
+                NVL(biz_addr,' ')          BIZ_ADDR,         /* 사업장/물건지상세주소 */
+                NVL(cel_no,' ')            CEL_NO,           /* 휴대전화번호 */
+                NVL(biz_tel,' ')           BIZ_TEL,          /* 사업자전화번호 */
+                NVL(saup_no,' ')           SAUP_NO,          /* 사업자등록번호 */
+                NVL(cmp_nm,' ')            CMP_NM,           /* 법인명 */
+                NVL(rvsn_yy,' ')           RVSN_YY,          /* 귀속년도 */
+                NVL(c_req_dt,' ')          C_REQ_DT,         /* 수정신고일자 */
+                NVL(due_dt,' ')            DUE_DT,           /* 납기일자 */
+                NVL(req_div,' ')           REQ_DIV,          /* 신고구분 */
+                NVL(inctx,0)               INCTX,            /* 종합소득세 */
+                NVL(rstx_inc,0)            RSTX_INC,         /* 주민세 종합소득세할 */
+                NVL(radtx,0)               RADTX,            /* 신고불성실가산액 */
+                NVL(padtx,0)               PADTX,            /* 납부불성실가산액 */
+                NVL(tax_rate,0)            TAX_RATE,         /* 세율 */
+                NVL(adtx_yn,' ')           ADTX_YN,          /* 가산세유무 */
+                NVL(dlq_cnt,0)             DLQ_CNT,          /* 납부지연일수 */
+                NVL(tot_adtx,0)            TOT_ADTX,         /* 가산세합계 */
+                NVL(tot_amt,0)             TOT_AMT,          /* 총납부금액 */
+                NVL(f_due_dt,' ')          F_DUE_DT,         /* 당초납기 */
+                NVL(pay_yn,' ')            PAY_YN,           /* 수납여부(수기수납처리시) */
+                NVL(brc_no,' ')            BRC_NO,           /* 수납기관코드 */
+                NVL(trs_dt,' ')            TRS_DT,           /* 이체일자 */
+                NVL(acc_dt,' ')            ACC_DT,           /* 회계일자 */
+                NVL(tax_no_scy,' ')        TAX_NO_SCY,       /* 연계과세번호 */
+                NVL(tr_tg,' ')             TR_TG,            /* 전송구분 */
+                NVL(master_bank_cod,' ')   BANK_COD,         /* 대표은행코드 */
+                CEIL(ROWNUM / #PAGE_PER_CNT#) AS PAGE        /* 페이지당 갯수 */
+            FROM    
+                tx1612_tb_damo                /* 지방소득세종합소득수기분 */
+            WHERE     
+                tr_tg = #tr_tg#     
+                AND sido_cod = #sido_cod#
+                AND sgg_cod = #sgg_cod#
+            ORDER BY
+                master_bank_cod,
+                tax_sno
+         ) T1
+         WHERE T1.PAGE = #PAGE#
+ 
+        ]]>
+    </select>    
+    
+    <!-- 종합소득세 수납내역 건수-->
+    <select id="scyb503_select_cnt" parameterClass="mapForm" resultClass="int">
+        <![CDATA[
+        
+            SELECT 
+                 COUNT(*) AS CNT
+            FROM scyb514   /* 지방소득세 특별징수 */
+            WHERE sgg_cod  = #SGG_COD#                
+              AND tax_dt   = #PAY_DT#             
+              AND tax_no   = #TAX_SNO#         
+        ]]>
+    </select>
+    
+   
+	<!-- 지방소득세 종합소득세 내역 수신 -->
+	<insert id="scyb514_insert_receipt" parameterClass="mapForm">
+		<![CDATA[
+		INSERT INTO
+			scyb514
+			(
+			reg_yy,				/* */
+			reg_seq,			/* */
+			sido_cod,			/* */
+			sgg_cod,			/* */
+			acc_cod,			/* */
+			tax_item,			/* */
+			tax_yymm,			/* */
+			tax_div,			/* */
+			adong_cod,			/* */
+			tax_no,				/* */
+			tax_dt,				/* */
+			reg_no,				/* */
+			reg_nm,				/* */
+			tpr_cod,			/* */
+			ldong_cod,			/* */
+			biz_zip_no,			/* */
+			biz_zip_addr,		/* */
+			biz_addr,			/* */
+			mo_tel,				/* */
+			biz_tel,			/* */
+			biz_no,				/* */
+			cmp_nm,				/* */
+			rvsn_yy,			/* */
+			c_req_dt,			/* */
+			due_dt,				/* */
+			req_div,			/* */
+			inctx,				/* */
+			rstx_inc,			/* */
+			radtx,				/* */
+			padtx,				/* */
+			tax_rt,				/* */
+			adtx_yn,			/* */
+			dlq_cnt,			/* */
+			tot_adtx,			/* */
+			tot_amt,			/* */
+			f_due_dt,			/* */
+			rpt_reg_no,			/* */
+			rpt_nm,				/* */
+			rpt_tel,			/* */
+			rpt_id,				/* */
+			epay_no,			/* */
+			trn_yn,				/* */
+			rec_dtm,			/* */
+			snd_ip,				/* */
+			update_dt,			/* */
+			insert_dt,			/* */
+			pay_yn,				/* */
+			bank_cod,			/* */
+			pay_dt,				/* */
+			trs_dt,				/* */
+			acc_dt				/* */
+		) VALUES (
+			#REG_YY#,				
+			bill_seq.NEXTVAL,			
+			#SIDO_COD#,			
+			#SGG_COD#,			
+			#ACC_COD#,			
+			#TAX_ITEM#,			
+			#TAX_YYMM#,			
+			#TAX_DIV#,			
+			#HACD#,		
+			#TAX_SNO#,				
+			#TAX_DT#,				
+			#REG_NO#,				
+			#REG_NM#,				
+			#TPR_COD#,			
+			#REG_BUCD#,		
+			#ZIP_NO#,		
+			#BIZ_ZIP_ADDR#,	
+			#BIZ_ADDR#,			
+			#CEL_NO#,				
+			#BIZ_TEL#,			
+			#SAUP_NO#,				
+			#CMP_NM#,				
+			#RVSN_YY#,			
+			#C_REQ_DT#,			
+			#DUE_DT#,				
+			#REQ_DIV#,			
+			#INCTX#,				
+			#RSTX_INC#,			
+			#RADTX#,				
+			#PADTX#,				
+			#TAX_RATE#,				
+			#ADTX_YN#,			
+			#DLQ_CNT#,			
+			#TOT_ADTX#,			
+			#TOT_AMT#,			
+			#F_DUE_DT#,			
+			#RPT_REG_NO#,		
+			#RPT_NM#,				
+			#RPT_TEL#,			
+			#RPT_ID#,				
+			#EPAY_NO#,			
+			#TRN_YN#,				
+			TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS'),			
+			#SND_IP#,				
+			TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS'),		
+			TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS'),		
+			#PAY_YN#,				
+			#BRC_NO#,			
+			#PAY_DT#,				
+			#TRS_DT#,				
+			#ACC_DT#
+		)
+		]]>
+	</insert>   
+   
+</sqlMap>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="KF271002" >
+
+    <!-- 세외수입 조회내역 가져온다. -->
+	<select id="SELECT_BNON_SEARCH_LIST" resultClass="mapForm" parameterClass="mapForm">	    
+	 <![CDATA[     
+
+        SELECT   SUBSTR(A.OCR_BD, 3, 29)||'000' TAX_NO
+                , FC_DAMO(A.REG_NO) REG_NO               
+                ,A.TAX_ITEM
+                ,B.TAX_NM
+                ,'4' GBN   /*구세외 : 특별회계 이므로 시세도세국세로 구분안함...*/  
+                ,A.OCR_BD
+                ,A.REG_NM
+                ,A.BUTT              AMT
+                ,A.BUTT + A.GAMONEY  AFT_AMT
+                , F_GET_GYMD(A.DUE_DT) DUE_DT
+                ,FC_GET_GYMD(A.DUE_F_DT,A.DUE_DT) DUE_F_DT   /*주의) 납기후 일자가 null 인경우 오늘날짜를 셋팅, '00000000' 셋팅 시 결제원 오류*/
+                ,A.TAX_GDS
+                ,'2' TAX_GB
+                ,DECODE(BUGWA_STAT,'B','1','D','1','F','1','2') BUGWA_STAT
+                ,A.ZW_DT  GOJI_DATE
+          FROM TX2121_VW_OCR A, CO3301_TB B   /*구세외수입 TBL,  세목코드 TBL*/
+        WHERE EPAY_NO  IS NOT NULL       /*전자납부번호는 무조건 있어야된다.	*/
+        AND A.SNTG     IN ('0', '9')     /*납부상태 미수납 및 취소*/
+		AND F_GET_GYMD(A.DUE_F_DT) >= TO_CHAR(SYSDATE, 'YYYYMMDD')   /*납부가능한 것만...*/
+        AND A.TAX_ITEM = B.TAX_ITEM
+	 ]]>      
+		  /* 전자납부번호 */
+		  <isNotEmpty prepend = "AND" property="GRNO">
+		 	 RPAD(A.EPAY_NO,19,'0')   =#GRNO#     /*전자납부번호 */
+		  </isNotEmpty>		
+		  <isNotEmpty prepend = "AND" property="JUMIN_NO">
+		     A.REG_NO    = FC_DAMO(#JUMIN_NO#)
+		  </isNotEmpty>	
+
+	</select>
+	
+	<!--  버스전용인 경우 로깅작업... -->
+	<insert id="INSERT_TX2421_TB_LOG"  parameterClass="mapForm">
+        INSERT INTO TX2421_TB (PAY_DT, REG_NO, TAX_NO, PAY_AMT, TX_GB)
+	    VALUES(#PAY_DT#, #JUMIN_NO#, #TAX_NO#, #NAPBU_AMT#, #TX_GB#)  /*TX_GB : 1표준세외 2:버스전용, 주거지*/
+	</insert>
+	
+</sqlMap>

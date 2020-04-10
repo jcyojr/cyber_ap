@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXDM2414" >
+
+	
+	<!-- 표준세외수입 수납건수를 페이지별로 계산하여 출력 -->
+	<select id="SELECT_TX2211_CNT" parameterClass="mapForm" resultClass="int">
+	<![CDATA[
+
+    SELECT COUNT(*) PAGE
+    FROM TX2111_TEST A, TX2112_TEST B, TX2211_TEST C
+    WHERE 1=1
+    	AND C.PAY_DT=TO_CHAR(SYSDATE,'YYYYMMDD')
+        AND A.SGG_COD=B.SGG_COD
+        AND A.TAX_NO=B.TAX_NO
+        AND B.TAX_NO=C.TAX_NO
+        AND B.TAX_CNT=C.TAX_CNT
+        AND A.TAX_ITEM NOT IN ('288125','281005')
+        AND C.SNTG IN ('1','2')
+        AND C.SNSU NOT IN ('1')
+        AND C.TRTG='0'
+        AND ROWNUM <  2001
+
+	]]>
+	</select>
+	
+	
+    <!-- 시구청 -->
+    <!-- 표준세외수입 사이버 수납내역 가져오기 -->
+	<select id="SELECT_TX2211_LIST" parameterClass="mapForm"  resultClass="mapForm">
+	<![CDATA[    
+
+    SELECT
+    	 LPAD(RISTNACOCR_SEQ.NEXTVAL,6,'0')		SNO
+        ,PAY_DT                                 PAY_DT
+        ,TAX_NO                                 TAX_NO
+        ,TAX_CNT                                TAX_CNT
+        ,PAY_CNT                                PAY_CNT
+        ,SGG_COD                                SGG_COD
+        ,TRTG                                   TRTG
+        ,'D'                                    PROCE_GBN
+        ,TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS')    PROCE_YMD
+        ,EPAY_NO                                ACCOUNT_NO
+        ,FC_DAMO(SEC_REG_NO)                    PER_PID
+        ,''                                     APPLY_YMD
+        ,CASE WHEN BU_ADD_YN='Y' THEN
+            CASE
+                WHEN ACCT_COD='16' THEN '01'
+                WHEN ACCT_COD IN ('31','51') THEN '02'
+                WHEN ACCT_COD IN ('41','61') THEN '03'
+                ELSE '00'
+            END
+         ELSE '00'
+         END                                    VAT_GBN
+        ,VAT_AMT                                VAT_AMT
+        ,PAY_DT                                 OCR_YMD
+        ,TAX_NO                                 LVY_KEY
+        ,PART_CODE                              DEP_CODE
+        ,ACCOUNT_YEAR                           ACC_YEAR
+        ,ACCT_COD                               ACC_GBN
+        ,TAX_ITEM                               SEMOK_CODE
+        ,TAX_SNO                                LVY_NO
+        ,DIVIDED_PAYMENT_SEQNUM                 DIV_SNO
+        ,TO_CHAR(SYSDATE,'YYYYMMDD')            SOIN_YMD
+        ,'00'                                   REG_GBN
+        ,''                                     ERR_CODE
+        ,FC_TRANS_BANKCODE(BANK_CD)             BANK_CODE
+        ,PAY_DT                                 PAY_YMD
+        ,F_GET_GYMD(PAY_DT)                     ACC_YMD
+        ,CASE WHEN BUGWA_STAT='01' THEN
+            CASE WHEN F_GET_GYMD(DUE_DT)<PAY_DT THEN PAYMENT_DATE1
+            ELSE SUM_RCP
+            END
+         ELSE SUM_RCP
+         END                                    NAP_AMT
+        ,CASE WHEN BUGWA_STAT='01' THEN
+            CASE WHEN F_GET_GYMD(DUE_DT)<PAY_DT THEN SUM_RCP
+            ELSE 0
+            END
+         ELSE 0
+         END                                    AFT_NAP_AMT
+        ,CASE WHEN BUGWA_STAT='01' THEN
+            CASE WHEN F_GET_GYMD(DUE_DT)<PAY_DT THEN '02'
+            ELSE '01'
+            END
+         ELSE '02'
+         END                                    PAY_NAP_GBN
+        ,CASE WHEN BUGWA_STAT='01' THEN '01'
+         ELSE '03'
+         END									DRAW_GBN
+        ,LPAD(SUBSTR(OCR_BD,94,1),2,'0')        AFT_NAP_PROC_GBN
+        ,CASE WHEN BUGWA_STAT='01' THEN DUE_DT
+         ELSE DUE_F_DT
+         END									NAP_YMD
+        ,SUBSTR(TAX_YM,5,2)                     MONTH
+        ,OCR_BD                                 OCR_LINE
+        ,F_GET_ICHEYMD(PAY_DT,BANK_CD)          ICHE_YMD
+        ,CASE WHEN SNSU IN ('2','5') THEN '08'
+         ELSE '33'
+         END                                    PAY_KIND
+    FROM
+    (
+        SELECT
+             C.TAX_NO TAX_NO
+            ,C.TAX_CNT TAX_CNT
+            ,C.PAY_CNT PAY_CNT
+            ,A.SGG_COD SGG_COD
+            ,C.TRTG TRTG
+            ,A.EPAY_NO EPAY_NO
+            ,A.SEC_REG_NO SEC_REG_NO
+            ,A.BU_ADD_YN BU_ADD_YN
+            ,B.VAT_AMT VAT_AMT
+            ,A.ACCT_COD ACCT_COD
+            ,A.PART_CODE PART_CODE
+            ,A.ACCOUNT_YEAR ACCOUNT_YEAR
+            ,A.TAX_ITEM TAX_ITEM
+            ,A.TAX_SNO TAX_SNO
+            ,A.DIVIDED_PAYMENT_SEQNUM DIVIDED_PAYMENT_SEQNUM
+            ,C.BANK_CD BANK_CD
+            ,B.DUE_DT DUE_DT
+            ,B.DUE_F_DT DUE_F_DT
+            ,C.SUM_RCP SUM_RCP
+            ,C.PAY_DT PAY_DT
+            ,B.BUGWA_STAT BUGWA_STAT
+            ,C.OCR_BD OCR_BD
+            ,A.TAX_YM TAX_YM
+            ,B.NATN_TAX NATN_TAX
+            ,B.NATN_RATE NATN_RATE
+            ,B.SIDO_TAX SIDO_TAX
+            ,B.SIDO_RATE SIDO_RATE
+            ,B.SIGUNGU_TAX SIGUNGU_TAX
+            ,B.SIGUNGU_RATE SIGUNGU_RATE
+            ,C.SNSU SNSU
+            ,B.PAYMENT_DATE1 PAYMENT_DATE1
+        FROM TX2111_TEST A, TX2112_TEST B, TX2211_TEST C
+        WHERE 1=1
+        AND C.PAY_DT=TO_CHAR(SYSDATE,'YYYYMMDD')
+        AND A.SGG_COD=B.SGG_COD
+        AND A.TAX_NO=B.TAX_NO
+        AND B.TAX_NO=C.TAX_NO
+        AND B.TAX_CNT=C.TAX_CNT
+        AND A.TAX_ITEM NOT IN ('288125','281005')
+        AND C.SNTG IN ('1','2')
+        AND C.SNSU NOT IN ('1')
+        AND C.TRTG='0'
+    )
+    WHERE ROWNUM<2001
+
+    ]]>
+	</select>
+
+
+	<!-- 표준세외수입 기수납 건수 -->
+	<select id="SELECT_RISTNACOCR_CNT" parameterClass="mapForm" resultClass="int">
+	<![CDATA[
+
+        SELECT COUNT(*) CNT
+        FROM RISTNACOCR
+        WHERE ACCOUNT_NO=#ACCOUNT_NO#
+            AND BANK_CODE=#BANK_CODE#
+            AND PAY_YMD=#PAY_YMD#
+
+	]]>
+	</select>
+	
+	
+	<!-- CYBER -->
+    <!-- 표준세외수입 수납연계 테이블에 수납정보 INSERT  -->
+	<insert id="INSERT_RISTNACOCR" parameterClass="mapForm">
+	<![CDATA[
+	
+            INSERT INTO RISTNACOCR
+            (
+                 PROCE_GBN
+                ,PROCE_YMD
+                ,ACCOUNT_NO
+                ,PER_PID
+                ,APPLY_YMD
+                ,VAT_GBN
+                ,VAT_AMT
+                ,OCR_YMD
+                ,SNO
+                ,LVY_KEY
+                ,DEP_CODE
+                ,ACC_YEAR
+                ,ACC_GBN
+                ,SEMOK_CODE
+                ,LVY_NO
+                ,DIV_SNO
+                ,SOIN_YMD
+                ,REG_GBN
+                ,ERR_CODE
+                ,BANK_CODE
+                ,PAY_YMD
+                ,ACC_YMD
+                ,NAP_AMT
+                ,AFT_NAP_AMT
+                ,PAY_NAP_GBN
+                ,DRAW_GBN
+                ,AFT_NAP_PROC_GBN
+                ,NAP_YMD
+                ,MONTH
+                ,OCR_LINE
+                ,ICHE_YMD
+                ,PAY_KIND
+            )
+            VALUES
+            (
+                 #PROCE_GBN#
+                ,#PROCE_YMD#
+                ,#ACCOUNT_NO#
+                ,#PER_PID#
+                ,#APPLY_YMD#
+                ,#VAT_GBN#
+                ,#VAT_AMT#
+                ,#OCR_YMD#
+                ,#SNO#
+                ,#LVY_KEY#
+                ,#DEP_CODE#
+                ,#ACC_YEAR#
+                ,#ACC_GBN#
+                ,#SEMOK_CODE#
+                ,#LVY_NO#
+                ,#DIV_SNO#
+                ,#SOIN_YMD#
+                ,#REG_GBN#
+                ,#ERR_CODE#
+                ,#BANK_CODE#
+                ,#PAY_YMD#
+                ,#ACC_YMD#
+                ,#NAP_AMT#
+                ,#AFT_NAP_AMT#
+                ,#PAY_NAP_GBN#
+                ,#DRAW_GBN#
+                ,#AFT_NAP_PROC_GBN#
+                ,#NAP_YMD#
+                ,#MONTH#
+                ,#OCR_LINE#
+                ,#ICHE_YMD#
+                ,#PAY_KIND#
+            )
+    ]]>           
+	</insert>	
+
+
+	<!-- 전송 Flag 를 업데이트 한다.  -->
+	<!-- CYBER -->
+	<update id="UPDATE_TX2211_TRTG" parameterClass="mapForm">
+    <![CDATA[
+
+        UPDATE TX2211_TEST
+        SET  TRTG=#TRTG#
+        WHERE PAY_DT=#PAY_DT#
+            AND TAX_NO=#TAX_NO#
+            AND TAX_CNT=#TAX_CNT#
+            AND PAY_CNT=#PAY_CNT#
+
+    ]]>
+	</update>	
+
+</sqlMap>

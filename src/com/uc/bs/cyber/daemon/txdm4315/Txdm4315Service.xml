@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+
+<sqlMap namespace="TXSV4315" >
+
+    <select id="ssd_enoti_count_page"  parameterClass="mapForm" resultClass="Integer">
+	SELECT CEIL(COUNT(*) / #PAGE_PER_CNT#) PAGE
+      FROM CYBER_MEMBER_INFO@SUDO
+     WHERE 1 = 1
+       AND STATE = #STATE#                   
+       AND ROWNUM <![CDATA[<=]]> 10000     
+    </select>	
+
+    <select id="getSudoEnotiList"  parameterClass="mapForm" resultClass="mapForm">
+    SELECT SEQ
+         , SGG_COD
+         , DECODE(ENOTI_YN,'Y','1',0) AS ENOTI 
+         , SEC_REG_NO
+         , MEM_NM
+         , ZIP_CD
+         , ADDR
+         , SADR
+         , TEL_NO
+         , CEL_NO
+         , E_MAIL
+         , E_MAIL2
+         , ENRDT
+         , ENHDT
+         , PRIV_AGR_YN
+         , IDCD_AGR_YN
+         , CH_PART
+         , CH_ORGN
+         , CH_NAME
+         , MD_YN
+         , MD_SEC_REG_NO
+         , MD_MEM_NM
+         , MD_REL
+         , MD_ADDR
+         , MD_TEL_NO
+         , REG_ID
+         , REG_SGG_COD
+         , REG_DTM
+         , LAST_DTM
+         , STATE
+         , MILE_YN
+         , MILE_KEY1
+         , MILE_KEY2
+         , DECODE(SSD_ENOTI,'Y','1','0') AS SSD_ENOTI 
+         , SSD_ENRDT
+         , SSD_ENHDT
+         , ENOTI_GB
+      FROM CYBER_MEMBER_INFO@SUDO
+     WHERE 1 = 1
+       AND STATE = #STATE#
+     ORDER BY SEQ
+    </select>
+    
+    
+    <select id="getCyberMemberInfoCheck"  parameterClass="mapForm" resultClass="Integer">
+	SELECT COUNT(*)
+	  FROM ME1101_TB_DAMO
+	 WHERE 1 = 1
+	   AND SEC_REG_NO = FC_DAMO(#SEC_REG_NO#)
+    </select>
+    
+ 
+    <insert id="insertSudoEnotiMemberInfo" parameterClass="mapForm">
+    INSERT INTO ME1105_TB_DAMO (
+                SEQ
+              , SGG_COD
+              , ENOTI
+              , SEC_REG_NO
+              , MEM_NM
+              , ZIP_CD
+              , ADDRESS
+              , SADR
+              , TEL_NO
+              , CEL_NO
+              , E_MAIL
+              , E_MAIL2
+              , MILE_YN
+              , MILE_KEY1
+              , MILE_KEY2
+              , ENRDT
+              , ENHDT
+              , PRIV_AGR_YN
+              , IDCD_AGR_YN
+              , CH_PART
+              , CH_ORGN
+              , CH_NAME
+              , MD_YN
+              , MD_SEC_REG_NO
+              , MD_MEM_NM
+              , MD_REL
+              , MD_ADDR
+              , MD_TEL_NO
+              , REG_DTM
+              , LAST_DTM
+              , REG_SGG_COD
+              , REG_ID 
+              , SSD_ENOTI
+              , SSD_ENRDT
+              , SSD_ENHDT
+     ) VALUES ( ME1105_SEQ.NEXTVAL
+              , '000'
+              , NVL(#ENOTI#,'0')
+              , FC_DAMO(#SEC_REG_NO#)
+              , #MEM_NM#
+              , #ZIP_CD#
+              , #ADDR#
+              , #SADR#
+              , #TEL_NO#
+              , #CEL_NO#
+              , #E_MAIL#
+              , #E_MAIL2#  
+              , NVL(#MILE_YN#,'N')  
+              , #MILE_KEY1#   
+              , #MILE_KEY2#  
+              , #ENRDT#
+              , #ENHDT#     
+              , #PRIV_AGR_YN#
+              , #IDCD_AGR_YN#
+              , #CH_PART#
+              , #CH_ORGN#
+              , #CH_NAME#
+              , #MD_YN#
+              , #MD_SEC_REG_NO#
+              , #MD_MEM_NM#
+              , #MD_REL#
+              , #MD_ADDR#
+              , #MD_TEL_NO#
+              , SYSDATE
+              , SYSDATE
+              , '000'
+              , 'SUDO' 
+              , #SSD_ENOTI#
+              , #SSD_ENRDT#
+              , #SSD_ENHDT#
+    )
+    </insert>
+    
+    
+    <insert id="insertSudoCustNo" parameterClass="mapForm">
+    INSERT INTO ME1301_TB_DAMO (
+                SNO
+              , SEC_REG_NO
+              , CUST_NO
+              , REG_DTM
+              , LAST_DTM
+       ) SELECT MUSER.ME1301_SNO.NEXTVAL
+              , FC_DAMO(REG_NO)
+              , CUST_NO
+              , SYSDATE
+              , SYSDATE
+           FROM CYBER_MEMBER_CUST_INFO@SUDO
+          WHERE 1 = 1
+            AND REG_NO = #SEC_REG_NO#
+    </insert>
+    
+    
+    <update id="updateCyberMemberEnotiInfo" parameterClass="mapForm">
+    UPDATE ME1101_TB_DAMO
+       SET E_MAIL    = #E_MAIL#
+         , ENOTI     = NVL(#ENOTI#,'1')         
+         , ENRDT     = #ENRDT#
+         , ENHDT     = #ENHDT#
+         , MILE_YN   = NVL(#MILE_YN#,'N')
+         , MILE_KEY1 = #MILE_KEY1#
+         , MILE_KEY2 = #MILE_KEY2#
+         , LCHG_DTM  = SYSDATE
+         , LAST_DTM  = SYSDATE
+     WHERE 1 = 1
+       AND SEC_REG_NO = FC_DAMO(#SEC_REG_NO#)
+    </update>
+    
+    
+    <update id="updateCyberMemberSSDInfo" parameterClass="mapForm">
+    UPDATE ME1101_TB_DAMO
+       SET E_MAIL    = #E_MAIL#
+         , SSD_ENOTI = #SSD_ENOTI#         
+         , SSD_ENRDT = #SSD_ENRDT#
+         , SSD_ENHDT = #SSD_ENHDT#
+         , LCHG_DTM  = SYSDATE
+         , LAST_DTM  = SYSDATE
+         , CEL_NO    = #CEL_NO#
+     WHERE 1 = 1
+       AND SEC_REG_NO = FC_DAMO(#SEC_REG_NO#)
+    </update>
+    
+    <update id="updateCyberMemberEnotiSsdEnotiInfo" parameterClass="mapForm">
+    UPDATE ME1101_TB_DAMO
+       SET E_MAIL    = #E_MAIL#
+         , ENOTI     = NVL(#ENOTI#,'0')
+         , ENRDT     = #ENRDT#
+         , ENHDT     = #ENHDT#
+         , MILE_YN   = NVL(#MILE_YN#,'N')
+         , MILE_KEY1 = #MILE_KEY1#
+         , MILE_KEY2 = #MILE_KEY2#
+         , SSD_ENOTI = #SSD_ENOTI#         
+         , SSD_ENRDT = #SSD_ENRDT#
+         , SSD_ENHDT = #SSD_ENHDT#
+         , LCHG_DTM  = SYSDATE
+         , LAST_DTM  = SYSDATE
+         , CEL_NO    = #CEL_NO#
+     WHERE 1 = 1
+       AND SEC_REG_NO = FC_DAMO(#SEC_REG_NO#)
+    </update>
+    
+    
+    <insert id="insertCyberMemberInfo" parameterClass="mapForm">
+    INSERT INTO ME1101_TB_DAMO (
+                REG_NO
+              , MEM_REG_CD
+              , PKID
+              , CERT
+              , MEM_NM
+              , PLGN
+              , ZIP_CD
+              , ADDRESS
+              , SGG_COD
+              , SADR
+              , E_MAIL
+              , TEL_NO
+              , CEL_NO
+              , ENOTI
+              , STAT_CD, TR_TG, EDI, CPNM, LAW_YN, WYN
+              , MILE_YN
+              , MILE_KEY1
+              , MILE_KEY2
+              , LUSE_DTM, LCHG_DTM
+              , ENRDT, ENHDT
+              , ACT_YN
+              , REG_DTM
+              , LAST_DTM
+              , SEC_REG_NO
+              , SSD_ENOTI
+              , SSD_ENRDT
+              , SSD_ENHDT
+     ) VALUES ( ''
+              , '3'
+              ,''
+              ,''
+              , #MEM_NM#
+              , '1'
+              , #ZIP_CD#
+              , #ADDR1#
+              , #SGG_COD#
+              , #ADDR2#
+              , #E_MAIL#
+              , #TEL_NO#
+              , #CEL_NO#
+              , NVL(#ENOTI#,'0')
+              , '0', '0', '0', '', 'Y', 'N'
+              , NVL(#MILE_YN#,'N')
+              , #MILE_KEY1#
+              , #MILE_KEY2#
+              , SYSDATE, SYSDATE 
+              , #ENRDT#, #ENHDT#
+              , 'N'
+              , SYSDATE
+              , SYSDATE
+              , FC_DAMO(#SEC_REG_NO#)
+              , #SSD_ENOTI#
+              , #SSD_ENRDT#
+              , #SSD_ENHDT# 
+    )
+    </insert>
+    
+    
+    <update id="updateCyberMemberState" parameterClass="mapForm">
+    UPDATE CYBER_MEMBER_INFO@SUDO
+       SET STATE = '2'       
+         , LAST_DTM  = SYSDATE
+     WHERE 1 = 1
+       AND SEQ = #SEQ#
+    </update>
+    
+</sqlMap>
+	

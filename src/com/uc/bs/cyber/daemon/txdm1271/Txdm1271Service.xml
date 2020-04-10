@@ -1,0 +1,557 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXDM1271" >
+
+	<!-- 지방소득세 특별징수 수기분 -->
+	<insert id="tx1613_man_insert_receipt" parameterClass="mapForm">
+    <![CDATA[
+        INSERT INTO
+        tx1613_tb_damo     /* 지방소득세 특별징수 수기분 */
+        (
+        	PAY_DT,        /* 납부일자 */
+        	TAX_SNO,       /* 과세번호 */
+        	SIDO_COD,      /* 시도코드 */
+        	SGG_COD,       /* 구청코드 */
+        	ACCT_COD,      /* 회계코드 */
+        	TAX_ITEM,      /* 과세목   */
+        	TAX_YYMM,      /* 과세년월 */
+        	TAX_DIV,       /* 과세구분 */
+        	HACD,          /* 행정동   */
+        	TAX_DT,        /* 신고일자 */
+        	SEC_REG_NO,    /* 주민법인번호 */
+        	REG_NM,        /* 성명(법인명) */
+        	TPR_COD,       /* 법인코드     */
+        	REG_BUCD,      /* 납세자법정동 */
+        	ZIP_NO,        /* 사업장/물건지우편번호 */
+        	BIZ_ZIP_ADDR,  /* 사업장/물건지우편주소 */
+        	BIZ_ADDR,      /* 사업장/물건지상세주소 */
+        	CEL_NO,        /* 휴대전화번호   */
+        	BIZ_TEL,       /* 사업자전화번호 */
+        	SAUP_NO,       /* 사업자등록번호 */
+        	CMP_NM,        /* 법인명   */
+        	REQ_DIV,       /* 신고구분 */
+        	RVSN_YYMM,     /* 귀속년월 */
+        	SUP_YYMM,      /* 지급년월 */
+        	DUE_DT,        /* 납기일자 */
+        	YY_TRTN,       /* 연말정산 환급총액   */
+        	YY_MRTN,       /* 당월조정 환급액     */
+        	YY_RRTN,       /* 연말정산 환급잔액   */
+        	OUT_TAMT,      /* 중도퇴사 차감총액   */
+        	OUT_MAMT,      /* 중도퇴사 당월조정액 */
+        	OUT_RAMT,      /* 중도퇴사 차감잔액   */
+        	EMP_CNT_1,     /* 인원 갑종근로소득   */
+        	INCOMTAX_1,    /* (신고),소득세액_갑종근로소득 */
+        	RSTX_1,        /* (신고),주민세_갑종근로소득   */
+        	ADTX_1,        /* (신고),가산세_갑종근로소득   */
+        	EMP_CNT_2,     /* 인원_이자소득 */
+        	INCOMTAX_2,    /* (신고),소득세액_이자소득 */
+        	RSTX_2,        /* (신고),주민세_이자소득   */
+        	ADTX_2,        /* (신고),가산세_이자소득   */
+        	EMP_CNT_3,     /* 인원_배당소득 */
+        	INCOMTAX_3,    /* (신고),소득세액_배당소득 */
+        	RSTX_3,        /* (신고),주민세_배당소득   */
+        	ADTX_3,        /* (신고),가산세_배당소득   */
+        	EMP_CNT_4,     /* 인원_자유직업소득(사업소득) */
+        	INCOMTAX_4,    /* (신고),소득세액_자유직업소득(사업소득) */
+        	RSTX_4,        /* (신고),주민세_자유직업소득(사업소득)   */
+        	ADTX_4,        /* (신고),가산세_자유직업소득(사업소득)   */
+        	EMP_CNT_5,     /* 인원_갑종퇴직소득 */
+        	INCOMTAX_5,    /* (신고),소득세액_갑종퇴직소득 */
+        	RSTX_5,        /* (신고),주민세_갑종퇴직소득   */
+        	ADTX_5,        /* (신고),가산세_갑종퇴직소득   */
+        	EMP_CNT_6,     /* 인원_기타소득 */
+        	INCOMTAX_6,    /* (신고),소득세액_기타소득 */
+        	RSTX_6,        /* (신고),주민세_기타소득   */
+        	ADTX_6,        /* (신고),가산세_기타소득   */
+        	EMP_CNT_7,     /* 인원_법인세법 98조...    */
+        	INCOMTAX_7,    /* (신고),소득세액_법인세법 98조... */
+        	RSTX_7,        /* (신고),주민세_법인세법 98조...   */
+        	ADTX_7,        /* (신고),가산세_법인세법 98조...   */
+        	EMP_CNT_8,     /* 인원_외국인으로부터 받은소득     */
+        	INCOMTAX_8,    /* (신고),소득세액_외국인으로부터 받은소득 */
+        	RSTX_8,        /* (신고),주민세_외국인으로부터 받은소득   */
+        	ADTX_8,        /* (신고),가산세_외국인으로부터 받은소득   */
+        	EMP_CNT_9,     /* 인원_소득세법 제119조 양도소득          */
+        	INCOMTAX_9,    /* (신고),소득세액_소득세법 제119조 양도소득 */
+        	RSTX_9,        /* (신고),주민세_소득세법 제119조 양도소득   */
+        	ADTX_9,        /* (신고),가산세_소득세법 제119조 양도소득   */
+        	INCOMTAX_10,   /* (신고),소득세액_합계 */
+        	RSTX_10,       /* (신고),주민세_합계   */
+        	ADTX_10,       /* (신고),가산세_합계  신고불성실 가산세와 동일 */
+        	MM_RTN,        /* 당월조정환급세액합계 */
+        	PAY_RSTX,      /* (납부),주민세 */
+        	PAY_ADTX,      /* (납부),가산세 */
+        	TAX_RATE,      /* 세율       */
+        	ADTX_YN,       /* 가산세유무 */
+        	TOT_ADTX,      /* 가산세합계 */
+        	TOT_AMT,       /* 총납부금액 */
+        	F_DUE_DT,      /* 당초납기   */
+        	EMP_CNT_11,    /* 인원_연금소득   */
+        	INCOMTAX_11,   /* 소득세_연금소득 */
+        	ADTX_11,       /* 주민세_연금소득 */
+        	RDT_RSTX,      /* 가산세_연금소득 */
+        	RDT_ADTX,      /* 조정액은 가산세 부터 차감함 */
+        	RSTX_11,       /* 조정액은 가산세 부터 차감함 */
+        	PAY_YN,        /* 수납여부(수기수납처리시) */
+        	BRC_NO,        /* 수납기관코드 */
+        	TRS_DT,        /* 이체일자     */
+        	ACC_DT,        /* 회계일자     */
+        	TAX_NO_SCY,    /* 연계과세번호 */
+        	TR_TG,         /* 전송구분     */
+            MASTER_BANK_COD,/*대표은행코드*/
+            REG_DTM,       /* 등록일시 */
+            LAST_DTM       /* 최종수정일시 */
+        ) VALUES (
+        	#PAY_DT#,        			/* 납부일자 */
+        	#TAX_SNO#,       			/* 과세번호 */
+        	#SIDO_COD#,      			/* 시도코드 */
+        	#SGG_COD#,       			/* 구청코드 */
+        	#ACCT_COD#,      			/* 회계코드 */
+        	#TAX_ITEM#,      			/* 과세목   */
+        	#TAX_YYMM#,      			/* 과세년월 */
+        	#TAX_DIV#,       			/* 과세구분 */
+        	#HACD#,          			/* 행정동   */
+        	#TAX_DT#,        			/* 신고일자 */
+        	FC_DAMO(#REG_NO#),        	/* 주민법인번호 */
+        	#REG_NM#,        		    /* 성명(법인명) */
+        	#TPR_COD#,        /* 법인코드     */
+        	#REG_BUCD#,      			/* 납세자법정동 */
+        	#ZIP_NO#,        			/* 사업장/물건지우편번호 */
+        	#BIZ_ZIP_ADDR#,  			/* 사업장/물건지우편주소 */
+        	#BIZ_ADDR#,      			/* 사업장/물건지상세주소 */
+        	#CEL_NO#,        			/* 휴대전화번호   */
+        	#BIZ_TEL#,       			/* 사업자전화번호 */
+        	#SAUP_NO#,       			/* 사업자등록번호 */
+        	#CMP_NM#,        			/* 법인명   */
+        	#REQ_DIV#,       	/* 신고구분 */
+        	#RVSN_YYMM#,     			/* 귀속년월 */
+        	#SUP_YYMM#,      			/* 지급년월 */
+        	#DUE_DT#,        			/* 납기일자 */
+        	#YY_TRTN#,       			/* 연말정산 환급총액   */
+        	#YY_MRTN#,       			/* 당월조정 환급액     */
+        	#YY_RRTN#,       			/* 연말정산 환급잔액   */
+        	#OUT_TAMT#,      			/* 중도퇴사 차감총액   */
+        	#OUT_MAMT#,      			/* 중도퇴사 당월조정액 */
+        	#OUT_RAMT#,      /* 중도퇴사 차감잔액   */
+        	#EMP_CNT_1#,     /* 인원 갑종근로소득   */
+        	#INCOMTAX_1#,    /* (신고),소득세액_갑종근로소득 */
+        	#RSTX_1#,        /* (신고),주민세_갑종근로소득 */
+        	#ADTX_1#,        /* (신고),가산세_갑종근로소득 */
+        	#EMP_CNT_2#,     /* 인원_이자소득 */
+        	#INCOMTAX_2#,    /* (신고),소득세액_이자소득 */
+        	#RSTX_2#,        /* (신고),주민세_이자소득 */
+        	#ADTX_2#,        /* (신고),가산세_이자소득 */
+        	#EMP_CNT_3#,     /* 인원_배당소득 */
+        	#INCOMTAX_3#,    /* (신고),소득세액_배당소득 */
+        	#RSTX_3#,        /* (신고),주민세_배당소득 */
+        	#ADTX_3#,        /* (신고),가산세_배당소득 */
+        	#EMP_CNT_4#,     /* 인원_자유직업소득(사업소득) */
+        	#INCOMTAX_4#,    /* (신고),소득세액_자유직업소득(사업소득) */
+        	#RSTX_4#,        /* (신고),주민세_자유직업소득(사업소득) */
+        	#ADTX_4#,        /* (신고),가산세_자유직업소득(사업소득) */
+        	#EMP_CNT_5#,     /* 인원_갑종퇴직소득 */
+        	#INCOMTAX_5#,    /* (신고),소득세액_갑종퇴직소득 */
+        	#RSTX_5#,        /* (신고),주민세_갑종퇴직소득 */
+        	#ADTX_5#,        /* (신고),가산세_갑종퇴직소득 */
+        	#EMP_CNT_6#,     /* 인원_기타소득 */
+        	#INCOMTAX_6#,    /* (신고),소득세액_기타소득 */
+        	#RSTX_6#,        /* (신고),주민세_기타소득 */
+        	#ADTX_6#,        /* (신고),가산세_기타소득 */
+        	#EMP_CNT_7#,     /* 인원_법인세법 98조...  */
+        	#INCOMTAX_7#,    /* (신고),소득세액_법인세법 98조... */
+        	#RSTX_7#,        /* (신고),주민세_법인세법 98조... */
+        	#ADTX_7#,        /* (신고),가산세_법인세법 98조... */
+        	#EMP_CNT_8#,     /* 인원_외국인으로부터 받은소득   */
+        	#INCOMTAX_8#,    /* (신고),소득세액_외국인으로부터 받은소득 */
+        	#RSTX_8#,        /* (신고),주민세_외국인으로부터 받은소득 */
+        	#ADTX_8#,        /* (신고),가산세_외국인으로부터 받은소득 */
+        	#EMP_CNT_9#,     /* 인원_소득세법 제119조 양도소득 */
+        	#INCOMTAX_9#,    /* (신고),소득세액_소득세법 제119조 양도소득 */
+        	#RSTX_9#,        /* (신고),주민세_소득세법 제119조 양도소득 */
+        	#ADTX_9#,        /* (신고),가산세_소득세법 제119조 양도소득 */
+        	#INCOMTAX_10#,   /* (신고),소득세액_합계 */
+        	#RSTX_10#,       /* (신고),주민세_합계   */
+        	#ADTX_10#,       /* (신고),가산세_합계  신고불성실 가산세와 동일 */
+        	#MM_RTN#,        /* 당월조정환급세액합계 */
+        	#PAY_RSTX#,      /* (납부),주민세 */
+        	#PAY_ADTX#,      /* (납부),가산세 */
+        	#TAX_RATE#,      /* 세율 */
+        	#ADTX_YN#,       /* 가산세유무 */
+        	#TOT_ADTX#,      /* 가산세합계 */
+        	#TOT_AMT#,       /* 총납부금액 */
+        	#F_DUE_DT#,      /* 당초납기   */
+        	#EMP_CNT_11#,    /* 인원_연금소득   */
+        	#INCOMTAX_11#,   /* 소득세_연금소득 */
+        	#ADTX_11#,       /* 주민세_연금소득 */
+        	#RDT_RSTX#,      /* 가산세_연금소득 */
+        	#RDT_ADTX#,      /* 조정액은 가산세 부터 차감함 */
+        	#RSTX_11#,       /* 조정액은 가산세 부터 차감함 */
+        	#PAY_YN#,        /* 수납여부(수기수납처리시)    */
+        	#BRC_NO#,        /* 수납기관코드 */
+        	#TRS_DT#,        /* 이체일자 */
+        	#ACC_DT#,        /* 회계일자 */
+        	#TAX_NO_SCY#,    /* 연계과세번호 */
+        	#TR_TG#,         /* 전송구분     */
+            #MASTER_BANK_COD#, /*대표은행코드 */
+            SYSDATE,           /* 등록일시    */
+            SYSDATE            /* 최종수정일시*/
+        )
+    ]]>
+	</insert>
+	
+    <!-- 특별징수 사이버세청 페이지 건수-->
+    <select id="tx1613_tb_select_page_cnt" parameterClass="mapForm" resultClass="int">
+        <![CDATA[
+        
+            SELECT 
+                 CEIL(COUNT(*) / #PAGE_PER_CNT#) PAGE
+            FROM tx1613_tb   /* 지방소득세 특별징수 */
+            WHERE tr_tg    = #tr_tg#                
+              AND sido_cod = #sido_cod#             
+              AND sgg_cod  = #sgg_cod#
+              AND ROWNUM  <= #rowcnt#              
+        ]]>
+    </select>
+   
+    <!-- 특별징수 사이버세청-->
+    <select id="tx1613_tb_select_list" parameterClass="mapForm" resultClass="mapForm">
+        <![CDATA[
+        SELECT *
+        FROM (
+            SELECT
+                NVL(pay_dt, ' ')          PAY_DT,          /* 납부일자 */
+                NVL(tax_sno, ' ')         TAX_SNO,         /* 과세번호 */
+                NVL(sido_cod, ' ')        SIDO_COD,        /* 시도코드 */
+                NVL(sgg_cod, ' ')         SGG_COD,         /* 구청코드 */
+                NVL(acct_cod, ' ')        ACCT_COD,        /* 회계코드 */
+                NVL(tax_item, ' ')        TAX_ITEM,        /* 과세목 */
+                NVL(tax_yymm, ' ')        TAX_YYMM,        /* 과세년월 */
+                NVL(tax_div, ' ')         TAX_DIV,         /* 과세구분 */
+                NVL(hacd, ' ')            HACD,            /* 행정동 */
+                NVL(tax_dt, ' ')          TAX_DT,          /* 신고일자 */
+                NVL(FC_DAMO(sec_reg_no), ' ') REG_NO,      /* 실명번호 */
+                NVL(reg_nm, ' ')          REG_NM,          /* 실명 */
+                NVL(tpr_cod, ' ')         TPR_COD,         /* 법인코드 */
+                NVL(reg_bucd, ' ')        REG_BUCD,        /* 납세자법정동 */
+                NVL(zip_no, ' ')          ZIP_NO,          /* 사업장/물건지우편번호 */
+                NVL(biz_zip_addr, ' ')    BIZ_ZIP_ADDR,    /* 사업장/물건지 주소 */
+                NVL(biz_addr, ' ')        BIZ_ADDR,        /* 사업장/물건지 상세주소 */
+                NVL(cel_no, ' ')          CEL_NO,          /* 휴대전화번호 */
+                NVL(biz_tel, ' ')         BIZ_TEL,         /* 사업자전화번호 */
+                NVL(saup_no, ' ')         SAUP_NO,         /* 사업자번호 */
+                NVL(cmp_nm, ' ')          CMP_NM,          /* 법인명 */
+                NVL(req_div, ' ')         REQ_DIV,         /* 신고구분 */
+                NVL(rvsn_yymm, ' ')       RVSN_YYMM,       /* 귀속년월 */
+                NVL(sup_yymm, ' ')        SUP_YYMM,        /* 지급년월 */
+                NVL(due_dt, ' ')          DUE_DT,          /* 납기일자 */
+                NVL(yy_trtn, 0)           YY_TRTN,         /* 년말정산 환급총액 */
+                NVL(yy_mrtn, 0)           YY_MRTN,         /* 당월조정 환급액 */
+                NVL(yy_rrtn, 0)           YY_RRTN,         /* 년말정산 환급잔액 */
+                NVL(out_tamt, 0)          OUT_TAMT,        /* 중도퇴사 차감총액 */
+                NVL(out_mamt, 0)          OUT_MAMT,        /* 중도퇴사 당월조정액 */
+                NVL(out_ramt, 0)          OUT_RAMT,        /* 중도퇴사 차감잔액 */
+                NVL(emp_cnt_1, 0)         EMP_CNT_1,       /* */
+                NVL(incomtax_1, 0)        INCOMTAX_1,      /* */
+                NVL(rstx_1, 0)            RSTX_1,          /* */
+                NVL(adtx_1, 0)            ADTX_1,          /* */
+                NVL(emp_cnt_2, 0)         EMP_CNT_2,       /* */
+                NVL(incomtax_2, 0)        INCOMTAX_2,      /* */
+                NVL(rstx_2, 0)            RSTX_2,          /* */
+                NVL(adtx_2, 0)            ADTX_2,          /* */
+                NVL(emp_cnt_3, 0)         EMP_CNT_3,       /* */
+                NVL(incomtax_3, 0)        INCOMTAX_3,      /* */
+                NVL(rstx_3, 0)            RSTX_3,          /* */
+                NVL(adtx_3, 0)            ADTX_3,          /* */
+                NVL(emp_cnt_4, 0)         EMP_CNT_4,       /* */
+                NVL(incomtax_4, 0)        INCOMTAX_4,      /* */
+                NVL(rstx_4, 0)            RSTX_4,          /* */
+                NVL(adtx_4, 0)            ADTX_4,          /* */
+                NVL(emp_cnt_5, 0)         EMP_CNT_5,       /* */
+                NVL(incomtax_5, 0)        INCOMTAX_5,      /* */
+                NVL(rstx_5, 0)            RSTX_5,          /* */
+                NVL(adtx_5, 0)            ADTX_5,          /* */
+                NVL(emp_cnt_6, 0)         EMP_CNT_6,       /* */
+                NVL(incomtax_6, 0)        INCOMTAX_6,      /* */
+                NVL(rstx_6, 0)            RSTX_6,          /* */
+                NVL(adtx_6, 0)            ADTX_6,          /* */
+                NVL(emp_cnt_7, 0)         EMP_CNT_7,       /* */
+                NVL(incomtax_7, 0)        INCOMTAX_7,      /* */
+                NVL(rstx_7, 0)            RSTX_7,          /* */
+                NVL(adtx_7, 0)            ADTX_7,          /* */
+                NVL(emp_cnt_8, 0)         EMP_CNT_8,       /* */
+                NVL(incomtax_8, 0)        INCOMTAX_8,      /* */
+                NVL(rstx_8, 0)            RSTX_8,          /* */
+                NVL(adtx_8, 0)            ADTX_8,          /* */
+                NVL(emp_cnt_9, 0)         EMP_CNT_9,       /* */
+                NVL(incomtax_9, 0)        INCOMTAX_9,      /* */
+                NVL(rstx_9, 0)            RSTX_9,          /* */
+                NVL(adtx_9, 0)            ADTX_9,          /* */
+                NVL(incomtax_10, 0)       INCOMTAX_10,     /* */
+                NVL(rstx_10, 0)           RSTX_10,         /* */
+                NVL(adtx_10, 0)           ADTX_10,         /* */
+                NVL(mm_rtn, 0)            MM_RTN,          /* */
+                NVL(pay_rstx, 0)          PAY_RSTX,        /* */
+                NVL(pay_adtx, 0)          PAY_ADTX,        /* */
+                NVL(tax_rate, 0)          TAX_RT,        /* */
+                NVL(adtx_yn, ' ')         ADTX_YN,         /* */
+                NVL(tot_adtx, 0)          TOT_ADTX,        /* */
+                NVL(tot_amt, 0)           TOT_AMT,         /* */
+                NVL(f_due_dt, ' ')        F_DUE_DT,        /* */
+                NVL(emp_cnt_11, 0)        EMP_CNT_11,      /* */
+                NVL(incomtax_11, 0)       INCOMTAX_11,     /* */
+                NVL(adtx_11, 0)           ADTX_11,         /* */
+                NVL(rdt_rstx, 0)          RDT_RSTX,        /* */
+                NVL(rdt_adtx, 0)          RDT_ADTX,        /* */
+                NVL(rstx_11, 0)           RSTX_11,         /* */
+                NVL(pay_yn, ' ')          PAY_YN,          /* */
+                NVL(brc_no, ' ')          BRC_NO,          /* 지로코드 */
+                NVL(trs_dt, ' ')          TRS_DT,          /* */
+                NVL(acc_dt, ' ')          ACC_DT,          /* */
+                NVL(tax_no_scy, ' ')      TAX_NO_SCY,      /* */
+                NVL(tr_tg,' ')            TR_TG,           /* 전송구분 */
+                NVL(master_bank_cod, ' ') BANK_COD,        /* */
+                CEIL(ROWNUM / #PAGE_PER_CNT#) AS PAGE      /* 페이지당 갯수 */
+            FROM    
+                tx1613_tb_damo                /* 지방소득세 특별징수 */
+            WHERE     
+                tr_tg = #tr_tg#                
+                AND sido_cod = #sido_cod#             
+                AND sgg_cod = #sgg_cod#           
+            ORDER BY
+                master_bank_cod,
+                tax_sno
+            ) T1
+            WHERE T1.PAGE = #PAGE#
+            
+
+        ]]>
+    </select>   
+    
+    <!-- 특별징수 사이버세청 페이지 건수-->
+    <select id="scyb503_select_cnt" parameterClass="mapForm" resultClass="int">
+        <![CDATA[
+        
+            SELECT 
+                 COUNT(*) AS CNT
+            FROM scyb503   /* 지방소득세 특별징수 */
+            WHERE sgg_cod  = #SGG_COD#                
+              AND tax_dt   = #PAY_DT#             
+              AND tax_no   = #TAX_SNO#         
+        ]]>
+    </select>
+    
+	<!-- 지방소득세 특별징수 내역 수신 -->
+	<insert id="scyb503_insert_receipt" parameterClass="mapForm">
+		<![CDATA[
+		INSERT INTO
+			scyb503			/* 사이버 특별징수과세 */
+			(
+			reg_yy,			/* 1. 등록년도	 */
+			reg_seq,		/* 2. 등록일련번호	 */
+			sido_cod,		/* 3. 시도코드	 */
+			sgg_cod,		/* 4. 시군구코드 	*/
+			acc_cod,		/* 5. 회계코드	 */
+			tax_item,		/* 6. 과목코드	 */
+			tax_yymm,		/* 7. 과세년월	 */
+			tax_div,		/* 8. 과세구분	 */
+			adong_cod,		/* 9. 과세행정동 	*/
+			tax_no,			/* 10. 과세번호	 */
+			tax_dt,			/* 11. 신고일자	 */
+			reg_no,			/* 12. 납세자 주민/법인번호	 */
+			reg_nm,			/* 13. 납세자 성명	 */
+			tpr_cod,		/* 14. 법인코드	 */
+			ldong_cod,		/* 15. 사업장 법정동 	*/
+			biz_zip_no,		/* 16. 사업장 우편번호	 */
+			biz_zip_addr,	/* 17. 사업장 우편주소	 */
+			biz_addr,		/* 18. 사업장 상세주소	 */
+			mo_tel,			/* 19. 핸드폰번호 	*/
+			biz_tel,		/* 20. 사업장 전화번호	 */
+			biz_no,			/* 21. 사업자번호 	*/
+			cmp_nm,			/* 22. 상호명 	*/
+			req_div,		/* 23. 신고구분	 */
+			rvsn_yymm,		/* 24. 귀속년월	 */
+			sup_yymm,		/* 25. 지급년월	 */
+			due_dt,			/* 26. 납기일자	 */
+			yy_trtn,		/* 27. 연말정산 환급총액	 */
+			yy_mrtn,		/* 28. 당월조정 환급액 	*/
+			yy_rrtn,		/* 29. 연말정산 환급잔액	 */
+			out_tamt,		/* 30. 중도퇴사 차감총액	 */
+			out_mamt,		/* 31. 중도퇴사 당월조정액 	*/
+			out_ramt,		/* 32. 중도퇴사 차감잔액	 */
+			emp_cnt_1,		/* 33. 인원'갑종근로소득'	 */
+			incomtax_1,		/* 34. (신고),소득세액'갑종근로소득'	 */
+			rstx_1,			/* 35. (신고),주민세'갑종근로소득'	 */
+			adtx_1,			/* 36. (신고),가산세'갑종근로소득'	 */
+			emp_cnt_2,		/* 37. 인원'이자소득'	 */
+			incomtax_2,		/* 38. (신고),소득세액'이자소득'	 */
+			rstx_2,			/* 39. (신고),주민세'이자소득'	 */
+			adtx_2,			/* 40. (신고),가산세'이자소득'	 */
+			emp_cnt_3,		/* 41. 인원'배당소득'	 */
+			incomtax_3,		/* 42. (신고),소득세액'배당소득'	 */
+			rstx_3,			/* 43. (신고),주민세'배당소득'	 */
+			adtx_3,			/* 44. (신고),가산세'배당소득'	 */
+			emp_cnt_4,		/* 45. 인원'자유직업소득(사업소득)'	 */
+			incomtax_4,		/* 46. (신고),소득세액'자유직업소득(사업소득)'	 */
+			rstx_4,			/* 47. (신고),주민세'자유직업소득(사업소득)'	 */
+			adtx_4,			/* 48. (신고),가산세'자유직업소득(사업소득)'	 */
+			emp_cnt_5,		/* 49. 인원'갑종퇴직소득'	 */
+			incomtax_5,		/* 50. (신고),소득세액'갑종퇴직소득'	 */
+			rstx_5,			/* 51. (신고),주민세'갑종퇴직소득'	 */
+			adtx_5,			/* 52. (신고),가산세'갑종퇴직소득'	 */
+			emp_cnt_6,		/* 53. 인원'기타소득'	 */
+			incomtax_6,		/* 54. (신고),소득세액'기타소득'	 */
+			rstx_6,			/* 55. (신고),주민세'기타소득'	 */
+			adtx_6,			/* 56. (신고),가산세'기타소득'	 */
+			emp_cnt_7,		/* 57. 인원'법인세법 98조...'	 */
+			incomtax_7,		/* 58. (신고),소득세액'법인세법 98조...'	 */
+			rstx_7,			/* 59. (신고),주민세'법인세법 98조...'	 */
+			adtx_7,			/* 60. (신고),가산세'법인세법 98조...'	 */
+			emp_cnt_8,		/* 61. 인원'외국인으로부터 받은소득'	 */
+			incomtax_8,		/* 62 . (신고),소득세액'외국인으로부터 받은소득'	 */
+			rstx_8,			/* 63. (신고),주민세'외국인으로부터 받은소득'	 */
+			adtx_8,			/* 64. (신고),가산세'외국인으로부터 받은소득'	 */
+			emp_cnt_9,		/* 65. 인원'소득세법 제119조 양도소득'	 */
+			incomtax_9,		/* 66. (신고),소득세액'소득세법 제119조 양도소득'	 */
+			rstx_9,			/* 67. (신고),주민세'소득세법 제119조 양도소득'	 */
+			adtx_9,			/* 68. (신고),가산세'소득세법 제119조 양도소득'	 */
+			incomtax_10,	/* 69. (신고),소득세액'합계'	 */
+			rstx_10,		/* 70. (신고),주민세'합계'	 */
+			adtx_10,		/* 71. (신고),가산세'합계'  신고불성실 가산세와 동일	 */
+			mm_rtn,			/* 72. 당월조정환급세액합계	 */
+			pay_rstx,		/* 73. (납부),주민세 	*/
+			pay_adtx,		/* 74. (납부),가산세 	*/
+			tax_rt,			/* 75. 세율	 */
+			adtx_yn,		/* 76. 가산세유무 	*/
+			tot_adtx,		/* 77. 가산세 합계	*/
+			tot_amt,		/* 78. 총납부세액 	*/
+			f_due_dt,		/* 79. 당초납기	 */
+			emp_cnt_11,		/* 80. 인원'연금소득'	 */
+			incomtax_11,	/* 81. 소득세'연금소득'	 */
+			adtx_11,		/* 82. 주민세'연금소득'	 */
+			rdt_rstx,		/* 83. 가산세'연금소득'	 */
+			rdt_adtx,		/* 84. 조정액은 가산세 부터 차감함 	*/
+			rstx_11,		/* 85. 조정액은 가산세 부터 차감함 	*/
+			rpt_reg_no,		/* 86. 신고자 주민/법인번호	*/
+			rpt_nm,			/* 87. 신고자 성명/법인명 	*/
+			rpt_tel,		/* 88. 신고자 전화번호	 */
+			rpt_id,			/* 89. 신고자ID	 */
+			epay_no,		/* 90. 전자납부번호	 */
+			trn_yn,			/* 91. 처리여부	 */
+			rec_dtm,		/* 92. 수신일시	 */
+			snd_ip,			/* 93. 송신IP	 */
+			update_dt,		/* 94. 수정일시	 */
+			insert_dt,		/* 95. 입력시간	 */
+			pay_yn,			/* 96. 수납여부(수기수납처리시)	 */
+			bank_cod,		/* 97. 은행코드	 */
+			pay_dt,			/* 98. 수납일자	 */
+			trs_dt,			/* 99. 이체일자	 */
+			acc_dt			/* 100. 회계일자 */
+			
+		) VALUES (
+			
+			#REG_YY#,			  /* 1. 등록년도	 */
+			BILL_SEQ.NEXTVAL,     /* 2. 등록일련번호	 */
+			#SIDO_COD#,		      /* 3. 시도코드	 */
+			#SGG_COD#,		      /* 4. 시군구코드 	*/
+			#ACCT_COD#,		      /* 5. 회계코드	 */
+			#TAX_ITEM#,		      /* 6. 과목코드	 */
+			#TAX_YYMM#,		      /* 7. 과세년월	 */
+			#TAX_DIV#,		      /* 8. 과세구분	 */
+			#HACD#,		          /* 9. 과세행정동 	*/
+			#TAX_SNO#,			  /* 10. 과세번호	 */
+			#TAX_DT#,			  /* 11. 신고일자	 */
+			#REG_NO#,			  /* 12. 납세자 주민/법인번호	 */
+			#REG_NM#,			  /* 13. 납세자 성명	 */
+			#TPR_COD#,		      /* 14. 법인코드	 */
+			#REG_BUCD#,		      /* 15. 사업장 법정동 	*/
+			#ZIP_NO#,		      /* 16. 사업장 우편번호	 */
+			#BIZ_ZIP_ADDR#,	      /* 17. 사업장 우편주소	 */
+			#BIZ_ADDR#,		      /* 18. 사업장 상세주소	 */
+			#CEL_NO#,			  /* 19. 핸드폰번호 	*/
+			#BIZ_TEL#,		      /* 20. 사업장 전화번호	 */
+			#SAUP_NO#,			  /* 21. 사업자번호 	*/
+			#CMP_NM#,			  /* 22. 상호명 	*/
+			#REQ_DIV#,		      /* 23. 신고구분	 */
+			#RVSN_YYMM#,		  /* 24. 귀속년월	 */
+			#SUP_YYMM#,		      /* 25. 지급년월	 */
+			#DUE_DT#,			  /* 26. 납기일자	 */
+			#YY_TRTN#,		      /* 27. 연말정산 환급총액	 */
+			#YY_MRTN#,		      /* 28. 당월조정 환급액 	*/
+			#YY_RRTN#,		      /* 29. 연말정산 환급잔액	 */
+			#OUT_TAMT#,		      /* 30. 중도퇴사 차감총액	 */
+			#OUT_MAMT#,		      /* 31. 중도퇴사 당월조정액 	*/
+			#OUT_RAMT#,		      /* 32. 중도퇴사 차감잔액	 */
+			#EMP_CNT_1#,		  /* 33. 인원'갑종근로소득'	 */
+			#INCOMTAX_1#,		  /* 34. (신고),소득세액'갑종근로소득'	 */
+			#RSTX_1#,			  /* 35. (신고),주민세'갑종근로소득'	 */
+			#ADTX_1#,			  /* 36. (신고),가산세'갑종근로소득'	 */
+			#EMP_CNT_2#,		  /* 37. 인원'이자소득'	 */
+			#INCOMTAX_2#,		  /* 38. (신고),소득세액'이자소득'	 */
+			#RSTX_2#,			  /* 39. (신고),주민세'이자소득'	 */
+			#ADTX_2#,			  /* 40. (신고),가산세'이자소득'	 */
+			#EMP_CNT_3#,		  /* 41. 인원'배당소득'	 */
+			#INCOMTAX_3#,		  /* 42. (신고),소득세액'배당소득'	 */
+			#RSTX_3#,			  /* 43. (신고),주민세'배당소득'	 */
+			#ADTX_3#,			  /* 44. (신고),가산세'배당소득'	 */
+			#EMP_CNT_4#,		  /* 45. 인원'자유직업소득(사업소득)'	 */
+			#INCOMTAX_4#,		  /* 46. (신고),소득세액'자유직업소득(사업소득)'	 */
+			#RSTX_4#,			  /* 47. (신고),주민세'자유직업소득(사업소득)'	 */
+			#ADTX_4#,			  /* 48. (신고),가산세'자유직업소득(사업소득)'	 */
+			#EMP_CNT_5#,		  /* 49. 인원'갑종퇴직소득'	 */
+			#INCOMTAX_5#,		  /* 50. (신고),소득세액'갑종퇴직소득'	 */
+			#RSTX_5#,			  /* 51. (신고),주민세'갑종퇴직소득'	 */
+			#ADTX_5#,			  /* 52. (신고),가산세'갑종퇴직소득'	 */
+			#EMP_CNT_6#,		  /* 53. 인원'기타소득'	 */
+			#INCOMTAX_6#,		  /* 54. (신고),소득세액'기타소득'	 */
+			#RSTX_6#,			  /* 55. (신고),주민세'기타소득'	 */
+			#ADTX_6#,			  /* 56. (신고),가산세'기타소득'	 */
+			#EMP_CNT_7#,		  /* 57. 인원'법인세법 98조...'	 */
+			#INCOMTAX_7#,		  /* 58. (신고),소득세액'법인세법 98조...'	 */
+			#RSTX_7#,			  /* 59. (신고),주민세'법인세법 98조...'	 */
+			#ADTX_7#,			  /* 60. (신고),가산세'법인세법 98조...'	 */
+			#EMP_CNT_8#,		  /* 61. 인원'외국인으로부터 받은소득'	 */
+			#INCOMTAX_8#,		  /* 62 . (신고),소득세액'외국인으로부터 받은소득'	 */
+			#RSTX_8#,			  /* 63. (신고),주민세'외국인으로부터 받은소득'	 */
+			#ADTX_8#,			  /* 64. (신고),가산세'외국인으로부터 받은소득'	 */
+			#EMP_CNT_9#,		  /* 65. 인원'소득세법 제119조 양도소득'	 */
+			#INCOMTAX_9#,		  /* 66. (신고),소득세액'소득세법 제119조 양도소득'	 */
+			#RSTX_9#,			  /* 67. (신고),주민세'소득세법 제119조 양도소득'	 */
+			#ADTX_9#,			  /* 68. (신고),가산세'소득세법 제119조 양도소득'	 */
+			#INCOMTAX_10#,	      /* 69. (신고),소득세액'합계'	 */
+			#RSTX_10#,		      /* 70. (신고),주민세'합계'	 */
+			#ADTX_10#,		      /* 71. (신고),가산세'합계'  신고불성실 가산세와 동일	 */
+			#MM_RTN#,			  /* 72. 당월조정환급세액합계	 */
+			#PAY_RSTX#,		      /* 73. (납부),주민세 	*/
+			#PAY_ADTX#,		      /* 74. (납부),가산세 	*/
+			#TAX_RT#,			  /* 75. 세율	 */
+			#ADTX_YN#,		      /* 76. 가산세유무 	*/
+			#TOT_ADTX#,		      /* 77. 가산세 합계	 */
+			#TOT_AMT#,		      /* 78. 총납부세액 	*/
+			#F_DUE_DT#,		      /* 79. 당초납기	 */
+			#EMP_CNT_11#,		  /* 80. 인원'연금소득'	 */
+			#INCOMTAX_11#,	      /* 81. 소득세'연금소득'	 */
+			#ADTX_11#,		      /* 82. 주민세'연금소득'	 */
+			#RDT_RSTX#,		      /* 83. 가산세'연금소득'	 */
+			#RDT_ADTX#,		      /* 84. 조정액은 가산세 부터 차감함 	*/
+			#RSTX_11#,		      /* 85. 조정액은 가산세 부터 차감함 	*/
+			#RPT_REG_NO#,	      /* 86. 신고자 주민/법인번호	 */
+			#RPT_NM#,			  /* 87. 신고자 성명/법인명 	*/
+			#RPT_TEL#,		      /* 88. 신고자 전화번호	 */
+			#RPT_ID#,			  /* 89. 신고자ID	 */
+			#EPAY_NO#,		      /* 90. 전자납부번호	 */
+			#TRN_YN#,			  /* 91. 처리여부	 */
+			TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS'),   /* 92. 수신일시	 */
+			#SND_IP#,			                   /* 93. 송신IP	 */
+			TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS'),   /* 94. 수정일시	 */
+			TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS'),   /* 95. 입력시간	 */
+			#PAY_YN#,			  /* 96. 수납여부(수기수납처리시)	 */
+			#BRC_NO#,		      /* 97. 은행코드(지로코드)	 */
+			#PAY_DT#,			  /* 98. 수납일자	 */
+			#TRS_DT#,			  /* 99. 이체일자	 */
+			#ACC_DT#			  /* 100. 회계일자	 */
+		)
+		]]>
+	</insert>
+   
+</sqlMap>

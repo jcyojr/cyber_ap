@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="WE252001" >
+
+    <!-- 전자수납분에 대해 수납순번을 구한다. -->
+    <!-- 중복수납이 존재하므로... -->
+    <select id="TX3211_TB_MaxPayCnt" parameterClass="mapForm" resultClass="int">
+    <![CDATA[
+        
+        SELECT NVL(MAX(A.PAY_CNT), -1) + 1 AS MAX_PAY_CNT 
+          FROM TX3211_TB A
+         WHERE A.TAX_YY    = #TAX_YY#
+           AND A.TAX_MM    = #TAX_MM#
+           AND A.PRT_NPNO  = #PRT_NPNO#
+           AND A.GUBUN     = #GUBUN#
+          
+    ]]>
+    </select>  
+    
+    <!-- 상하수도 부과내역조회. -->
+    <select id="SELECT_SHSD_LEVY_LIST" resultClass="mapForm">
+    <![CDATA[
+        SELECT                     
+              TAX_YY                  /*부과년                  */
+             ,TAX_MM                  /*부과월                  */
+             ,PRT_NPNO                /*상하수도 관리번호       */
+             /*,TAX_CD                  부과구분                */
+             ,EPAY_NO                 /*전자납부번호            */
+             ,CUST_NO                 /*수용가번호              */
+             ,GUBUN                   /*구분 (당월)        */
+             ,REG_NM                  /*성명                    */
+             /*,PRT_DATE                부과일                  */
+             ,SUM_B_AMT               /*납기내총액              */
+             ,SUM_F_AMT               /*납기후총액              */
+             ,F_GET_GYMD(DUE_DT) DUE_DT      /*납기일자         */
+             ,F_GET_GYMD(DUE_F_DT) DUE_F_DT  /*납기후납기일     */
+             /*,PRT_GB                  고지구분                */
+             ,NVL(BANK_CD, '0000000') /*수납은행코드            */
+             ,RCV_DATE                /*납부일시                */
+             ,RCV_GB                  /*납기 내후 구분          */
+             ,CARD_CODE               /*카드_납부코드           */
+             ,SNTG                    /*납부상태                */
+         FROM TX3111_TB
+        WHERE SNTG     IN ('0', '1', '2', '9')     /*0: 기본값, 1: 납부처리중, 2: 납부완료, 9: 납부취소 */
+          AND EPAY_NO  IS NOT NULL    /*전자납부번호*/
+          AND DEL_YN = 'N'
+          /* AND F_GET_GYMD( A.DUE_F_DT) >= TO_CHAR(SYSDATE, 'yyyymmdd') */
+      ]]>         
+          <isNotEmpty prepend = "AND" property="EPAY_NO">
+            EPAY_NO = #EPAY_NO#
+          </isNotEmpty>
+    </select>
+    
+    <!--상하수도요금 전자수납테이블 INSERT -->
+    <insert id="INSERT_TX3211_TB_EPAY"  parameterClass="mapForm">
+    <![CDATA[
+        INSERT INTO TX3211_TB( 
+              TAX_YY               /*부과년도          */
+             ,TAX_MM               /*부과월            */
+             ,PRT_NPNO             /*상하수도 관리번호 */
+             ,GUBUN                /*당월구분          */
+             ,PAY_CNT              /*수납순번          */
+             ,SUM_RCP              /*수납금액          */
+             ,PAY_DT               /*납부일자          */
+             ,SNSU                 /*수납수단          */
+             ,BANK_CD              /*납부기관          */
+             ,BRC_NO               /*수납기관코드      */
+             ,TMSG_NO              /*출금은행_전문관리번호 */
+             ,SNTG                 /*수납상태          */
+             ,RSN_YN)              /*예약납부 여부     */
+        VALUES(
+              #TAX_YY#
+             ,#TAX_MM#
+             ,#PRT_NPNO#
+             ,#GUBUN#
+             ,#PAY_CNT#
+             ,#SUM_RCP#
+             ,#PAY_DT#
+             ,'1'       /* SNSU */
+             ,#BNK_CD#
+             ,#BANK_COD#
+             ,#CO_BKNUM#
+             ,'2'      /* SNTG */
+             ,#RSN_YN#)
+      ]]>
+    </insert>
+
+    <!-- 상하수도 부과테이블에 수납처리한다. (수납FLAG) -->
+    <update id="UPDATE_TX3111_TB_NAPBU_INFO" parameterClass="mapForm">
+    <![CDATA[
+    
+        UPDATE TX3111_TB
+           SET SNTG = '2'
+         WHERE TAX_YY    = #TAX_YY#
+           AND TAX_MM    = #TAX_MM#
+           AND PRT_NPNO  = #PRT_NPNO#
+           AND GUBUN     = #GUBUN#
+           AND DEL_YN    = 'N'
+
+    ]]>
+    </update>
+    
+</sqlMap>

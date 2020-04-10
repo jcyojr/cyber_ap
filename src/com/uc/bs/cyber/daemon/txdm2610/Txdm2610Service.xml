@@ -1,0 +1,612 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXDM2610" >
+	
+	<!-- 법정동 코드 -->
+	<select id="getLdongCode" parameterClass="mapForm" resultClass="String">
+	    SELECT BUCD 
+          FROM CO3111_TB
+         WHERE 1 = 1
+           AND SIDO_COD = #SIDO_CD#
+           AND SGG_COD = #SGG_CD#
+           AND HACD = #HACD#
+           AND ROWNUM = 1
+	</select>	
+	
+	
+	<!-- 행정동코드 -->
+	<select id="getHacdCode" parameterClass="mapForm" resultClass="String">
+	    SELECT HACD 
+          FROM CO3111_TB
+         WHERE 1 = 1
+           AND SIDO_COD = #SIDO_CD#
+           AND SGG_COD = #SGG_CD#
+           AND BUCD = #BUCD#
+           AND ROWNUM = 1
+	</select>
+	
+	
+	<!-- 주소 -->
+	<select id="getAddress" parameterClass="mapForm" resultClass="String">
+	    SELECT SIDO || ' '|| GU ||' '|| DONG ||' '|| RI 
+          FROM CO3112_TB
+         WHERE 1 = 1
+           AND ZIP_CD = #POST#
+           AND ROWNUM = 1
+	</select>
+	
+	
+	<!--종합소득 입력 -->
+	<insert id="insertEs1121Tax004"  parameterClass="mapForm">
+	    INSERT INTO ES1121_TB_DAMO ( 
+	                TAX_YY
+	              , TAX_MM
+	              , SGG_COD
+	              , HACD
+	              , TAX_SNO 
+	              , SEC_REG_NO
+	              , DPNM
+	              , TEL_NO
+	              , ZIP_CD
+	              , ADDR1
+	              , ADDR2
+	              , KJSA
+	              , JMSA 
+                  , GAST
+                  , HWAN
+                  , TAX_DT
+                  , YMDS
+                  , RVSN_YY
+                  , REQ_SNMH
+                  , REQ_NM
+                  , REQ_STEL
+                  , NJHK
+                  , SNTG
+                  , RCI_GRNO
+                  , GGYM
+                  , BUCD
+                  , TAX_RATE
+                  , SUM_RCP
+                  , EPAY_NO
+                  , SAUP_NO
+                  , CMP_NM
+                  , SGGB
+                  , F_DUE_DT
+                  , DLQ_CNT
+                  , DUE_DT 
+                  , REQ_DIV
+                  , REG_DTM 
+                  , LAST_DTM
+         ) VALUES ( #TAX_YY#
+                  , #TAX_MM#
+                  , #SGG_CD#
+                  , #HACD#
+                  , #TAX_SNO#
+                  , FC_DAMO(#REG_NO#)
+                  , #DPNM#
+                  , #TEL_NO#
+                  , #ZIP_CD#
+                  , #ADDRESS#
+                  , #ADDR#
+                  , #KJSA#
+                  , #JMSA# 
+                  , #GAST#
+                  , #HWAN#
+                  , TO_CHAR(SYSDATE, 'YYYYMMDD')
+                  , TO_CHAR(SYSDATE, 'YYYYMMDD')
+                  , #RVSN_YY#
+                  , #CMP_NM#
+                  , #DPNM#
+                  , #PHONE_NO#
+                  , '000000'
+                  , '0'
+                  , #RCI_GRNO#
+                  , #GGYM# 
+                  , #BUCD#
+                  , #TAX_RATE#
+                  , #SUM_RCP# 
+                  , #EPAY_NO#
+                  , #SAUP_NO#
+                  , #CMP_NM#
+                  , #SGGB#
+                  , #F_DUE_DT#
+                  , #DLQ_CNT#
+                  , #DUE_DT# 
+                  , ''
+                  , SYSDATE
+                  , SYSDATE
+        )  
+	</insert>
+
+    
+    <!--양도소득 입력 -->
+	<insert id="insertEs1131Tax005"  parameterClass="mapForm" >
+	    INSERT INTO ES1131_TB_DAMO ( 
+	                TAX_YY
+	              , TAX_MM
+	              , SGG_COD
+	              , TAX_SNO
+	              , HACD
+	              , SEC_REG_NO
+	              , SAUP_NO
+	              , DPNM
+	              , TEL_NO
+	              , BUCD
+	              , ZIP_CD
+	              , ADDR1
+	              , ADDR2
+	              , RTN_ZIP_CD
+	              , RTN_ADDR
+	              , RVSN_YY
+	              , GGYM
+	              , KJSA
+	              , JMSA
+	              , ADD_AMT
+	              , TAX_DT
+	              , GYMD
+	              , YMDS
+	              , YYMD 
+   	              , REQ_SNMH
+   	              , REQ_NM
+   	              , REQ_STEL
+   	              , SNTG
+   	              , RCI_GRNO
+   	              , TAX_RATE
+   	              , SUM_RCP
+   	              , TRTG
+   	              , EPAY_NO
+   	              , CMP_NM
+   	              , SGGB
+   	              , F_DUE_DT
+   	              , DLQ_CNT 
+   	              , REQ_DIV
+   	              , REG_DTM
+   	              , LAST_DTM
+   	     ) VALUES ( #TAX_YY#
+   	              , #TAX_MM#
+   	              , #SGG_CD#
+   	              , #TAX_SNO#
+   	              , #HACD#
+   	              , FC_DAMO(#REG_NO#)
+   	              , #SAUP_NO#
+   	              , #DPNM#
+	              , #TEL_NO#
+	              , #BUCD#
+	              , #ZIP_CD#
+	              , #ADDRESS#
+	              , #ADDR# 
+	              , #RTN_ZIP_CD#
+	              , #RTN_ADDR#
+	              , #RVSN_YY#
+	              , #GGYM#
+	              , #KJSA#
+	              , #JMSA#
+	              , #GAST#
+	              , TO_CHAR(SYSDATE, 'YYYYMMDD')
+	              , TO_CHAR(SYSDATE, 'YYYYMMDD')
+	              , TO_CHAR(SYSDATE, 'YYYYMMDD')
+	              , TO_CHAR(SYSDATE, 'YYYYMMDD') 
+   	              , #REQ_NM#
+   	              , #REQ_NM#
+   	              , #PHONE_NO#
+   	              , 0
+   	              , #RCI_GRNO#
+   	              , '10'
+   	              , #SUM_RCP#
+   	              , ''
+   	              , #EPAY_NO#
+   	              , #CMP_NM#
+   	              , '2'
+   	              , #F_DUE_DT#
+   	              , #DLQ_CNT#
+   	              , ''
+   	              , SYSDATE
+   	              , SYSDATE
+   	    ) 
+	</insert>
+	
+	
+	<!-- 법인세분 입력 -->
+	<insert id="insertEs1141Tax006"  parameterClass="mapForm" >
+        INSERT INTO ES1141_TB_DAMO (  
+                    TAX_YY
+                  , TAX_MM
+                  , SGG_COD
+                  , TAX_SNO
+                  , HACD
+                  , SEC_REG_NO
+                  , SAUP_NO
+                  , DPNM
+                  , CMP_NM
+                  , TEL_NO
+                  , BUCD
+   			      , ZIP_CD
+   			      , ADDR1
+   			      , ADDR2
+   			      , PAY_DT
+   			      , SYGB
+   			      , GJGB
+   			      , JSDT
+   			      , JEDT
+   			      , GGYM
+                  , TCNT
+                  , TJUS
+                  , TTAX
+                  , TJTX
+                  , SASU
+                  , JUWS
+                  , ANBR
+                  , KJSA
+                  , JMSA
+                  , RADTX
+   			      , TAX_DT
+   			      , DUE_DT
+   			      , YMDS
+   			      , REQ_SNMH
+   			      , REQ_NM
+   			      , REQ_STEL
+   			      , NJHK
+   			      , SNTG
+   			      , RCI_GRNO
+   			      , TAX_RATE
+   			      , SUM_RCP
+   			      , TRTG
+   			      , EPAY_NO
+   			      , F_DUE_DT
+   			      , DUDT
+   			      , DLQ_CNT
+   			      , NGAS
+   			      , SGGB
+   			      , REQ_DIV
+   			      , REG_DTM
+   			      , LAST_DTM
+         ) VALUES ( #TAX_YY#
+                  , #TAX_MM#
+                  , #SGG_CD#
+                  , #TAX_SNO#
+                  , #HACD#
+                  , FC_DAMO(#REG_NO#)
+                  , #SAUP_NO#
+                  , #DPNM#
+                  , #CMP_NM#
+                  , #TEL_NO#
+                  , #BUCD#
+   			      , #ZIP_CD#
+   			      , #ADDRESS#
+   			      , #ADDR#
+   			      , #PAY_DT#
+   			      , '1'
+   			      , '0'
+   			      , #JSDT#
+   			      , #JEDT#
+   			      , #DUE_DT#
+                  , #TCNT#
+                  , #TJUS#
+                  , #KJSA#
+                  , #JMSA#
+                  , #SASU#
+                  , #JUWS#
+                  , #ANBR#
+                  , #KJSA#
+                  , #JMSA#
+                  , #RADTX#
+   			      , TO_CHAR(SYSDATE, 'YYYYMMDD')
+   			      , #DUE_DT#
+   			      , TO_CHAR(SYSDATE, 'YYYYMMDD')
+   			      , #CMP_NM#
+   			      , #DPNM#
+   			      , #PHONE_NO#
+   			      , '000000'
+   			      , '0'
+   			      , #RCI_GRNO#
+   			      , #TAX_RATE#
+   			      , #SUM_RCP# 
+   			      , '0'
+   			      , #EPAY_NO#
+   			      , #F_DUE_DT#
+   			      , #DUE_DT#, #DLQ_CNT#, #NGAS#
+   			      , '1'
+   			      , ''
+   			      , SYSDATE
+   			      , SYSDATE
+   	    )
+	</insert>
+	
+	
+	<!--특별징수 입력 -->
+	<insert id="insertEs1111Tax008"  parameterClass="mapForm" >	
+  	    INSERT INTO ES1111_TB_DAMO (
+                    TAX_YY
+                  , TAX_MM
+                  , SGG_COD 
+				  , TAX_SNO
+				  , HACD
+				  , SEC_REG_NO
+				  , SAUP_NO
+				  , DPNM
+				  , CMP_NM
+				  , TEL_NO
+				  , BUCD
+				  , DONG_FLAG
+				  , ZIP_CD
+				  , ADDR1 
+				  , ADDR2
+				  , JYMD
+				  , SYGB
+				  , GJGB
+				  , MAN4, GWA4, TAX4, GAS4
+				  , MAN5, GWA5, TAX5, GAS5
+				  , MAN6, GWA6, TAX6, GAS6
+				  , MAN7, GWA7, TAX7, GAS7
+				  , MAN8, GWA8, TAX8, GAS8
+				  , MAN9, GWA9, TAX9, GAS9 
+				  , MANA, GWAA, TAXA, GASA
+				  , MANB, GWAB, TAXB, GASB
+				  , MANC, GWAC, TAXC, GASC
+				  , MAND, GWAD, TAXD, GASD
+				  , MANE, GWAE, TAXE, GASE
+				  , WANT, GWAT, TAXT, GAST
+				  , TAX_DT
+				  , YMDS
+				  , REQ_SNMH
+				  , REQ_NM
+				  , REQ_STEL
+				  , REQ_NJHK				  
+				  , SNTG 
+				  , RCI_GRNO
+				  , TAX_RATE
+				  , SUM_RCP
+				  , TRTG
+				  , EPAY_NO
+				  , SGGB
+				  , HAMT
+				  , HSET
+				  , HMOD
+				  , MAMT 
+				  , MSET
+				  , MMOD
+				  , HMSM
+				  , F_DUE_DT
+				  , JGAM
+				  , GGAM
+				  , RVSN_YYMM
+				  , BIGO
+				  , DUE_DT				  
+				  , ADTX_AM
+				  , DLQ_ADTX
+				  , DLQ_CNT
+				  , REG_DTM
+				  , LAST_DTM
+         ) VALUES ( #TAX_YY#
+                  , #TAX_MM#
+                  , #SGG_CD#
+				  , #TAX_SNO#
+				  , #HACD#
+				  , FC_DAMO(#REG_NO#) 
+				  , #SAUP_NO#
+				  , #DPNM#
+				  , #CMP_NM#
+				  , #TEL_NO#
+				  , #BUCD#
+				  , '1' 
+				  , #ZIP_CD#
+				  , #ADDRESS#
+				  , #ADDR#
+				  , #JYMD#
+				  , '0'
+				  , '0'
+				  , 0, 0, 0, 0
+				  , 0, 0, 0, 0
+				  , 0, 0, 0, 0 
+				  , #WAMT#, #GWAT#, #TAXT#, #GAST#
+				  , 0, 0, 0, 0
+				  , 0, 0, 0, 0 
+				  , 0, 0, 0, 0
+				  , 0, 0, 0, 0
+				  , 0, 0, 0, 0 
+				  , 0, 0, 0, 0
+				  , 0, 0, 0, 0
+				  , #WANT#
+				  , #GWAT#
+				  , #TAXT#
+				  , #GAST# 
+				  , TO_CHAR(SYSDATE, 'YYYYMMDD')
+				  , TO_CHAR(SYSDATE, 'YYYYMMDD')
+				  , #CMP_NM# 
+				  , #DPNM#
+				  , #PHONE_NO#
+				  , '000000'
+				  , '0'
+				  , #RCI_GRNO#
+				  , '10'
+				  , #SUM_RCP#
+				  , '0'
+				  , #EPAY_NO#
+				  , '1'
+				  , #HAMT#
+				  , #HSET#
+				  , #HMOD#
+				  , #MAMT#
+				  , #MAMT#
+				  , 0
+				  , 0
+				  , #DUE_DT#
+				  , 0
+				  , 0
+				  , SUBSTR(#JYMD#,0,6)
+				  , ''
+				  , #DUE_DT# 				  
+				  , 0
+				  , 0
+				  , #DLQ_CNT#
+				  , SYSDATE
+				  , SYSDATE
+	    )   
+	</insert>
+	
+	
+	<!-- 연계관리 테이블 등록 -->
+	<insert id="insertBaroPayData" parameterClass="mapForm"> 
+	    INSERT INTO ES4111_TB_DAMO (
+	                JM_NO
+	              , SIDO_COD       
+                  , SGG_COD     
+                  , HACD        
+                  , ACC_CD     
+                  , TAX_ITEM    
+                  , TAX_YY      
+                  , TAX_MM  
+                  , TAX_DD
+                  , TAX_TIME    
+                  , TAX_DIV     
+                  , TAX_SNO                        
+                  , TAX_NO     
+                  , EPAY_NO     
+                  , DUE_DT      
+                  , SUM_RCP     
+                  , SEC_REG_NO  
+                  , DPNM                          
+                  , DP_GBN      
+                  , SAUP_NO     
+                  , CMP_NM      
+                  , TEL_NO      
+                  , PHONE_NO    
+                  , ZIP_CD      
+                  , ADDR        
+                  , RTN_ZIP_CD  
+                  , RTN_ADDR                      
+                  , RVSN_YY     
+                  , RVSN_YYMM   
+                  , DLQ_CNT                      
+                  , KJSA        
+                  , JMSA        
+                  , GAST                          
+                  , JYMD        
+                  , WANT        
+                  , GWAT        
+                  , TAXT        
+                  , HAMT                        
+                  , JSDT        
+                  , JEDT                          
+                  , TJUS        
+                  , JUWS        
+                  , TCNT        
+                  , SASU                     
+                  , GGYM       
+                  , RADTX      
+                  , NGAS    
+                  , BANK_CD                    
+                  , TX_DATETIME  
+                  , NAPBU_TAX
+                  , SUNAP_DT
+                  , NAPBU_SUDAN
+                  , NAPBU_GB
+                  , NAPBU_JM_NO   
+                  , LAST_DTM    
+                  , STATE
+                  , SUP_DT
+	     ) VALUES ( #JM_NO#
+	              , #SIDO_COD#       
+                  , #SGG_COD#     
+                  , #HACD#        
+                  , #ACCT_COD#     
+                  , #TAX_ITEM#    
+                  , #TAX_YY#      
+                  , #TAX_MM#  
+                  , #TAX_DD# 
+                  , #TAX_TIME#     
+                  , #TAX_DIV#    
+                  , #TAX_SNO#                        
+                  , #TAX_NO#     
+                  , #EPAY_NO#     
+                  , #DUE_DT#      
+                  , #SUM_RCP#     
+                  , FC_DAMO(#REG_NO#)  
+                  , #DPNM#                          
+                  , #DP_GBN#      
+                  , #SAUP_NO#     
+                  , #CMP_NM#      
+                  , #TEL_NO#      
+                  , #PHONE_NO#    
+                  , #ZIP_CD#      
+                  , #ADDR# || #ADDR_DT#        
+                  , #RTN_ZIP_CD#  
+                  , #RTN_ADDR#                      
+                  , #RVSN_YY#     
+                  , #RVSN_YYMM#   
+                  , #DLQ_CNT#                      
+                  , #KJSA#        
+                  , #JMSA#        
+                  , #GAST#                          
+                  , #JYMD#        
+                  , #WANT#        
+                  , #GWAT#        
+                  , #TAXT#        
+                  , #HAMT#                        
+                  , #JSDT#        
+                  , #JEDT#                          
+                  , #TJUS#        
+                  , #JUWS#        
+                  , #TCNT#        
+                  , #SASU#                     
+                  , #GGYM#       
+                  , #RADTX#      
+                  , #NGAS#     
+                  , #BANK_CD#                   
+                  , #TX_DATETIME#  
+                  , #NAPBU_TAX#
+                  , #SUNAP_DT#
+                  , #NAPBU_SUDAN#
+                  , #NAPBU_GB#
+                  , #NAPBU_JM_NO#   
+                  , SYSDATE    
+                  , #STATE# 
+                  , #SUP_DT#   
+	    )	
+	</insert>
+
+
+    <!-- 수납요청 처리 시작 -->
+    <select id="getSingoDataCheckCount" parameterClass="mapForm" resultClass="Integer">
+	    SELECT COUNT(*) 
+          FROM ES4111_TB_DAMO
+         WHERE 1 = 1
+           AND JM_NO = #NAPBU_JM_NO#
+           AND STATE = '0'
+    </select>	
+
+	
+    
+    <!-- 전문 데이터 비교 -->
+	<select id="getSingoData" parameterClass="mapForm" resultClass="mapForm">
+	    SELECT SUM_RCP
+	         , TAX_NO
+	         , EPAY_NO
+	         , TAX_YY || TAX_MM || TAX_DD AS TAX_DT 
+	         , FC_DAMO(SEC_REG_NO) AS REG_NO
+	         , NAPBU_TAX
+          FROM ES4111_TB_DAMO
+         WHERE 1 = 1
+           AND JM_NO = #NAPBU_JM_NO#
+           AND STATE = '0'
+    </select>
+		
+	
+	<!-- 수납요청으로 변경 -->
+	<update id="updateSinGoDataForSunap" parameterClass="mapForm">
+    UPDATE ES4111_TB_DAMO
+       SET LAST_DTM    = SYSDATE
+         , STATE       = '1'
+         , BANK_CD     = #BANK_CD#
+         , NAPBU_JM_NO = #JM_NO#
+         , NAPBU_GB    = #NAPBU_GB#
+         , NAPBU_SUDAN = #NAPBU_SUDAN#
+         , SUNAP_DT    = #SUNAP_DT#
+     WHERE 1 = 1
+       AND JM_NO = #NAPBU_JM_NO#
+       AND STATE = '0'
+    </update>
+    
+
+</sqlMap>

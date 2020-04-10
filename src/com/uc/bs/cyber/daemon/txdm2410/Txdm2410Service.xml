@@ -1,0 +1,703 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXDM2410" >
+
+    <!-- 시구청 -->
+    <!-- 세외수입 부과내역 가져오기  -->
+	<select id="SELECT_O_LEVY_LIST" parameterClass="mapForm"  resultClass="mapForm">
+	<![CDATA[    
+
+    SELECT  T1.TRT_SP                     TRT_SP 
+           ,T1.TRT_SNO                    TRT_SNO
+           ,T1.BUGWA_STAT                 BUGWA_STAT
+           ,T1.EPAY_NO                    EPAY_NO
+           ,T1.TAX_NO                     TAX_NO
+           ,T1.TAX_NOTICE_TITLE           TAX_NOTICE_TITLE
+           ,T1.PART_CODE                  PART_CODE
+           ,T1.ORG_PART_CODE              ORG_PART_CODE
+           ,T1.ACCOUNT_YEAR               ACCOUNT_YEAR
+           ,NVL(T1.ACCOUNT_NAME, ' ')               ACCOUNT_NAME
+           ,T1.ACCT_COD                   ACCT_COD
+           ,T1.TAX_ITEM                   TAX_ITEM
+           ,T1.TAX_NM                     TAX_NM
+           ,T1.TAX_SNO                    TAX_SNO
+           ,T1.DIVIDED_PAYMENT_SEQNUM     DIVIDED_PAYMENT_SEQNUM
+           ,T1.TAX_YM                     TAX_YM
+           ,T1.LEVY_DIV                   LEVY_DIV
+           ,T1.TAX_DIV                    TAX_DIV
+           ,T1.REG_NM                     REG_NM
+           ,NVL(T1.REG_TEL, ' ')                    REG_TEL
+           ,T1.REG_NO                     REG_NO
+           ,NVL(T1.REG_ZIPCD, ' ')                  REG_ZIPCD
+           ,NVL(T1.ADDRESS, ' ')                    ADDRESS
+           ,NVL(SUBSTRB(T1.TAX_GDS, 1, 100), ' ')                    TAX_GDS
+           ,NVL(T1.LEVY_DETAIL1, ' ')               LEVY_DETAIL1
+           ,NVL(T1.LEVY_DETAIL2, ' ')               LEVY_DETAIL2
+           ,NVL(T1.LEVY_DETAIL3 , ' ')              LEVY_DETAIL3
+           ,NVL(T1.LEVY_DETAIL4 , ' ')              LEVY_DETAIL4
+           ,NVL(T1.LEVY_DETAIL5 , ' ')              LEVY_DETAIL5
+           ,NVL(T1.LEVY_DETAIL6 , ' ')              LEVY_DETAIL6
+           ,T1.DUE_DT                     DUE_DT
+           ,T1.DUE_F_DT                   DUE_F_DT
+           ,T1.NATN_TAX                   NATN_TAX
+           ,T1.NATN_RATE                  NATN_RATE
+           ,T1.SIDO_TAX                   SIDO_TAX
+           ,T1.SIDO_RATE                  SIDO_RATE
+           ,CASE WHEN T1.THAP_GBN = '01' THEN /*통합구분인 경우 부가세 발생*/
+               CASE WHEN T1.VAT_TAX > 0 THEN
+                   CASE WHEN T1.ACCT_COD = '31' THEN T1.VAT_TAX
+                        WHEN T1.ACCT_COD IN('41','61') THEN T1.SIGUNGU_TAX + T1.VAT_TAX
+                   ELSE T1.SIGUNGU_TAX END   /*시군구세*/
+               ELSE
+                   T1.SIGUNGU_TAX
+               END    
+            ELSE
+               T1.SIGUNGU_TAX
+            END SIGUNGU_TAX
+           ,T1.SIGUNGU_RATE     SIGUNGU_RATE
+           ,T1.SUBJECT_NAME1    SUBJECT_NAME1
+           ,CASE WHEN T1.THAP_GBN = '01' THEN /*통합구분인 경우 부가세 발생*/
+               CASE WHEN T1.VAT_TAX > 0 THEN
+                   CASE WHEN T1.ACCT_COD = '31' THEN T1.SIDO_TAX + T1.VAT_TAX
+                        WHEN T1.ACCT_COD IN('41','61') THEN T1.SIGUNGU_TAX + T1.VAT_TAX
+                   ELSE T1.PAYMENT_DATE1 END   
+               ELSE
+                   T1.PAYMENT_DATE1
+               END    
+            ELSE
+                T1.PAYMENT_DATE1
+            END PAYMENT_DATE1
+           ,T1.AFTPAYMENT_DATE1        AFTPAYMENT_DATE1
+           ,NVL(T1.SUBJECT_NAME2, ' ')           SUBJECT_NAME2
+           ,T1.PAYMENT_DATE2           PAYMENT_DATE2
+           ,T1.AFTPAYMENT_DATE2        AFTPAYMENT_DATE2
+           ,NVL(T1.SUBJECT_NAME3, ' ')           SUBJECT_NAME3
+           ,T1.PAYMENT_DATE3           PAYMENT_DATE3
+           ,T1.AFTPAYMENT_DATE3        AFTPAYMENT_DATE3
+           ,T1.BUGWA_BUSEONAME         BUGWA_BUSEONAME
+           ,NVL(T1.SUNAP_BUSEONAME, ' ')         SUNAP_BUSEONAME
+           ,NVL(T1.USER_NAME, ' ')               USER_NAME
+           ,NVL(T1.USER_TEL_NO, ' ')             USER_TEL_NO
+           ,T1.OCR_BD				   OCR_BD
+           ,T1.SNTG                    SNTG
+           ,NVL(T1.PAID_DATE, ' ')               PAID_DATE
+           ,T1.TAX_GB                  TAX_GB
+           ,NVL(T1.ABKU, ' ')                    ABKU
+           ,T1.SGG_COD                 SGG_COD
+           ,T1.THAP_GBN                THAP_GBN
+           ,NVL(T1.PAY_DT, ' ')                  PAY_DT
+           ,T1.VAT_TAX                 VAT_TAX
+     FROM(
+     
+       SELECT
+               TRT_SP															TRT_SP            /*처리구분 1:신규, 2:수정, 3:삭제 (단, 삭제는 수납과 다름)*/
+             , TRT_SNO   													    TRT_SNO
+             , IMPS_STAT_SP                                                     BUGWA_STAT        /*미납체납구분 01:미납(부과/정기), 02:체납 */
+             , ELCT_PAY_NO                                                      EPAY_NO           /*전자납부번호 (19) */
+             , DEPT_CD||FISYY||FIS_SP||PTCL_CD||LPAD(IMPS_NO,6,'0')||
+                                                LPAD(DIVD_RECP_SNO,2,'0')       TAX_NO            /*납세번호 (31) */
+             , DECODE(FIS_SP,'16','[국세외]'
+                            ,'31','[시세외]'
+                            ,'41','[구군세외]'
+                            ,'61','[구군세외]')||' '||PTCL_NM                    TAX_NOTICE_TITLE  /*고지서제목*/
+             , DEPT_CD                                                          PART_CODE         /*부서코드*/
+             , DEPT_NM                                                          ORG_PART_CODE     /*부서명*/
+             , FISYY                                                            ACCOUNT_YEAR      /*부과연도*/
+             , FIS_SP                                                           ACCT_COD          /*회계코드*/
+             , DECODE(FIS_SP,'16','국세'
+                            ,'31','시세'
+                            ,'41','구군세'
+                            ,'61','구군세')                                     ACCOUNT_NAME      /*회계명*/
+             , PTCL_CD                                                          TAX_ITEM          /*세목코드*/
+             , PTCL_NM                                                          TAX_NM            /*세목코드명*/
+             , IMPS_NO                                                          TAX_SNO           /*부과번호 (6)*/
+             , DIVD_RECP_SNO                                                    DIVIDED_PAYMENT_SEQNUM  /*분납순번 (2)*/
+             , SUBSTRB(IMPS_DT,1,6)                                             TAX_YM            /*부과년월 (6)*/
+             , DECODE(IMPS_SP,'01','정기','수시')                               LEVY_DIV          /*부과구분 01:정기분, 02:수시분 */
+             , SUBSTR(IMPS_SP, 2, 1)                                            TAX_DIV           /*기분(1) */
+             , REPLACE(TXPR_NM,'''','')                                         REG_NM             /*성명(법인명)*/
+             , ''                                                               REG_TEL           /*전화번호*/
+             , REPLACE(TXPR_NO,' ','')                                          REG_NO             /*주민-법인번호*/
+             , TXPR_ZIP_CD                                                      REG_ZIPCD         /*발송지우편번호*/
+             , TXPR_ADDR                                                        ADDRESS           /*주소*/
+             , NVL(TAX_OBJ_NM, ' ')                                             TAX_GDS           /*물건명(과세대상)*/
+             , ''                                                               LEVY_DETAIL1
+             , ''                                                               LEVY_DETAIL2
+             , ''                                                               LEVY_DETAIL3
+             , ''                                                               LEVY_DETAIL4
+             , ''                                                               LEVY_DETAIL5
+             , ''                                                               LEVY_DETAIL6
+             , DECODE(IMPS_STAT_SP, '01', INIT_DUE_DT, LST_DUE_DT)              DUE_DT            /*납기일자*/
+             , LST_DUE_DT                                                       DUE_F_DT          /*납기마감일 */
+             , CASE WHEN IMPS_STAT_SP='01' THEN
+                     CASE WHEN FIS_SP='16' THEN NTN_TAX+DIVD_RECP_ITT_AMT
+                     ELSE NTN_TAX
+                     END
+               ELSE
+                     CASE WHEN FIS_SP='16' THEN NTN_TAX+DIVD_RECP_ITT_AMT+LST_ADD_AMT
+                     ELSE NTN_TAX
+                     END
+               END                                                              NATN_TAX           /*국세*/
+             , NTN_RATE                                                         NATN_RATE          /*국세요율*/
+             , CASE WHEN FIS_SP IN ('31', '51') THEN
+                       CASE WHEN IMPS_STAT_SP='01' THEN
+                             CASE WHEN FIS_SP='16' THEN CNP_TAX+DIVD_RECP_ITT_AMT
+                             ELSE CNP_TAX+DIVD_RECP_ITT_AMT
+                             END
+                       ELSE
+                             CASE WHEN FIS_SP='16' THEN CNP_TAX+DIVD_RECP_ITT_AMT+LST_ADD_AMT
+                             ELSE CNP_TAX+DIVD_RECP_ITT_AMT + LST_ADD_AMT
+                             END
+                       END
+                    ELSE 0 END                                                 SIDO_TAX           /*시도세*/
+             , CNP_RATE                                                         SIDO_RATE          /*시도세요율*/
+             , CASE WHEN FIS_SP IN ('31', '51') THEN 0 ELSE
+                   CASE WHEN IMPS_STAT_SP='01' THEN
+                         CASE WHEN FIS_SP='16' THEN CDS_TAX+DIVD_RECP_ITT_AMT
+                         ELSE CDS_TAX +DIVD_RECP_ITT_AMT
+                         END
+                   ELSE
+                         CASE WHEN FIS_SP='16' THEN CDS_TAX+DIVD_RECP_ITT_AMT+LST_ADD_AMT
+                         ELSE CDS_TAX + LST_ADD_AMT+DIVD_RECP_ITT_AMT
+                         END
+                   END 
+               END                                                              SIGUNGU_TAX        /*시군세*/
+             , CDS_RATE                                                         SIGUNGU_RATE       /*시군세요율*/
+             , PTCL_NM                                                          SUBJECT_NAME1      /*세목명*/
+             , DECODE(IMPS_STAT_SP, '01', NTN_TAX+CNP_TAX+CDS_TAX+DIVD_RECP_ITT_AMT
+                                        , NTN_TAX+CNP_TAX+CDS_TAX+DIVD_RECP_ITT_AMT + LST_ADD_AMT) PAYMENT_DATE1  /*납기내금액1*/
+             , DECODE(IMPS_STAT_SP, '01', LST_ADD_AMT, 0)                       AFTPAYMENT_DATE1   /*납기후 금액1*/
+             , ''                                                               SUBJECT_NAME2
+             , 0                                                                PAYMENT_DATE2
+             , 0                                                                AFTPAYMENT_DATE2
+             , ''                                                               SUBJECT_NAME3
+             , 0                                                                PAYMENT_DATE3
+             , 0                                                                AFTPAYMENT_DATE3
+             , DEPT_NM                                                          BUGWA_BUSEONAME    /*부과부서명*/
+             , ''                                                               SUNAP_BUSEONAME
+             , ''                                                               USER_NAME
+             , ''                                                               USER_TEL_NO
+             , DEPT_CD       /* 부서코드 */
+               ||FISYY       /* 부과년도 */
+               ||FIS_SP||PTCL_CD    /* 회계세목 */
+               ||IMPS_NO            /* 과세번호 */
+               ||DIVD_RECP_SNO      /* 순번    */
+               ||'0'                /* 검1  */
+               ||DECODE(IMPS_STAT_SP, '01', '1', '2')           /* 고지구분 */
+               ||DECODE(IMPS_STAT_SP, '01', LPAD(NTN_TAX+CNP_TAX+CDS_TAX+DIVD_RECP_ITT_AMT, 11, '0'), LPAD(NTN_TAX+CNP_TAX+CDS_TAX+DIVD_RECP_ITT_AMT+LST_ADD_AMT, 11, '0'))/* 납기내금액 */
+               ||DECODE(IMPS_STAT_SP, '01', INIT_DUE_DT, LST_DUE_DT) 
+               ||CASE WHEN INTGRTN_SP = '01' THEN /*통합구분인 경우 부가세 발생*/
+                    CASE WHEN VAT_TAX > 0 THEN
+                       CASE WHEN FIS_SP = '31' THEN '2'
+                            WHEN FIS_SP IN('41','61') THEN '3'
+                       ELSE '0' END     
+                    ELSE '0' END
+                 ELSE '0' END  /* FILLER */
+               ||'2'           /* 검2     */
+               ||LPAD(NTN_TAX, 10, '0')  /* 국세 */
+               ||LPAD(NTN_RATE, 2, '0')  /* 국세요율    */
+               ||CASE WHEN FIS_SP IN ('31', '51') THEN
+                       CASE WHEN IMPS_STAT_SP='01' THEN
+                             CASE WHEN FIS_SP='16' THEN LPAD(CNP_TAX+DIVD_RECP_ITT_AMT, 10, '0')
+                             ELSE LPAD(CNP_TAX+DIVD_RECP_ITT_AMT, 10, '0')
+                             END
+                       ELSE
+                             CASE WHEN FIS_SP='16' THEN LPAD(CNP_TAX+DIVD_RECP_ITT_AMT+LST_ADD_AMT, 10, '0')
+                             ELSE LPAD(CNP_TAX+DIVD_RECP_ITT_AMT + LST_ADD_AMT, 10, '0')
+                             END
+                       END
+                    ELSE LPAD(0, 10, '0') END   /* 시세 */
+               ||LPAD(CNP_RATE, 2, '0')  /* 시세요율    */
+               ||CASE WHEN INTGRTN_SP = '01' THEN /*통합구분인 경우 부가세 발생*/
+					    CASE WHEN VAT_TAX > 0 THEN
+					       CASE WHEN FIS_SP = '31' THEN LPAD(VAT_TAX, 10, '0')
+					            WHEN FIS_SP IN('41','61') THEN DECODE(IMPS_STAT_SP, '01', LPAD(CDS_TAX + VAT_TAX+DIVD_RECP_ITT_AMT, 10, '0'), LPAD(CDS_TAX + VAT_TAX+DIVD_RECP_ITT_AMT + LST_ADD_AMT, 10, '0'))
+					       ELSE LPAD(CDS_TAX +DIVD_RECP_ITT_AMT+ LST_ADD_AMT, 10, '0') END     
+					    ELSE DECODE(IMPS_STAT_SP, '01', LPAD(CDS_TAX+DIVD_RECP_ITT_AMT, 10, '0'), LPAD(CDS_TAX +DIVD_RECP_ITT_AMT+ LST_ADD_AMT, 10, '0')) END
+					ELSE CASE WHEN FIS_SP IN ('31', '51') THEN '0000000000' 
+					     ELSE DECODE(IMPS_STAT_SP, '01', LPAD(CDS_TAX+DIVD_RECP_ITT_AMT, 10, '0'), LPAD(CDS_TAX +DIVD_RECP_ITT_AMT+ LST_ADD_AMT, 10, '0')) END  
+					END /*시군구세 셋팅*/
+               ||CASE WHEN INTGRTN_SP = '01' THEN /*통합구분인 경우 부가세 발생*/
+                    CASE WHEN VAT_TAX > 0 THEN
+                       CASE WHEN FIS_SP = '31' THEN '00'
+                            WHEN FIS_SP IN('41','61') THEN LPAD(CDS_RATE, 2, '0')
+                       ELSE LPAD(CDS_RATE, 2, '0') END     
+                    ELSE LPAD(CDS_RATE, 2, '0') END
+                 ELSE LPAD(CDS_RATE, 2, '0') END  /*시군구세요율 */
+               ||'7'           /* 검3    */
+               ||SUBSTR(IMPS_DT, 5, 2) /* 월(부과월) */
+               ||CASE WHEN (FIS_SP = '51' AND PTCL_CD = '281024') OR (LST_ADD_AMT > 0) THEN '1'  /*환경세이거나 가산금이 있으면 */ 
+                 ELSE AF_DUE_SP END    /* 납후(납기후처리) */
+               ||LPAD(NVL(NTN_TAX+CNP_TAX+CDS_TAX+DIVD_RECP_ITT_AMT + LST_ADD_AMT, '0'), 12, '0')/* 납기후금액 */
+               ||'0'           /* 검4 */
+               ||'0'           /* 검5 */
+                AS OCR_BD      /* OCR_BAND */ 
+             , '0'                   SNTG              /*납부여부 0:미수납, 1:수납처리중, 2:수납 */
+             , ''                    PAID_DATE         /*납부일자(체납고지일)*/
+             , '2'                   TAX_GB            /*세금구분 1:지방세, 2:세외수입*/
+             , ''                    ABKU              /*압류구분 01:압류, 02:미압류*/
+             , SUBSTRB(DEPT_CD,1,3)  SGG_COD           /*구청코드 */
+             , INTGRTN_SP            THAP_GBN          /*통합구분 01.통합 02.미통합*/
+             , TRIM(RCPT_DT)               PAY_DT            /*수납일자*/
+             , VAT_TAX               VAT_TAX           /*부가기치세*/
+             , CASE WHEN ((FIS_SP='31' AND CDS_TAX>0) OR (FIS_SP='41' AND CNP_TAX>0)) THEN 'N'
+			   ELSE 'Y'
+			   END YN_FLAG
+       FROM NTMCYB001
+       WHERE FIS_SP <> '16'
+         AND PTCL_CD NOT IN ('294143') /* 남구 61294143 농협특별회계는 농협에서도 전자수납처리불가, 연계하지 않는다 */ 
+         AND (PTCL_CD  >=  '201000' AND PTCL_CD < '300000' OR PTCL_CD = '202099') 
+    ]]> 
+         <isNotEmpty prepend = "AND" property="BS_NOT_IN_SEMOK">
+             SUBSTR(PTCL_CD,1,3) NOT IN (#BS_NOT_IN_SEMOK#)         
+         </isNotEmpty>  
+   <![CDATA[
+         AND ELCT_PAY_NO IS NOT NULL
+         AND TRT_YN = '0'
+         AND INTGRTN_SP IN ('01', '02') 
+         AND DEPT_CD LIKE #SG_COD#||'%'
+         AND TRIM(TXPR_NO) IS NOT NULL
+         AND MOD(NVL(LST_PRCP_TAX_AMT,0),10)=0
+         AND MOD(NVL(LST_ADD_AMT,0),10)=0
+         AND MOD(NVL(NTN_TAX,0),10)=0
+         AND MOD(NVL(CNP_TAX,0),10)=0
+         AND MOD(NVL(CDS_TAX,0),10)=0
+         AND MOD(NVL(VAT_TAX,0),10)=0
+       ORDER BY WRK_DT, TRT_SNO 	 
+     )T1 
+      WHERE LENGTH(T1.OCR_BD)=108
+      	 AND ROWNUM <  2001
+      	 AND T1.YN_FLAG='Y'
+     ]]>
+	</select>
+	
+	
+	<!-- 시청세외수입 전체부과건수를 페이지별로 계산하여 출력 -->
+	<!-- 20110919 -->
+	<select id="SELECT_O_LEVY_CNT" parameterClass="mapForm" resultClass="int">
+	<![CDATA[
+	
+       SELECT COUNT(*) PAGE
+       FROM NTMCYB001
+       WHERE FIS_SP <> '16'
+         AND (PTCL_CD  >=  '201000' AND PTCL_CD < '300000' OR PTCL_CD = '202099') 
+    ]]>     
+         <isNotEmpty prepend = "AND" property="BS_NOT_IN_SEMOK">
+             SUBSTR(PTCL_CD,1,3) NOT IN (#BS_NOT_IN_SEMOK#)         
+         </isNotEmpty>
+    <![CDATA[
+         AND ELCT_PAY_NO IS NOT NULL
+         AND TRT_YN = '0'
+         AND INTGRTN_SP IN ('01', '02') 
+         AND DEPT_CD LIKE #SG_COD#||'%'
+         AND TRIM(TXPR_NO) IS NOT NULL
+         AND MOD(NVL(LST_PRCP_TAX_AMT,0),10)=0
+         AND MOD(NVL(LST_ADD_AMT,0),10)=0
+         AND MOD(NVL(NTN_TAX,0),10)=0
+         AND MOD(NVL(CNP_TAX,0),10)=0
+         AND MOD(NVL(CDS_TAX,0),10)=0
+         AND MOD(NVL(VAT_TAX,0),10)=0
+         AND ROWNUM <  2001
+	]]>
+	</select>
+	
+	
+	<!-- CYBER -->
+    <!-- 표준세외수입 부과상세 :: 표준세외수입 부과의 상세 금액 정보 입력  -->
+	<insert id="INSERT_PUB_O_LEVY_DETAIL" parameterClass="mapForm">
+	<![CDATA[
+	
+        INSERT INTO TX2112_TB(
+                TAX_NO               /*납세번호            (31)*/ 
+               ,SGG_COD              /*구청코드*/
+               ,TAX_CNT              /*부과순번            (3 )*/ 
+               ,BUGWA_STAT           /*부과상태            (2 )*/ 
+               ,NATN_TAX             /*국세                (22)*/ 
+               ,NATN_RATE            /*국세요율            (22)*/ 
+               ,SIDO_TAX             /*시도세              (22)*/ 
+               ,SIDO_RATE            /*시도세요율          (22)*/ 
+               ,SIGUNGU_TAX          /*시군구세            (22)*/ 
+               ,SIGUNGU_RATE         /*시군구세요율        (22)*/ 
+               ,SUBJECT_NAME1        /*과목명칭1           (40)*/ 
+               ,PAYMENT_DATE1        /*납기내금액1         (22)*/ 
+               ,AFTPAYMENT_DATE1     /*납기후금액1         (22)*/ 
+               ,SUBJECT_NAME2        /*과목명칭2           (40)*/ 
+               ,PAYMENT_DATE2        /*납기내금액2         (22)*/ 
+               ,AFTPAYMENT_DATE2     /*납기후금액2         (22)*/ 
+               ,SUBJECT_NAME3        /*과목명칭3           (40)*/ 
+               ,PAYMENT_DATE3        /*납기내금액3         (22)*/ 
+               ,AFTPAYMENT_DATE3     /*납기후금액3         (22)*/ 
+               ,DUE_DT               /*납기일자            (8 )*/ 
+               ,DUE_F_DT             /*납기후납기일        (8 )*/ 
+               ,OCR_BD               /*OCR_BAND            (200)*/ 
+               ,SNTG                 /*납부상태            (1 )*/ 
+               ,THAP_GBN             /*통합고지구분        (2 )*/ 
+               ,PAID_DATE            /*납기후납기일        (8 )*/  
+               ,CUD_OPT              /*자료등록구분        (1 )*/                    
+               ,PROC_CLS             /*가상계좌체번구분    (1 )*/ 
+               ,VIR_ACC_NO           /*가상계좌번호        (30)*/ 
+               ,SGG_TR_TG            /*구청전송처리구분코드(1 )*/ 
+               ,DEL_YN               /*삭제여부            (1 )*/ 
+               ,DEL_DT               /*삭제일시            (7 )*/ 
+               ,TAX_ITEM)            /*세목코드            (6 )*/
+        VALUES(                              
+                #TAX_NO#
+               ,#SGG_COD#
+               ,#TAX_CNT#
+               ,#BUGWA_STAT#
+               ,#NATN_TAX#
+               ,#NATN_RATE#
+               ,#SIDO_TAX#
+               ,#SIDO_RATE#
+               ,#SIGUNGU_TAX#
+               ,#SIGUNGU_RATE#
+               ,#SUBJECT_NAME1#
+               ,#PAYMENT_DATE1#
+               ,#AFTPAYMENT_DATE1#
+               ,#SUBJECT_NAME2#
+               ,#PAYMENT_DATE2#
+               ,#AFTPAYMENT_DATE2#
+               ,#SUBJECT_NAME3#
+               ,#PAYMENT_DATE3#
+               ,#AFTPAYMENT_DATE3#
+               ,#DUE_DT#
+               ,#DUE_F_DT#
+               ,FC_CHECK_OCR(#OCR_BD#)
+               ,#SNTG#
+               ,#THAP_GBN#
+               ,#PAID_DATE#
+               ,#CUD_OPT#
+               ,#PROC_CLS#
+               ,''
+               ,#SGG_TR_TG#
+               ,#DEL_YN#
+               ,null
+               ,#TAX_ITEM#)
+    ]]>           
+	</insert>	
+	
+	<!-- CYBER -->
+	<!-- 세외수입 중 버스전용차로, 주거지전용, 환경개선부담금을 제외한 표준세외수입과 
+	     교통유발부담금, 주정차위반과태료의 부과 자료.
+	     1.각 구청에서 발생된 자료가 취합
+	     2.삭제되는 자료 없이 누적되어 관리됨(삭제여부 속성 관리) 
+	     3.구청에서 오는 자료라 구조는 그대로 유지
+	     4.가산금 속성이 없고 국세, 시도세, 시군구세가 있고 각 요율이 있는데 각 금액과 요율을 곱하면 각 세금의 가산금이 계산됨
+	     5.부과상태의 사전고지는 주정차위반인 경우 서전에 납부하면 20%할인되므로 사전고지 상태가 있음
+	     6.현재 금액이 크지 않아 분납은 없음 -->
+    <!-- 표준세외수입 부과자료 입력  -->
+	<insert id="INSERT_PUB_O_LEVY" parameterClass="mapForm">
+	<![CDATA[
+
+        INSERT INTO TX2111_TB_DAMO (
+                TAX_NO                   /*납세번호        (31) */
+               ,SGG_COD                  /*구청코드        (3 ) */
+               ,EPAY_NO                  /*전자납부번호    (19) */
+               ,TAX_NOTICE_TITLE         /*고지서제목      (80) */
+               ,PART_CODE                /*부서코드        (11) */
+               ,ORG_PART_CODE            /*기관부서코드명  (80) */
+               ,ACCOUNT_YEAR             /*회계년도        (4 ) */
+               ,ACCT_COD                 /*회계코드        (2 ) */
+               ,ACCOUNT_NAME             /*회계명          (20) */
+               ,TAX_ITEM                 /*과세목          (6 ) */
+               ,TAX_NM                   /*과세목명        (80) */
+               ,TAX_SNO                  /*과세번호1       (6 ) */
+               ,DIVIDED_PAYMENT_SEQNUM   /*과세번호2       (2 ) */
+               ,TAX_YM                   /*부과년월        (6 ) */
+               ,TAX_DIV                  /*기분            (1 ) */
+               ,REG_NM                   /*성명(법인명)    (40) */
+               ,REG_TEL                  /*납세자전화번호  (20) */
+               ,SEC_REG_NO                   /*주민법인번호    (13) */
+               ,REG_ZIPCD                /*납세자우편번호  (6 ) */
+               ,ADDRESS                  /*주소            (200)*/
+               ,TAX_GDS                  /*과세대상        (100)*/
+               ,LEVY_DETAIL1             /*물건내용1       (50) */
+               ,LEVY_DETAIL2             /*물건내용2       (50) */
+               ,LEVY_DETAIL3             /*물건내용3       (50) */
+               ,LEVY_DETAIL4             /*물건내용4       (50) */
+               ,LEVY_DETAIL5             /*물건내용5       (50) */
+               ,LEVY_DETAIL6             /*물건내용6       (50) */
+               ,BUGWA_BUSEONAME          /*부과부서명      (40) */
+               ,SUNAP_BUSEONAME          /*수납부서명      (40) */
+               ,USER_NAME                /*사용자명        (40) */
+               ,USER_TEL_NO              /*담당자전화번호  (20) */
+               ,TAX_GB                   /*세금구분        (1 ) */
+               ,ABKU                     /*압류구분        (2 ) */
+               ,BU_ADD_YN)               /*부가가치세구분  (1 ) */
+
+        VALUES(                              
+                #TAX_NO#                
+               ,#SGG_COD#               
+               ,#EPAY_NO#               
+               ,#TAX_NOTICE_TITLE#      
+               ,#PART_CODE#             
+               ,#ORG_PART_CODE#         
+               ,#ACCOUNT_YEAR#          
+               ,#ACCT_COD#              
+               ,#ACCOUNT_NAME#          
+               ,#TAX_ITEM#              
+               ,#TAX_NM#                
+               ,#TAX_SNO#               
+               ,#DIVIDED_PAYMENT_SEQNUM#
+               ,#TAX_YM#                
+               ,#TAX_DIV#               
+               ,#REG_NM#                
+               ,#REG_TEL#               
+               ,FC_DAMO(#REG_NO#)                
+               ,#REG_ZIPCD#             
+               ,#ADDRESS#               
+               ,#TAX_GDS#               
+               ,#LEVY_DETAIL1#
+               ,#LEVY_DETAIL2#
+               ,#LEVY_DETAIL3#
+               ,#LEVY_DETAIL4#
+               ,#LEVY_DETAIL5#
+               ,#LEVY_DETAIL6#
+               ,#BUGWA_BUSEONAME#
+               ,#SUNAP_BUSEONAME#
+               ,#USER_NAME#
+               ,#USER_TEL_NO#
+               ,#TAX_GB#
+               ,#ABKU#
+               ,#BU_ADD_YN#)
+
+    ]]>           
+	</insert>	
+	
+	<!-- 표준세외수입 부과상세 :: 표준세외수입 부과의 상세 금액 정보 업데이트  -->
+	<!-- CYBER -->
+	<update id="UPDATE_PUB_O_LEVY_DETAIL" parameterClass="mapForm">
+    <![CDATA[
+    
+        UPDATE TX2112_TB
+        SET
+
+                SGG_COD          = #SGG_COD#            /*구청코드            (3 )*/
+               ,BUGWA_STAT       = #BUGWA_STAT#         /*부과상태            (2 )*/ 
+               ,NATN_TAX         = #NATN_TAX#           /*국세                (22)*/ 
+               ,NATN_RATE        = #NATN_RATE#          /*국세요율            (22)*/ 
+               ,SIDO_TAX         = #SIDO_TAX#           /*시도세              (22)*/ 
+               ,SIDO_RATE        = #SIDO_RATE#          /*시도세요율          (22)*/ 
+               ,SIGUNGU_TAX      = #SIGUNGU_TAX#        /*시군구세            (22)*/ 
+               ,SIGUNGU_RATE     = #SIGUNGU_RATE#       /*시군구세요율        (22)*/ 
+               ,SUBJECT_NAME1    = #SUBJECT_NAME1#      /*과목명칭1           (40)*/ 
+               ,PAYMENT_DATE1    = #PAYMENT_DATE1#      /*납기내금액1         (22)*/ 
+               ,AFTPAYMENT_DATE1 = #AFTPAYMENT_DATE1#   /*납기후금액1         (22)*/ 
+               ,SUBJECT_NAME2    = #SUBJECT_NAME2#      /*과목명칭2           (40)*/ 
+               ,PAYMENT_DATE2    = #PAYMENT_DATE2#      /*납기내금액2         (22)*/ 
+               ,AFTPAYMENT_DATE2 = #AFTPAYMENT_DATE2#   /*납기후금액2         (22)*/ 
+               ,SUBJECT_NAME3    = #SUBJECT_NAME3#      /*과목명칭3           (40)*/ 
+               ,PAYMENT_DATE3    = #PAYMENT_DATE3#      /*납기내금액3         (22)*/ 
+               ,AFTPAYMENT_DATE3 = #AFTPAYMENT_DATE3#   /*납기후금액3         (22)*/ 
+               ,DUE_DT           = #DUE_DT#             /*납기일자            (8 )*/ 
+               ,DUE_F_DT         = #DUE_F_DT#           /*납기후납기일        (8 )*/ 
+               ,OCR_BD           = FC_CHECK_OCR(#OCR_BD#)         /*(120)*/
+               ,SNTG             = #SNTG#               /*납부상태            (1 )*/ 
+               ,THAP_GBN         = #THAP_GBN#           /*통합고지구분        (2 )*/ 
+               ,PAID_DATE        = #PAID_DATE#          /*납기후납기일        (8 )*/ 
+               ,CUD_OPT          = #CUD_OPT#            /*자료등록구분        (1 )*/                
+               ,PROC_CLS         = #PROC_CLS#           /*가상계좌체번구분    (1 )*/ 
+               ,SGG_TR_TG        = #SGG_TR_TG#          /*구청전송처리구분코드(1 )*/ 
+               ,DEL_YN           = #DEL_YN#             /*삭제여부            (1 )*/ 
+               ,DEL_DT           = null            /*삭제일시            (7 )*/ 
+               ,LAST_DTM         = SYSDATE              /*최종수정일시        (7 )*/
+               ,TAX_ITEM         = #TAX_ITEM#           /*세목코드            (8 )*/
+        WHERE SGG_COD			 = #SGG_COD#            /*구청코드            (3 )*/
+          AND TAX_NO             = #TAX_NO#             /*납세번호            (31) pk*/ 
+          AND TAX_CNT            = #TAX_CNT#            /*부과순번            (22) pk*/ 
+          AND SNTG               IN ('0', '9')
+        
+    ]]>
+	</update>
+		
+	
+	<!-- 표준세외수입 부과자료 업데이트  -->
+	<!-- CYBER -->
+	<update id="UPDATE_PUB_O_LEVY" parameterClass="mapForm">
+    <![CDATA[
+    
+        UPDATE TX2111_TB_DAMO
+        SET
+                SGG_COD                 = #SGG_COD#                 /*구청코드        (3 ) */
+               ,EPAY_NO                 = #EPAY_NO#                 /*전자납부번호    (19) */
+               ,TAX_NOTICE_TITLE        = #TAX_NOTICE_TITLE#        /*고지서제목      (80) */
+               ,PART_CODE               = #PART_CODE#               /*부서코드        (11) */
+               ,ORG_PART_CODE           = #ORG_PART_CODE#           /*기관부서코드명  (80) */
+               ,ACCOUNT_YEAR            = #ACCOUNT_YEAR#            /*회계년도        (4 ) */
+               ,ACCT_COD                = #ACCT_COD#                /*회계코드        (2 ) */
+               ,ACCOUNT_NAME            = #ACCOUNT_NAME#            /*회계명          (20) */
+               ,TAX_ITEM                = #TAX_ITEM#                /*과세목          (6 ) */
+               ,TAX_NM                  = #TAX_NM#                  /*과세목명        (80) */
+               ,TAX_SNO                 = #TAX_SNO#                 /*과세번호1       (6 ) */
+               ,DIVIDED_PAYMENT_SEQNUM  = #DIVIDED_PAYMENT_SEQNUM#  /*과세번호2       (2 ) */
+               ,TAX_YM                  = #TAX_YM#                  /*부과년월        (6 ) */
+               ,TAX_DIV                 = #TAX_DIV#                 /*기분            (1 ) */
+               ,REG_NM                  = #REG_NM#                  /*성명(법인명)    (40) */
+               ,REG_TEL                 = #REG_TEL#                 /*납세자전화번호  (20) */
+               ,SEC_REG_NO          = FC_DAMO(#REG_NO#)                  /*주민법인번호    (13) */
+               ,REG_ZIPCD               = #REG_ZIPCD#               /*납세자우편번호  (6 ) */
+               ,ADDRESS                 = #ADDRESS#                 /*주소            (200)*/
+               ,TAX_GDS                 = #TAX_GDS#                 /*과세대상        (100)*/
+               ,LEVY_DETAIL1            = #LEVY_DETAIL1#            /*물건내용1       (50) */
+               ,LEVY_DETAIL2            = #LEVY_DETAIL2#            /*물건내용2       (50) */
+               ,LEVY_DETAIL3            = #LEVY_DETAIL3#            /*물건내용3       (50) */
+               ,LEVY_DETAIL4            = #LEVY_DETAIL4#            /*물건내용4       (50) */
+               ,LEVY_DETAIL5            = #LEVY_DETAIL5#            /*물건내용5       (50) */
+               ,LEVY_DETAIL6            = #LEVY_DETAIL6#            /*물건내용6       (50) */
+               ,BUGWA_BUSEONAME         = #BUGWA_BUSEONAME#         /*부과부서명      (40) */
+               ,SUNAP_BUSEONAME         = #SUNAP_BUSEONAME#         /*수납부서명      (40) */
+               ,USER_NAME               = #USER_NAME#               /*사용자명        (40) */
+               ,USER_TEL_NO             = #USER_TEL_NO#             /*담당자전화번호  (20) */
+               ,TAX_GB                  = #TAX_GB#                  /*세금구분        (1 ) */
+               ,ABKU                    = #ABKU#                    /*압류구분        (2 ) */
+               ,BU_ADD_YN               = #BU_ADD_YN#               /*부가가치세구분  (1 ) */
+               ,LAST_DTM                = SYSDATE                   /*최종수정일시         */
+        WHERE SGG_COD			 		= #SGG_COD#            		/*구청코드            (3 )*/
+        	AND TAX_NO                  = #TAX_NO#                  /*납세번호        (31) pk*/ 
+          
+    ]]>
+	</update>
+	
+	<!-- CYBER -->
+	<!-- 기 부과자료 삭제 -->
+	<delete id ="DELETE_EXT_INFO" parameterClass="mapForm">
+	<![CDATA[
+	
+	    DELETE FROM TX2111_TB   /*표준세외수입 부과*/
+	    WHERE SGG_COD	= #SGG_COD#            		/*구청코드            (3 )*/
+	    	AND TAX_NO  = #TAX_NO#      /*부과대장 키(조합키)*/
+	
+	]]>
+	</delete>
+	
+	<!-- CYBER -->
+	<!-- 기 상세부과자료 삭제 -->
+	<delete id ="DELETE_EXT_DETAIL_INFO" parameterClass="mapForm">
+	<![CDATA[
+	
+	    DELETE FROM TX2112_TB   /*표준세외수입 부과상세*/
+	    WHERE  SGG_COD			= #SGG_COD#     /*구청코드            (3 )*/
+	      AND  TAX_NO           = #TAX_NO#      /*부과대장 키(조합키) : 납세번호*/
+	      AND  TAX_CNT          = 0             /*부과순번 */
+	      AND  (SNTG = 0 OR SNTG IS NULL)       /*납부여부 0:미수납, 1:수납처리중, 2:수납*/
+	      AND  EXISTS(
+	              SELECT 'Y' FROM TX2111_TB
+	              WHERE  TAX_NO = #TAX_NO#      /*부과대장 키(조합키)*/
+	      )
+	     
+	]]>
+	</delete>		
+	
+	<!-- CYBER -->
+	<!-- 부가가치세 기 부과자료 삭제
+	    (EX:일반고지로 부과처리되어 있는 부가세 자료를 찻아서 합산전 삭제) -->
+	<delete id ="DELETE_EXT_VAT_INFO" parameterClass="mapForm">
+	<![CDATA[
+	
+	    DELETE FROM TX2111_TB   /*표준세외수입 부과*/
+	    WHERE  SGG_COD			= #SGG_COD#     /*구청코드            (3 )*/
+	      AND  TAX_NO           = #TAX_NO#      /*부과대장 키(조합키)*/
+	      AND  TAX_ITEM         = '299099'      /*부가가치세(과세목)*/
+	
+	]]>
+	</delete>
+	
+	<!-- CYBER -->
+	<!-- 부가가치세 기 상세부과자료 삭제
+	    (EX:일반고지로 부과처리되어 있는 부가세 자료를 찻아서 합산전 삭제) 
+	    상세자료 삭제후 정상이면 부과자료를 삭제한다                       -->
+	<delete id ="DELETE_EXT_VAT_DETAIL_INFO" parameterClass="mapForm">
+	<![CDATA[
+	
+	    DELETE FROM TX2112_TB                   /*표준세외수입 부과상세*/
+	    WHERE  SGG_COD			= #SGG_COD#     /*구청코드            (3 )*/
+	      AND  TAX_NO           = #TAX_NO#      /*부과대장 키(조합키) : 납세번호*/
+	      AND  TAX_CNT          = 0             /*부과순번 */
+	      AND  THAP_GBN         = '02'          /*통합고지구분(1:통합고지,2:개별고지,3:통합고지이관 */
+	      AND  BUGWA_STAT       = '01'          /*부과상태 01:부과, 02:체납 */ 
+	      AND  SNTG             IN ('0','9')    /*납부여부 0:미수납, 1:수납처리중, 2:수납, 9:취소 */
+	      AND  EXISTS(
+	      
+	              SELECT 'Y' FROM TX2111_TB
+	              WHERE  SGG_COD			= #SGG_COD#     /*구청코드            (3 )*/
+					AND  TAX_NO     = #TAX_NO#      /*부과대장 키(조합키)*/
+	                AND  TAX_ITEM   = '299099'      /*부가가치세(과세목)*/
+	      )
+	]]>
+	</delete>	
+	
+	<!-- 부가금액을 업데이트 한다. 상세내역-->
+	<!-- 회계 [31], [41,61] 경우를 분리한다.   -->
+	<!-- CYBER -->
+	<update id="UPDATE_VAT_AMT_DETAIL_SAVE" parameterClass="mapForm">
+
+        UPDATE TX2112_TB     /*표준세외수입 부과상세*/
+        SET  
+             SIGUNGU_TAX   = (CASE WHEN #ACCT_COD#='31' THEN #VAT_TAX# 
+        						   WHEN #ACCT_COD# IN ('41','61') THEN SIGUNGU_TAX + #VAT_TAX#
+        						   ELSE SIGUNGU_TAX END)                 /*시군구세*/
+        						   
+        	,PAYMENT_DATE1 = (CASE WHEN #ACCT_COD#='31' THEN SIDO_TAX + #VAT_TAX# 
+        						   WHEN #ACCT_COD# IN ('41','61') THEN SIGUNGU_TAX + #VAT_TAX#
+        						   ELSE PAYMENT_DATE1 END)               /*납기내금액1*/    
+        						   
+        	,OCR_BD        = (CASE WHEN #ACCT_COD#='31' THEN SUBSTR(FC_BUSAN_OCR_CHECKSUM( SUBSTR(OCR_BD,1,31), SUBSTR(OCR_BD,33,20)||'2', SUBSTR(OCR_BD,55,24)||LPAD(#VAT_TAX#,10,'0')||'00', SUBSTR(OCR_BD,92, 15)), 1, 108)
+        						   WHEN #ACCT_COD# IN ('41','61') THEN SUBSTR(FC_BUSAN_OCR_CHECKSUM( SUBSTR(OCR_BD,1,31), SUBSTR(OCR_BD,33,20)||'3', SUBSTR(OCR_BD,55,24)||LPAD(SIGUNGU_TAX + #VAT_TAX#,10,'0')||SUBSTR(OCR_BD, 89, 2), SUBSTR(OCR_BD,92, 15)), 1, 108)
+        						   ELSE OCR_BD END) 
+        	,LAST_DTM      = SYSDATE					   
+        WHERE  SGG_COD		 = #SGG_COD#     /*구청코드            (3 )*/
+          AND TAX_NO         = #TAX_NO#       /*납세번호*/
+          AND TAX_CNT        =  0
+          AND SNTG           = '0'            /*납부여부 0:미수납, 1:수납처리중, 2:수납 */ 
+	      AND EXISTS(
+	          SELECT 'Y'
+			  FROM TX2111_TB
+	          WHERE SGG_COD		= #SGG_COD#     /*구청코드            (3 )*/
+					AND TAX_NO  = #TAX_NO#       /*부과대장 키(조합키)*/
+	    )        
+	      
+	</update>	
+	
+	<!-- CYBER -->
+	<!-- 부가가치세구분 업데이트. 부과내역 -->
+	<update id="UPDATE_VAT_AMT_SAVE" parameterClass="mapForm">
+
+        UPDATE TX2111_TB     /*표준세외수입 부과*/
+        SET  BU_ADD_YN       = 'Y'          /*부가가치세 구분*/        
+            ,LAST_DTM        = SYSDATE
+        WHERE SGG_COD		 = #SGG_COD#     /*구청코드            (3 )*/
+			AND TAX_NO       = #TAX_NO#     /*납세번호*/
+        
+	</update>	
+	
+	<!-- NID -->
+	<!-- 연계테이블 업데이트  -->
+	<update id="UPDATE_O_ORG_TBL" parameterClass="mapForm">
+	    UPDATE NTMCYB001 
+	          SET TRT_YN = '1' 
+	     WHERE TRT_SNO = #TRT_SNO# 
+	</update>	
+	
+	<!-- 구청의 수납된 자료를 삭제Flag 를 업데이트 한다.  -->
+	<!-- CYBER -->
+	<update id="UPDATE_DEL_INFO_DETAIL" parameterClass="mapForm">
+    <![CDATA[
+     
+        UPDATE TX2112_TB
+        SET DEL_YN    = 'Y'
+           ,LAST_DTM  = SYSDATE		
+        WHERE SGG_COD		   = #SGG_COD#     /*구청코드            (3 )*/
+		  AND TAX_NO           = #TAX_NO#      /*납세번호            (31) pk*/ 
+          AND TAX_CNT          = 0
+          AND SNTG             IN ('0', '9')   /*납부여부 0:미수납, 1:수납처리중, 2:수납, 9:취소 :: 수납구분*/
+          AND EXISTS(
+                     SELECT 'Y'
+                     FROM TX2111_TB 
+                     WHERE TAX_NO           = #TAX_NO#  
+          )
+
+    ]]>
+	</update>	
+	
+</sqlMap>

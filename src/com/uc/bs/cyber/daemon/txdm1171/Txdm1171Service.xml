@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="txdm1171" >
+
+<select id="txdm1171_select_count_page" resultClass="int">
+	<![CDATA[  
+			SELECT
+				CEIL(COUNT(*) / #PAGE_PER_CNT#) PAGE
+			FROM V_TTPRCON1
+			WHERE
+				SUBSTR(REG_NO,1,6) <> '999999'
+				AND SGG_COD IS NOT NULL
+				AND SUBSTR(SGG_COD,1,2)='26'
+				AND D_MODIFY >= (SYSDATE - INTERVAL '01:00' HOUR TO MINUTE)
+				AND NVL(LENGTH(TRANSLATE(REG_NO,' +.1234567890',' ')),0)=0
+			ORDER BY REG_NO DESC
+	]]>
+	 
+</select>
+
+<select id="txdm1171_select_list" resultClass="mapForm">
+	<![CDATA[ 
+		SELECT  REPLACE(REG_NO,' ','') REG_NO,
+				REG_NM,
+				SGG_COD WARD_COD,
+				TPR_COD,
+				NVL(ADONG_COD, ' ') HACD,
+				LDONG_COD BUCD,
+				ZIP_NO,
+				ADDR ADDRESS
+		FROM (
+			SELECT
+				REG_NO  ,
+				REG_NM  ,
+				SGG_COD  ,
+				TPR_COD,
+				ADONG_COD  ,
+				LDONG_COD  ,
+				ZIP_NO  ,
+				ADDR ,
+			    CEIL(ROWNUM / #PAGE_PER_CNT#) AS PAGE
+			FROM
+			    V_TTPRCON1
+			WHERE
+			    SUBSTR(REG_NO,1,6) <> '999999'
+			        AND SGG_COD IS NOT NULL
+			        AND SUBSTR(SGG_COD,1,2)='26'
+					AND D_MODIFY >= (SYSDATE - INTERVAL '01:00' HOUR TO MINUTE)
+			        AND NVL(LENGTH(TRANSLATE(REG_NO,' +.1234567890',' ')),0)=0
+	 		ORDER BY
+	    REG_NO DESC) A
+	    WHERE A.PAGE = #PAGE#
+    ]]>
+    
+</select>
+	
+	
+<!-- 수기입력용 납세자 정보 수신 -->
+<insert id="txdm1171_insert_tx1601_tb" parameterClass="mapForm">
+        INSERT INTO
+        TX1601_TB_DAMO    /* 수기 납세자정보 구축 */
+        (
+        SGG_COD,    /* 구청코드 */
+        SEC_REG_NO,        /* 주민법인번호 */
+        REG_NM,        /* 성명(법인명) */
+        WARD_COD,    /* 자치단체코드 */
+        TPR_COD,     /* 법인구분코드 */
+        HACD,         /* 행정동 */
+        BUCD,        /* 납세자법정동 */
+        ZIP_CD,        /* 우편번호 */
+        ADDRESS,    /* 주소 */
+        REG_DTM,    /* 등록일시 */
+        LAST_DTM    /* 최종수정일시 */
+        ) VALUES (
+            #SGG_COD#, FC_DAMO(#REG_NO#), #REG_NM#, #WARD_COD#,#TPR_COD#, #HACD#, #BUCD#, #ZIP_NO#, #ADDRESS# , SYSDATE, SYSDATE
+        )
+</insert>
+
+
+
+<update id="txdm1171_update_tx1601_tb" parameterClass="mapForm">
+        UPDATE
+        TX1601_TB_DAMO       /* 수기 납세자정보 구축 */
+        SET
+        REG_NM = #REG_NM#,        /* 성명(법인명) */
+        SEC_REG_NO = FC_DAMO(#REG_NO#),
+        WARD_COD = #WARD_COD#,        /* 자치단체코드 */
+        TPR_COD = #TPR_COD#,         /* 법인구분코드 */
+        HACD = #HACD#,       /* 행정동 */
+        BUCD = #BUCD#,        /* 납세자법정동 */
+        ZIP_CD = #ZIP_NO#,       /* 우편번호 */
+        ADDRESS = #ADDRESS#,        /* 주소 */
+        LAST_DTM = SYSDATE    /* 최종수정일시 */
+        WHERE
+        SGG_COD = #SGG_COD#      /* 구청코드 */
+        AND SEC_REG_NO = FC_DAMO(#REG_NO#)    /* 주민법인번호 */
+</update>
+	
+</sqlMap>

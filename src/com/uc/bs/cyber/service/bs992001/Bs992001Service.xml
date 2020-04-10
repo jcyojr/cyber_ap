@@ -1,0 +1,609 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="BS992001" >
+
+    <!-- 취소내역을 구하기 위해 전장표의 쿼리를 조회하여 온다. -->
+    <!-- 단 수신받은 데이터가 출금은행점별코드 와 원거래 출금은행 전문관리만 있음... -->
+    <!-- 따라서 인텍스를 생성할 필요가 있음. -->
+
+	
+	<!-- 환경개선 전자수납 내역 출금은행 전문관리번호로 조회-->
+	<select id="SELECT_RECIP_H_LIST" resultClass="mapForm" parameterClass="mapForm">
+	<![CDATA[    
+
+      SELECT 
+             'H' AS TAX_GB 
+           , SGG_COD
+           , ACCT_COD
+           , TAX_ITEM
+           , TAX_YY
+           , TAX_MM
+           , TAX_DIV
+           , HACD
+           , TAX_SNO
+           , TAX_CNT
+           , PAY_CNT
+           , SUM_RCP
+           , PAY_DT
+           , SNTG
+           , SNSU
+           , BANK_CD
+           , BRC_NO
+           , TMSG_NO
+           , OCR_BD
+           , TRTG
+           , RSN_YN
+           , '' TAX_NO
+        FROM TX2231_TB                          /*환경개선부담금 전자수납*/
+       WHERE SNTG     IN ('1', '2', '9')       /*납부 1:가수납 2: 수납 9:취소*/
+         AND TMSG_NO = #B_OUTBANKJNO#
+         AND BRC_NO  = #OUTBANK_CODE# 
+         AND PAY_DT  = TO_CHAR(SYSDATE,'yyyymmdd')
+	]]>		
+	</select>
+	
+	<!-- 지방세 -->
+	<select id="SELECT_RECIP_J_LIST" resultClass="mapForm" parameterClass="mapForm">
+	<![CDATA[    
+
+        SELECT 
+             'J' AS TAX_GB    
+           , SGG_COD
+           , ACCT_COD
+           , TAX_ITEM
+           , TAX_YY
+           , TAX_MM
+           , TAX_DIV
+           , HACD
+           , TAX_SNO
+           , RCP_CNT AS TAX_CNT
+           , PAY_CNT
+           , SUM_RCP
+           , SNTG
+           , PAY_DT
+           , SNSU
+           , BANK_CD
+           , BRC_NO
+           , TMSG_NO
+           , OCR_BD
+           , TRTG
+           , RSN_YN   
+           , '' TAX_NO                
+        FROM  TX1201_TB                          /*지방세전자수납*/
+        WHERE SNTG     IN ('1', '2', '9')       /*납부 1:가수납 2: 수납 9:취소*/
+          AND TMSG_NO  = #B_OUTBANKJNO#
+          AND BRC_NO  = #OUTBANK_CODE# 
+          AND PAY_DT = TO_CHAR(SYSDATE,'yyyymmdd')
+        UNION ALL  
+          
+        SELECT 
+              'O' AS TAX_GB 
+            , SGG_COD
+            , ACCT_COD
+            , TAX_ITEM
+            , TAX_YY
+            , TAX_MM
+            , TAX_DIV
+            , HACD
+            , TAX_SNO
+            , TAX_CNT
+            , PAY_CNT
+            , SUM_RCP
+            , SNTG
+            , PAY_DT
+            , SNSU
+            , BANK_CD
+            , BRC_NO
+            , TMSG_NO
+            , OCR_BD
+            , TRTG
+            , RSN_YN
+            , '' TAX_NO            
+        FROM TX2221_TB                          /*세외수입전자수납*/
+        WHERE SNTG     IN ('1', '2', '9')       /*납부 1:가수납 2: 수납 9:취소*/
+          AND TMSG_NO  = #B_OUTBANKJNO#
+          AND BRC_NO  = #OUTBANK_CODE#           
+          AND PAY_DT = TO_CHAR(SYSDATE,'yyyymmdd')
+	]]>		
+	</select>	
+	
+	<!-- [표준]세외수입 전자수납 출금은행 전문관리번호로 조회-->
+	<select id="SELECT_RECIP_O_LIST" resultClass="mapForm" parameterClass="mapForm">
+	<![CDATA[    
+
+      SELECT 
+             'T' AS TAX_GB 
+           , SUBSTR(TAX_NO, 0,3) AS SGG_COD
+           , SUBSTR(TAX_NO, 3,2) AS ACCT_COD
+           , SUBSTR(TAX_NO, 5,6) AS TAX_ITEM
+           , SUBSTR(TAX_NO, 11,4) AS TAX_YY
+           , SUBSTR(TAX_NO, 15,2) AS TAX_MM
+           , SUBSTR(TAX_NO, 17,1) AS TAX_DIV
+           , SUBSTR(TAX_NO, 18,3) AS HACD
+           , SUBSTR(TAX_NO, 22,6) AS TAX_SNO
+           , TAX_CNT
+           , PAY_CNT
+           , SUM_RCP
+           , SNTG
+           , PAY_DT
+           , SNSU
+           , BANK_CD
+           , BRC_NO
+           , TMSG_NO
+           , OCR_BD
+           , TRTG
+           , RSN_YN
+           , TAX_NO
+        FROM TX2211_TB                          /*표준세외수입전자수납*/
+        WHERE SNTG     IN ('1', '2', '9')       /*납부 1:가수납 2: 수납 9:취소*/
+          AND TMSG_NO = #B_OUTBANKJNO#
+          AND BRC_NO  = #OUTBANK_CODE#          
+          AND PAY_DT = TO_CHAR(SYSDATE,'yyyymmdd')
+        UNION ALL  
+       SELECT 
+              'O' AS TAX_GB 
+            , SGG_COD
+            , ACCT_COD
+            , TAX_ITEM
+            , TAX_YY
+            , TAX_MM
+            , TAX_DIV
+            , HACD
+            , TAX_SNO
+            , TAX_CNT
+            , PAY_CNT
+            , SUM_RCP
+            , SNTG
+            , PAY_DT
+            , SNSU
+            , BANK_CD
+            , BRC_NO
+            , TMSG_NO
+            , OCR_BD
+            , TRTG
+            , RSN_YN
+            , '' TAX_NO            
+         FROM TX2221_TB                          /*세외수입전자수납*/
+        WHERE SNTG     IN ('1', '2', '9')       /*납부 1:가수납 2: 수납 9:취소*/
+          AND TMSG_NO = #B_OUTBANKJNO#
+          AND BRC_NO  = #OUTBANK_CODE# 
+          AND PAY_DT = TO_CHAR(SYSDATE,'yyyymmdd')
+	]]>		
+	</select>	
+	
+	<!-- 상하수도 부과내역 조회-->
+	<select id="SELECT_RECIP_S_LIST" resultClass="mapForm" parameterClass="mapForm">
+	<![CDATA[    
+     
+       SELECT 
+              'S' AS TAX_GB
+            , SUBSTR(A.EPAY_NO, 2,3) SGG_COD
+            , ' ' ACCT_COD
+            , ' ' TAX_ITEM
+            , A.TAX_YY                  /*부과년*/
+            , A.TAX_MM                  /*부과월*/
+            , ' ' TAX_DIV
+            , ' ' HACD
+            , TO_CHAR(B.PRT_NPNO) TAX_SNO       /*상하수도 관리번호(여기선 과세번호로 맵핑)*/
+            , 0 TAX_CNT
+            , B.PAY_CNT
+            , B.SUM_RCP
+            , B.SNTG
+            , B.PAY_DT
+            , B.SNSU           
+            , B.BANK_CD
+            , B.BRC_NO
+            , B.TMSG_NO
+            , ' ' OCR_BD
+            , ' ' TRTG
+            , B.RSN_YN
+            , '' TAX_NO
+         FROM TX3111_TB A, TX3211_TB B
+        WHERE A.TAX_YY   = B.TAX_YY
+          AND A.TAX_MM   = B.TAX_MM
+          AND A.PRT_NPNO = B.PRT_NPNO
+          AND A.EPAY_NO  IS NOT NULL         /*전자납부번호*/
+          AND B.SNTG     IN ('1', '2', '9')  /*납부상태 - 1:가수납 2:수납 9:취소*/
+          AND B.TMSG_NO = #B_OUTBANKJNO#    /*출금은행_전문관리번호*/
+          AND B.BRC_NO  = #OUTBANK_CODE#	/*출금은행_점별코드*/
+		
+	]]>		
+	</select>	
+	
+	
+	
+<!-- 0000000000000000000000000000000000000000000000000000000000000000000 -->
+<!-- 000000000000000000000000000잠시구분합니다.0000000000000000000000000 -->
+<!-- 0000000000000000000000000000000000000000000000000000000000000000000 -->	
+	
+	
+	
+	<!-- 환경개선 전자수납 납부내역 조회-->
+	<select id="SELECT_PAY_H_LIST" resultClass="mapForm" parameterClass="mapForm">
+	<![CDATA[    
+
+      SELECT 
+             SGG_COD
+           , ACCT_COD
+           , TAX_ITEM
+           , TAX_YY
+           , TAX_MM
+           , TAX_DIV
+           , HACD
+           , TAX_SNO
+           , TAX_CNT
+           , PAY_CNT
+           , SUM_RCP
+           , PAY_DT
+           , SNTG
+           , SNSU
+           , BANK_CD
+           , BRC_NO
+           , TMSG_NO
+           , OCR_BD
+           , TRTG
+           , RSN_YN
+           , '' TAX_NO
+        FROM TX2231_TB                          /*환경개선부담금 전자수납*/
+       WHERE SNTG     IN ('1', '2')            /*납부 1:가수납 2: 수납 9:취소*/
+         AND SGG_COD  = #SGG_COD#
+         AND ACCT_COD = #ACCT_COD# 
+         AND TAX_ITEM = #TAX_ITEM# 
+         AND TAX_YY   = #TAX_YY# 
+         AND TAX_MM   = #TAX_MM# 
+         AND TAX_DIV  = #TAX_DIV# 
+         AND HACD     = #HACD# 
+         AND TAX_SNO  = #TAX_SNO# 
+         AND TAX_CNT  = #TAX_CNT# 
+        
+	]]>		
+	</select>	
+	
+	<!-- 지방세 -->
+	<select id="SELECT_PAY_J_LIST" resultClass="mapForm" parameterClass="mapForm">
+	<![CDATA[    
+
+      SELECT    
+             SGG_COD
+           , ACCT_COD
+           , TAX_ITEM
+           , TAX_YY
+           , TAX_MM
+           , TAX_DIV
+           , HACD
+           , TAX_SNO
+           , RCP_CNT AS TAX_CNT
+           , PAY_CNT
+           , SUM_RCP
+           , SNTG
+           , PAY_DT
+           , SNSU
+           , BANK_CD
+           , BRC_NO
+           , TMSG_NO
+           , OCR_BD
+           , TRTG
+           , RSN_YN   
+           , '' TAX_NO            
+        FROM TX1201_TB                          /*지방세전자수납*/
+       WHERE SNTG     IN ('1', '2')            /*납부 1:가수납 2: 수납 9:취소*/
+         AND SGG_COD  = #SGG_COD#
+         AND ACCT_COD  = #ACCT_COD# 
+         AND TAX_ITEM  = #TAX_ITEM# 
+         AND TAX_YY  = #TAX_YY# 
+         AND TAX_MM  = #TAX_MM# 
+         AND TAX_DIV  = #TAX_DIV# 
+         AND HACD  = #HACD# 
+         AND TAX_SNO  = #TAX_SNO# 
+         AND RCP_CNT  = #TAX_CNT# 
+          
+         
+	]]>		
+	</select>	
+	
+	<!-- 세외수입 -->
+	<select id="SELECT_PAY_O_LIST" resultClass="mapForm" parameterClass="mapForm">
+	<![CDATA[    
+
+       SELECT 
+              SGG_COD
+            , ACCT_COD
+            , TAX_ITEM
+            , TAX_YY
+            , TAX_MM
+            , TAX_DIV
+            , HACD
+            , TAX_SNO
+            , TAX_CNT
+            , PAY_CNT
+            , SUM_RCP
+            , SNTG
+            , PAY_DT
+            , SNSU
+            , BANK_CD
+            , BRC_NO
+            , TMSG_NO
+            , OCR_BD
+            , TRTG
+            , RSN_YN
+            , '' TAX_NO            
+         FROM TX2221_TB                          /*세외수입전자수납*/
+        WHERE SNTG     IN ('1', '2')            /*납부 1:가수납 2: 수납 9:취소*/
+          AND SGG_COD  = #SGG_COD#
+          AND ACCT_COD = #ACCT_COD# 
+          AND TAX_ITEM = #TAX_ITEM# 
+          AND TAX_YY   = #TAX_YY# 
+          AND TAX_MM   = #TAX_MM# 
+          AND TAX_DIV  = #TAX_DIV# 
+          AND HACD     = #HACD# 
+          AND TAX_SNO  = #TAX_SNO# 
+          AND TAX_CNT  = #TAX_CNT#   
+
+	]]>		
+	</select>	
+
+	<!-- 표준세외수입 -->
+	<select id="SELECT_PAY_T_LIST" resultClass="mapForm" parameterClass="mapForm">
+	<![CDATA[  
+	
+      SELECT 
+             SUBSTR(TAX_NO, 0,3) AS SGG_COD
+           , SUBSTR(TAX_NO, 3,2) AS ACCT_COD
+           , SUBSTR(TAX_NO, 5,6) AS TAX_ITEM
+           , SUBSTR(TAX_NO, 11,4) AS TAX_YY
+           , SUBSTR(TAX_NO, 15,2) AS TAX_MM
+           , SUBSTR(TAX_NO, 17,1) AS TAX_DIV
+           , SUBSTR(TAX_NO, 18,3) AS HACD
+           , SUBSTR(TAX_NO, 22,6) AS TAX_SNO
+           , TAX_CNT
+           , PAY_CNT
+           , SUM_RCP
+           , SNTG
+           , PAY_DT
+           , SNSU
+           , BANK_CD
+           , BRC_NO
+           , TMSG_NO
+           , OCR_BD
+           , TRTG
+           , RSN_YN
+           , TAX_NO
+        FROM TX2211_TB                          /*표준세외수입전자수납*/
+       WHERE SNTG     IN ('1', '2')            /*납부 1:가수납 2: 수납 9:취소*/
+         AND TAX_NO   = #TAX_NO#
+         AND TAX_CNT  = #TAX_CNT#      
+               
+	]]>		
+	</select>	
+	
+	
+	<!-- 상하수도 수납내역 조회-->
+	<select id="SELECT_PAY_S_LIST" resultClass="mapForm" parameterClass="mapForm">
+	<![CDATA[    
+     
+        SELECT 
+	           SUBSTR(A.EPAY_NO, 2,3) SGG_COD
+	         , ' ' ACCT_COD
+	         , ' ' TAX_ITEM
+	         , A.TAX_YY                  /*부과년                  */
+	         , A.TAX_MM                  /*부과월                  */
+	         , ' ' TAX_DIV
+	         , ' ' HACD
+	         , TO_CHAR(B.PRT_NPNO) TAX_SNO       /*상하수도 관리번호(여기선 과세번호로 맵핑)*/
+	         , 0 TAX_CNT
+	         , B.PAY_CNT
+	         , B.SUM_RCP
+	         , B.SNTG
+	         , B.PAY_DT
+	         , B.SNSU           
+	         , B.BANK_CD
+	         , B.BRC_NO
+	         , B.TMSG_NO
+	         , ' ' OCR_BD
+	         , ' ' TRTG
+	         , B.RSN_YN
+	         , '' TAX_NO
+          FROM TX3111_TB A, TX3211_TB B
+         WHERE A.TAX_YY   = B.TAX_YY
+           AND A.TAX_MM   = B.TAX_MM
+           AND A.PRT_NPNO = B.PRT_NPNO
+           AND A.EPAY_NO  IS NOT NULL         /*전자납부번호*/
+           AND B.SNTG     IN ('1', '2')       /*납부 1:가수납 2: 수납 9:취소*/          
+           AND A.TAX_YY   = #TAX_YY#           
+           AND A.TAX_MM   = #TAX_MM#
+           AND A.PRT_NPNO = #TAX_SNO#       /*상하수도 관리번호(출금은행-전문관리번호로 조회시 과세번호로 맵핑되었음)*/
+		
+	]]>		
+	</select>	
+	
+	
+	
+	
+<!-- 0000000000000000000000000000000000000000000000000000000000000000000 -->
+<!-- 000000000000000000000000000잠시구분합니다.0000000000000000000000000 -->
+<!-- 0000000000000000000000000000000000000000000000000000000000000000000 -->	
+	
+	
+	
+	
+	<!-- 지방세 부과 상세 취소로 업데이트 -->
+    <update id="UPDATE_TX1102_TB_LEVY_DETAIL" parameterClass="mapForm">
+    <![CDATA[
+    
+      UPDATE TX1102_TB
+         SET SNTG = '9'
+           , LAST_DTM = SYSDATE
+       WHERE SGG_COD  = #SGG_COD#
+         AND ACCT_COD = #ACCT_COD#
+         AND TAX_ITEM = #TAX_ITEM#
+         AND TAX_YY   = #TAX_YY#
+         AND TAX_MM   = #TAX_MM#
+         AND TAX_DIV  = #TAX_DIV#
+         AND HACD     = #HACD#
+         AND TAX_SNO  = #TAX_SNO# 
+         AND RCP_CNT  = #TAX_CNT#
+
+    ]]>
+    </update>    
+    
+    <!-- 지방세전자수납 삭제 즉 취소로 업데이트 -->
+    <update id="DELETE_TX1201_TB_EPAY"  parameterClass="mapForm">
+         
+      UPDATE TX1201_TB
+         SET
+             SNTG = '9'
+           , TRTG = '0'
+           , LAST_DTM = SYSDATE
+       WHERE SGG_COD  = #SGG_COD#
+         AND ACCT_COD = #ACCT_COD#
+         AND TAX_ITEM = #TAX_ITEM#
+         AND TAX_YY   = #TAX_YY#
+         AND TAX_MM   = #TAX_MM#
+         AND TAX_DIV  = #TAX_DIV#
+         AND HACD     = #HACD#
+         AND TAX_SNO  = #TAX_SNO# 
+         AND RCP_CNT  = #TAX_CNT#
+         AND PAY_CNT  = #PAY_CNT#
+         AND TMSG_NO  = #TMSG_NO#         
+         AND SNTG     IN ('1')
+    
+    </update>
+    
+    <!-- 세외수입일반 전자수납 취소FLAG  -->
+    <update id="UPDATE_TX2221_TB_LEVY_DETAIL"  parameterClass="mapForm">
+    
+      UPDATE TX2221_TB
+         SET
+             SNTG = '9'
+           , TRTG = '0'
+           , LAST_DTM = SYSDATE
+       WHERE SGG_COD  = #SGG_COD#
+         AND ACCT_COD = #ACCT_COD#
+         AND TAX_ITEM = #TAX_ITEM#
+         AND TAX_YY   = #TAX_YY#
+         AND TAX_MM   = #TAX_MM#
+         AND TAX_DIV  = #TAX_DIV#
+         AND HACD     = #HACD#
+         AND TAX_SNO  = #TAX_SNO# 
+         AND TAX_CNT  = #TAX_CNT#
+         AND PAY_CNT  = #PAY_CNT#
+         AND TMSG_NO  = #TMSG_NO#         
+         AND SNTG     IN ('1')
+             
+    </update>
+    
+    <!-- 세외수입일반 부과상세 삭제 -->
+    <update id="DELETE_TX2122_TB_EPAY"  parameterClass="mapForm">
+    
+      UPDATE TX2122_TB
+         SET SNTG = '9'      
+           , LAST_DTM = SYSDATE
+       WHERE SGG_COD  = #SGG_COD#
+         AND ACCT_COD = #ACCT_COD#
+         AND TAX_ITEM = #TAX_ITEM#
+         AND TAX_YY   = #TAX_YY#
+         AND TAX_MM   = #TAX_MM#
+         AND TAX_DIV  = #TAX_DIV#
+         AND HACD     = #HACD#
+         AND TAX_SNO  = #TAX_SNO# 
+         AND TAX_CNT  = #TAX_CNT#
+
+    </update>    
+	
+    <!-- 상하수도 부과 취소 납부상태FLAG 업데이트  -->
+    <update id="UPDATE_TX3111_TB_LEVY_DETAIL"  parameterClass="mapForm">
+    
+       UPDATE TX3111_TB
+          SET SNTG = '0'
+            , LAST_DTM = SYSDATE
+        WHERE TAX_YY    = #TAX_YY#
+          AND TAX_MM    = #TAX_MM#
+          AND PRT_NPNO  = #TAX_SNO# 
+          AND SNTG      IN ('1')
+
+    </update>
+    
+    <!-- 상하수도 전자수납 취소 수납데이터 삭제-->
+    <update id="DELETE_TX3211_TB_EPAY"  parameterClass="mapForm">
+    
+        DELETE TX3211_TB         
+         WHERE TAX_YY    = #TAX_YY#
+           AND TAX_MM    = #TAX_MM#
+           AND PRT_NPNO  = #TAX_SNO# 
+           AND TMSG_NO   = #TMSG_NO#   /*출금은행 전문관리번호*/
+           
+    </update>    	
+    
+    
+	<!-- 환경개선부담금 부과 상세 삭제Flag 업데이트 -->
+    <update id="UPDATE_TX2132_TB_LEVY_DETAIL" parameterClass="mapForm">
+    <![CDATA[
+    
+      UPDATE TX2132_TB
+         SET SNTG = '9'      
+           , LAST_DTM = SYSDATE
+       WHERE SGG_COD  = #SGG_COD#
+         AND ACCT_COD = #ACCT_COD#
+         AND TAX_ITEM = #TAX_ITEM#
+         AND TAX_YY   = #TAX_YY#
+         AND TAX_MM   = #TAX_MM#
+         AND TAX_DIV  = #TAX_DIV#
+         AND HACD     = #HACD#
+         AND TAX_SNO  = #TAX_SNO# 
+         AND TAX_CNT  = #TAX_CNT#
+
+    ]]>
+    </update>    
+    
+    <!-- 환경개선부담금전자수납 삭제 -->
+    <delete id="DELETE_TX2231_TB_EPAY"  parameterClass="mapForm">
+    
+      UPDATE TX2231_TB
+         SET SNTG = '9'
+           , TRTG = '0'
+           , LAST_DTM = SYSDATE
+       WHERE SGG_COD  = #SGG_COD#
+         AND ACCT_COD = #ACCT_COD#
+         AND TAX_ITEM = #TAX_ITEM#
+         AND TAX_YY   = #TAX_YY#
+         AND TAX_MM   = #TAX_MM#
+         AND TAX_DIV  = #TAX_DIV#
+         AND HACD     = #HACD#
+         AND TAX_SNO  = #TAX_SNO# 
+         AND TAX_CNT  = #TAX_CNT#
+         AND PAY_CNT  = #PAY_CNT#
+         AND TMSG_NO  = #TMSG_NO#         
+         AND SNTG     IN ('1')
+    
+    </delete>
+
+	<!-- 표준세외수입 부과 상세 삭제Flag 업데이트 -->
+    <update id="UPDATE_TX2112_TB_LEVY_DETAIL" parameterClass="mapForm">
+    <![CDATA[
+    
+      UPDATE TX2112_TB
+         SET SNTG = '9'      
+           , LAST_DTM = SYSDATE
+       WHERE TAX_NO   = #TAX_NO#
+         AND TAX_CNT  = #TAX_CNT#
+
+    ]]>
+    </update>    
+    
+    <!-- 표준세외수입 전자수납 삭제 -->
+    <update id="DELETE_TX2211_TB_EPAY"  parameterClass="mapForm">
+    
+      UPDATE TX2211_TB
+         SET
+             SNTG = '9'
+           , TRTG = '0'
+           , LAST_DTM = SYSDATE       
+       WHERE TAX_NO   = #TAX_NO#
+         AND TAX_CNT  = #TAX_CNT#
+         AND PAY_CNT  = #PAY_CNT#
+         AND TMSG_NO  = #TMSG_NO#         
+         AND SNTG     IN ('1')
+    
+    </update>
+       
+</sqlMap>

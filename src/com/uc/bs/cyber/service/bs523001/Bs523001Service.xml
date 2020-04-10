@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="BS523001" >
+
+    <!-- 지방세 납부내역 가져온다. -->
+	<select id="SELECT_RECIP_LIST" resultClass="mapForm" parameterClass="mapForm">
+	<![CDATA[    
+	
+        SELECT SUBSTR(TAX_NO, 3, 29) ETAXNO
+             , TAX_ITEM
+             , TAX_YY
+             , TAX_MM
+             , SUM_RCP SUTT
+             , PAY_DT
+             , TAX_DIV
+             , 'B' 납부시스템
+             , BRC_NO BANK_CODE
+          FROM TX1201_VW_RCP  
+	    WHERE REG_NO = FC_DAMO(#JUMINNO#)
+		     AND PAY_DT >= #IN_STDATE#
+		     AND PAY_DT <= #IN_ENDATE# 
+		     AND SNSU ='3'
+		     AND BANK_CD ='032'         
+        
+        UNION ALL
+        
+        SELECT SUBSTR(OCR_BD, 3, 29) ETAXNO
+             , TAX_ITEM
+             , TAX_YY
+             , TAX_MM
+             , SUM_RCP SUTT
+             , PAY_DT
+             , TAX_DIV
+             , 'B' 납부시스템
+             , BRC_NO BANK_CODE
+          FROM TX2221_VW_RCP 
+	    WHERE REG_NO = FC_DAMO(#JUMINNO#)
+		     AND PAY_DT >= #IN_STDATE#
+		     AND PAY_DT <= #IN_ENDATE#
+		     AND SNSU ='3'
+		     AND BANK_CD ='032'
+		
+	]]>		
+		
+	</select>
+	
+</sqlMap>

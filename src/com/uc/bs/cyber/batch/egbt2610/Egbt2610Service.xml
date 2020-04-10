@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="EGBT2610" >
+	
+	<!-- 전자고지발송자료 등록(구청별) -->
+	<!-- CYBER -->
+	<update id="INSERT_ME1151" parameterClass="mapForm">
+    <![CDATA[
+        INSERT INTO ME1151_TB_DAMO 
+		              (NOTI_SNO,
+		               SEC_REG_NO,
+		               NOTI_YM,
+		               NOTI_GB,
+		               KWA_CD,
+		               E_MAIL,
+		               ENOTI,
+		               NOTI_STD,
+		               CEL_NO)
+        SELECT  #NOTI_SNO#            NOTI_SNO,
+                M.SEC_REG_NO          SEC_REG_NO,
+                #NOTI_YY#||#NOTI_MM#  NOTI_YM,
+                #NOTI_GB#             NOTI_GB,
+                #KWA_CD#              KWA_CD,
+                NVL(TRIM(M.E_MAIL),'없음')  EMAIL,
+                M.ENOTI               ENOTI,
+		T.ETC0
+		||(CASE WHEN T.CNT>1 THEN '' ELSE T.ETC1 END)
+		|| ', '
+		||(CASE WHEN T.CNT>1 THEN '총 '||T.CNT||'건의 부과내역이 있습니다.' ELSE T.ETC2 END)
+		||', '
+		|| T.ETC3
+		||', '
+		||SUBSTR(T.DUE_DT,1,4)||'-'||SUBSTR(T.DUE_DT,5,2)||'-'||SUBSTR(T.DUE_DT,7,2)
+                NOTI_STD,
+                M.CEL_NO CEL_NO
+              FROM ME1101_TB_DAMO M,
+                   (  SELECT A.REG_NO,
+		             '부산광역시 ' ETC0,
+                             (SELECT GUBUN_NM
+                                FROM CO3102_TB
+                               WHERE GUBUN_ID = 'SGG_COD' AND GUBUN_CD = #SGG_COD#)
+                                ETC1,
+                             (SELECT    EPAY_NO||' ['||TAX_SNO||']' ETC2
+                                FROM TX1101_VW_ALL V
+                               WHERE     SGG_COD = #SGG_COD#
+                                     AND TAX_YY  = #NOTI_YY#
+                                     AND TAX_MM  = #NOTI_MM#
+                                     AND TAX_DIV = '1'
+                                     AND TAX_ITEM LIKE #KWA_CD#|| '%'
+                                     AND REG_NO = A.REG_NO
+                                     AND ROWNUM = 1)
+                                ETC2,
+							    (SELECT TAX_NM FROM CO3301_TB WHERE TAX_ITEM=#KWA_CD#||'000') ETC3,
+                                F_GET_GYMD(DUE_DT) DUE_DT, 
+                             COUNT (*) CNT
+                        FROM TX1101_VW_ALL A
+                        ,    ME1152_TB_DAMO  B
+                       WHERE     A.SGG_COD = #SGG_COD#
+                             AND A.TAX_YY  = #NOTI_YY#
+                             AND A.TAX_MM  = #NOTI_MM#
+                             AND A.TAX_DIV = '1'
+                             AND A.DEL_YN='N'
+                             AND A.TAX_ITEM LIKE #KWA_CD#|| '%'
+                             AND A.AUTO_TRNF_YN = DECODE (#NOTI_GB#, '2', 'Y', 'N')
+                             AND A.REG_NO = B.SEC_REG_NO
+                             AND B.REC_DTM LIKE #NOTI_YY#||#NOTI_MM#||'%'
+							 AND B.ENOTI IN ('1', '2')
+							 AND B.STAT_CD = '0'
+                    GROUP BY A.REG_NO, F_GET_GYMD(DUE_DT)) T
+             WHERE M.SEC_REG_NO = T.REG_NO
+                   AND M.SEC_REG_NO NOT IN (SELECT SEC_REG_NO FROM ME1151_TB_DAMO WHERE NOTI_SNO=#NOTI_SNO#)
+        
+    ]]>	
+	</update>
+	
+	<!-- 썬더메일 연계 대상목록 조회 -->
+	<select id="SELECT_ME1151" parameterClass="mapForm" resultClass="mapForm">
+		SELECT  E.NOTI_SNO
+		        , FC_DAMO(E.REG_NO) REG_NO
+		        , M.MEM_NM
+		        , NVL(TRIM(E.E_MAIL_CONV),'null')  E_MAIL
+		        , E.NOTI_STD NOTI_STD
+		  FROM  ME1151_TB_DAMO E,
+		        ME1101_TB_DAMO M
+		 WHERE  NOTI_SNO = #NOTI_SNO# 
+			AND NOTI_GB = #NOTI_GB#
+		    AND TRTG = '5' /* 발송중 으로 UPDATE 된 목록만 조회한다 */ 
+		    AND M.SEC_REG_NO = E.SEC_REG_NO	
+	</select>
+	
+	<!-- 썬더메일 연계 대상목록 사전 UPDATE -->
+	<update id="UPDATE_ME1151_SENDING" parameterClass="mapForm">
+    <![CDATA[
+	UPDATE   ME1151_TB
+		   SET   TRTG = '5' /* 발송중 으로 변경한다. */
+		 WHERE   NOTI_SNO = #NOTI_SNO# 
+			AND NOTI_GB = #NOTI_GB#
+		    AND TRTG = '0' 
+		    AND ROWNUM <= 3000 /* 한번에 보낼수 있는 건수제한을 둔다 */
+    ]]>		    
+	</update>
+		    
+	<!-- 썬더메일 연계 전송결과 UPDATE -->
+	<update id="UPDATE_ME1151_SENDRESULT" parameterClass="mapForm">
+	UPDATE   ME1151_TB
+		   SET MNG_NO = #MNG_NO#
+		       , TR_RES =#TR_RES#
+		   	   , TRTG = #TRTG#		       
+		       , TRN_DTM = SYSDATE
+		 WHERE   NOTI_SNO = #NOTI_SNO# 
+			AND NOTI_GB = #NOTI_GB#
+		    AND TRTG = '5' 
+	</update>
+	
+	<!-- 과목코드명 가져오기 -->
+	<select id="SELECT_CO3301_KWANAME" parameterClass="String" resultClass="String">
+		SELECT FC_GET_ENOTI_KWANAME(#NOTI_MM#) FROM DUAL
+	</select>
+	
+</sqlMap>

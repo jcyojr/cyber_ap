@@ -1,0 +1,878 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXDM2411" >
+
+	
+	<!-- 표준세외수입 부과건수 계산 -->
+	<select id="SELECT_SPNT200_SEQ_MAX" parameterClass="mapForm" resultClass="String">
+	<![CDATA[
+
+	SELECT NVL(MAX(SEQ),0) SEQ_MAX
+	FROM
+	(
+		SELECT SEQ, ROWNUM RNUM
+		FROM
+		(
+			SELECT SEQ
+			FROM SPNT200
+			WHERE TRN_YN IN ('N','0')
+    ]]> 
+	<isNotEmpty prepend = "AND" property="BS_NOT_IN_SEQ">
+            SEQ NOT IN ($BS_NOT_IN_SEQ$)         
+	</isNotEmpty>  
+	<![CDATA[
+			ORDER BY SEQ
+		)
+	)
+	WHERE RNUM<1001
+
+	]]>
+	</select>
+
+
+	
+	<!-- 표준세외수입 부과를 연계 대기상태로 변경 -->
+	<update id="UPDATE_SPNT200_START" parameterClass="long">
+	<![CDATA[
+
+    UPDATE SPNT200
+    SET TRN_YN='0'
+    WHERE TRN_YN='N'
+    	AND SEQ<=#SEQ_MAX#
+
+	]]>
+	</update>
+	
+	
+	<!-- 표준세외수입 부과를 연계 완료상태로 변경 -->
+	<update id="UPDATE_SPNT200_END" parameterClass="mapForm">
+	<![CDATA[
+
+	    UPDATE SPNT200
+    	SET TRN_YN='E'
+		WHERE TRN_YN='0'
+    ]]> 
+	<isNotEmpty prepend = "AND" property="BS_NOT_IN_SEQ">
+	        SEQ NOT IN ($BS_NOT_IN_SEQ$)         
+	</isNotEmpty>  
+	</update>
+	
+	
+    <!-- 시구청 -->
+    <!-- 세외수입 부과내역 가져오기 -->
+	<select id="SELECT_SPNT200_LIST" parameterClass="mapForm" resultClass="mapForm">
+	<![CDATA[    
+
+    SELECT
+         SEQ                    SEQ
+        ,TRNN_ID                TRNN_ID
+        ,NVL(TAX_NO,' ')        TAX_NO
+        ,SUBSTR(DEP_DIV,1,3)    SGG_COD
+        ,NVL(EPAY_NO,' ')       EPAY_NO
+        ,CASE
+         WHEN ACCT_COD='16' THEN '[국세외] '||TAX_ITEM_NM
+         WHEN ACCT_COD IN ('31','51') THEN '[시세외] '||TAX_ITEM_NM
+         ELSE '[구군세외] '||TAX_ITEM_NM
+         END                    TAX_NOTICE_TITLE
+        ,DEP_DIV                PART_CODE
+        ,DEP_NM                 ORG_PART_CODE
+        ,TAX_YY                 ACCOUNT_YEAR
+        ,ACCT_COD               ACCT_COD
+        ,CASE
+         WHEN ACCT_COD='16' THEN '국세외'
+         WHEN ACCT_COD IN ('31','51') THEN '시세외'
+         ELSE '구군세외'
+         END                    ACCOUNT_NAME
+        ,TAX_ITEM               TAX_ITEM
+        ,TAX_ITEM_NM            TAX_NM
+        ,SUBSTR(TAX_NO,24,6)    TAX_SNO
+        ,SUBSTR(TAX_NO,30,2)    DIVIDED_PAYMENT_SEQNUM
+        ,TAX_YY||TAX_MM         TAX_YM
+        ,NVL(TAX_DIV,'2')       TAX_DIV
+        ,NVL(REG_NM,' ')        REG_NM
+        ,''                     REG_TEL
+        ,TRIM(REG_NO)           REG_NO
+        ,''                     REG_ZIPCD
+        ,''                     ADDRESS
+        ,SUBSTR(TAX_GDS,1,50)   TAX_GDS
+        ,''                     LEVY_DETAIL1
+        ,''                     LEVY_DETAIL2
+        ,''                     LEVY_DETAIL3
+        ,''                     LEVY_DETAIL4
+        ,''                     LEVY_DETAIL5
+        ,''                     LEVY_DETAIL6
+        ,DEP_NM                 BUGWA_BUSEONAME
+        ,''                     SUNAP_BUSEONAME
+        ,CHRG_NM                USER_NAME
+        ,CHRG_TEL               USER_TEL_NO
+        ,RVN_DIV                TAX_GB
+        ,''                     ABKU
+        ,CASE WHEN BUGTX+BUGTX_ADTX>0 THEN 'Y'
+         ELSE 'N'
+         END                    BU_ADD_YN
+        ,0                      TAX_CNT
+        ,LPAD(DLQ_DIV,2,'0')    BUGWA_STAT
+        ,CASE WHEN ACCT_COD='16' THEN
+            CASE WHEN DLQ_DIV='1' THEN NATTX+BUNTX
+            ELSE (NATTX+BUNTX+NATTX_ADTX+BUNTX_ADTX)
+            END
+         ELSE NATTX
+         END                    NATN_TAX
+        ,CASE WHEN (TMP_NATN_RATE>5 OR TMP_NATN_RATE<2 OR TAX_ITEM='299099') THEN 0
+         ELSE TMP_NATN_RATE
+         END                    NATN_RATE
+        ,CASE WHEN ACCT_COD IN ('31','51') THEN
+            CASE WHEN DLQ_DIV='1' THEN SDOTX+BUNTX
+            ELSE (SDOTX+BUNTX+SDOTX_ADTX+BUNTX_ADTX)
+            END
+         ELSE 0
+         END                    SIDO_TAX
+        ,CASE WHEN (TMP_SIDO_RATE>5 OR TMP_SIDO_RATE<2 OR TAX_ITEM='299099') THEN 0
+         ELSE TMP_SIDO_RATE
+         END                    SIDO_RATE
+        ,CASE WHEN BUGTX+BUGTX_ADTX>0 THEN
+            CASE
+            WHEN ACCT_COD IN ('16') THEN
+                CASE WHEN DLQ_DIV='1' THEN SGGTX+BUNTX
+                ELSE (SGGTX+BUNTX+SGGTX_ADTX+BUNTX_ADTX)
+                END
+            WHEN ACCT_COD IN ('31','51') THEN (BUGTX+BUGTX_ADTX)
+            ELSE
+                CASE WHEN DLQ_DIV='1' THEN (SGGTX+BUGTX+BUNTX)
+                ELSE (SGGTX+BUGTX+BUNTX+SGGTX_ADTX+BUGTX_ADTX+BUNTX_ADTX)
+                END
+            END
+         ELSE
+            CASE WHEN ACCT_COD IN ('16','41','61') THEN
+                CASE WHEN DLQ_DIV='1' THEN SGGTX+BUNTX
+                ELSE (SGGTX+BUNTX+SGGTX_ADTX+BUNTX_ADTX)
+                END
+            ELSE 0
+            END
+         END                    SIGUNGU_TAX
+        ,CASE WHEN (TMP_SIGUNGU_RATE>5 OR TMP_SIGUNGU_RATE<2 OR TAX_ITEM='299099') THEN 0
+         ELSE TMP_SIGUNGU_RATE
+         END                    SIGUNGU_RATE
+        ,TAX_ITEM_NM            SUBJECT_NAME1
+        ,CASE WHEN BUGTX+BUGTX_ADTX>0 THEN
+            CASE
+            WHEN ACCT_COD IN ('31','51') THEN
+                CASE WHEN DLQ_DIV='1' THEN SDOTX+BUGTX
+                ELSE (SDOTX+BUGTX+SDOTX_ADTX+BUGTX_ADTX)
+                END
+            WHEN ACCT_COD IN ('41','61') THEN
+                CASE WHEN DLQ_DIV='1' THEN (NATTX+SDOTX+SGGTX+BUGTX+BUNTX)
+                ELSE (NATTX+SDOTX+SGGTX+BUGTX+BUNTX+NATTX_ADTX+SDOTX_ADTX+SGGTX_ADTX+BUGTX_ADTX+BUNTX_ADTX)
+                END
+            ELSE
+                CASE WHEN DLQ_DIV='1' THEN (NATTX+SDOTX+SGGTX+BUNTX)
+                ELSE (NATTX+SDOTX+SGGTX+BUNTX+NATTX_ADTX+SDOTX_ADTX+SGGTX_ADTX+BUNTX_ADTX)
+                END
+            END
+         ELSE
+            CASE WHEN DLQ_DIV='1' THEN (NATTX+SDOTX+SGGTX+BUNTX)
+            ELSE (NATTX+SDOTX+SGGTX+BUNTX+NATTX_ADTX+SDOTX_ADTX+SGGTX_ADTX+BUNTX_ADTX)
+            END
+         END                    PAYMENT_DATE1
+        ,CASE WHEN DLQ_DIV='1' THEN (NATTX_ADTX+SDOTX_ADTX+SGGTX_ADTX+BUNTX_ADTX)
+         ELSE 0
+         END                    AFTPAYMENT_DATE1
+        ,''                     SUBJECT_NAME2
+        ,0                      PAYMENT_DATE2
+        ,0                      AFTPAYMENT_DATE2
+        ,''                     SUBJECT_NAME3
+        ,0                      PAYMENT_DATE3
+        ,0                      AFTPAYMENT_DATE3
+        ,DUE_DT                 DUE_DT
+        ,CASE WHEN DUE_F_DT<DUE_DT THEN DUE_DT
+         ELSE DUE_F_DT
+         END                    DUE_F_DT
+        ,'0'                    SNTG
+        ,CASE WHEN ((BUGTX+BUGTX_ADTX>0) OR (SDOTX+SDOTX_ADTX>0 AND SGGTX+SGGTX_ADTX>0)) THEN '01'
+         ELSE '02'
+         END                    THAP_GBN
+        ,NVL(PAY_DT,BANK_RCP_DT)
+                                PAID_DATE
+        ,''                     LVY_NO
+        ,''                     BDNG_MGT_NO
+        ,''                     OWNER_MGT_NO
+        ,CUD_OPT                CUD_OPT
+        ,'1'                    PROC_CLS
+        ,'N'                    DEL_YN
+        ,''                     VIR_ACC_NO
+        ,'0'                    SGG_TR_TG
+        ,''                     DEL_DT
+        ,''                     VIR_DTM
+        ,'Y'                    ARS_YN
+        ,AUTO_TRNF_YN           AUTO_TRNF_YN
+        ,CSEN                   CSEN
+        ,DLQ_CHG_DIV            DLQ_CHG_DIV
+        ,CASE WHEN ACCT_COD='16' THEN
+        	CASE WHEN TAX_ITEM='299099' THEN BUGTX
+        	ELSE
+            	CASE WHEN DLQ_DIV='1' THEN NATTX+BUNTX
+            	ELSE (NATTX+BUNTX+NATTX_ADTX+BUNTX_ADTX)
+            	END
+            END
+         ELSE NATTX
+         END                    OCR_NATN_TAX
+        ,CASE WHEN ACCT_COD IN ('31','51') THEN
+			CASE WHEN TAX_ITEM='299099' THEN BUGTX
+			ELSE
+            	CASE WHEN DLQ_DIV='1' THEN SDOTX+BUNTX
+            	ELSE (SDOTX+BUNTX+SDOTX_ADTX+BUNTX_ADTX)
+            	END
+			END
+         ELSE 0
+         END                    OCR_SIDO_TAX
+        ,CASE WHEN BUGTX+BUGTX_ADTX>0 THEN
+            CASE
+            WHEN ACCT_COD IN ('16') THEN
+            	CASE WHEN TAX_ITEM='299099' THEN 0
+            	ELSE
+                	CASE WHEN DLQ_DIV='1' THEN SGGTX+BUNTX
+                	ELSE (SGGTX+BUNTX+SGGTX_ADTX+BUNTX_ADTX)
+                	END
+                END
+            WHEN ACCT_COD IN ('31','51') THEN
+            	CASE WHEN TAX_ITEM='299099' THEN 0
+            	ELSE (BUGTX+BUGTX_ADTX)
+            	END
+            ELSE
+                CASE WHEN TAX_ITEM='299099' THEN BUGTX
+                ELSE
+	                CASE WHEN DLQ_DIV='1' THEN (SGGTX+BUGTX+BUNTX)
+    	            ELSE (SGGTX+BUGTX+BUNTX+SGGTX_ADTX+BUGTX_ADTX+BUNTX_ADTX)
+        	        END
+                END
+            END
+         ELSE
+            CASE WHEN ACCT_COD IN ('16','41','61') THEN
+                CASE WHEN DLQ_DIV='1' THEN SGGTX+BUNTX
+                ELSE (SGGTX+BUNTX+SGGTX_ADTX+BUNTX_ADTX)
+                END
+            ELSE 0
+            END
+         END                    OCR_SIGUNGU_TAX
+        ,CASE WHEN TAX_ITEM='299099' THEN BUGTX
+         ELSE
+            CASE WHEN DLQ_DIV='1' THEN (NATTX+SDOTX+SGGTX+BUNTX)
+            ELSE (NATTX+SDOTX+SGGTX+BUNTX+NATTX_ADTX+SDOTX_ADTX+SGGTX_ADTX+BUNTX_ADTX)
+            END
+         END					OCR_PAYMENT_DATE1
+        ,CASE WHEN TAX_ITEM='299099' THEN (BUGTX+BUGTX_ADTX)
+         ELSE (NATTX+SDOTX+SGGTX+BUNTX+NATTX_ADTX+SDOTX_ADTX+SGGTX_ADTX+BUNTX_ADTX)
+         END					OCR_AFTPAYMENT_DATE1
+        ,CASE WHEN TAX_ITEM<>'299099' AND BUGTX+BUGTX_ADTX>0 THEN
+            CASE
+                WHEN ACCT_COD='16' THEN '1'
+                WHEN ACCT_COD IN ('31','51') THEN '2'
+                WHEN ACCT_COD IN ('41','61') THEN '3'
+                ELSE '0'
+            END
+         ELSE '0'
+         END                    OCR_VAT
+        ,BUGTX+BUGTX_ADTX		VAT_AMT
+        ,CASE
+            WHEN DUE_DF_OPT='A' THEN '0'
+            WHEN DUE_DF_OPT='B' THEN '1'
+            WHEN DUE_DF_OPT='C' THEN '2'
+         END                    DUE_DF_OPT
+        ,CASE WHEN RCP_DIV='1' THEN (NATTX+SDOTX+SGGTX+BUGTX+BUNTX)
+         ELSE (NATTX+SDOTX+SGGTX+BUGTX+BUNTX+NATTX_ADTX+SDOTX_ADTX+SGGTX_ADTX+BUGTX_ADTX+BUNTX_ADTX)
+         END                    SUM_RCP
+        ,TRN_YN					TRN_YN
+        ,SDOTX					SDOTX
+        ,SGGTX   				SGGTX
+        ,SDOTX_ADTX				SDOTX_ADTX
+        ,SGGTX_ADTX   			SGGTX_ADTX
+    FROM
+    (
+		SELECT TMP.*
+        	,CASE 
+            	WHEN NATTX=0 THEN 0
+            	WHEN NATTX_ADTX>0 THEN CEIL((NATTX_ADTX/NATTX)*100)
+         	 ELSE 0
+         	 END                 TMP_NATN_RATE
+        	,CASE
+            	WHEN SDOTX=0 THEN 0
+            	WHEN SDOTX_ADTX>0 THEN CEIL((SDOTX_ADTX/SDOTX)*100)
+         	 ELSE 0
+         	 END                 TMP_SIDO_RATE
+        	,CASE
+            	WHEN SGGTX=0 THEN 0
+            	WHEN SGGTX_ADTX>0 THEN CEIL((SGGTX_ADTX/SGGTX)*100)
+         	 ELSE 0
+         	 END                 TMP_SIGUNGU_RATE
+			,ROWNUM				RNUM
+		FROM
+		(
+        	SELECT *
+        	FROM SPNT200
+        	WHERE TRN_YN='0'
+	]]>
+	<isNotEmpty prepend = "AND" property="BS_NOT_IN_SEQ">
+	        SEQ NOT IN ($BS_NOT_IN_SEQ$)         
+	</isNotEmpty>  
+	<![CDATA[
+        	ORDER BY TRNN_ID, SEQ
+		) TMP
+		ORDER BY RNUM
+    )
+
+	
+     ]]>
+	</select>
+
+	
+	<!-- 표준세외수입 부과 건수 EPAY_NO -->
+	<select id="SELECT_TX2111_CNT_EPAY_NO" parameterClass="mapForm" resultClass="int">
+	<![CDATA[
+
+    SELECT COUNT(*) CNT
+    FROM TX2111_TB_DAMO A
+    WHERE A.SGG_COD=#SGG_COD#
+		AND A.EPAY_NO=#EPAY_NO#
+
+	]]>
+	</select>
+	
+	
+	<!-- 표준세외수입 수납 건수  EPAY_NO -->
+	<select id="SELECT_TX2211_CNT_EPAY_NO" parameterClass="mapForm" resultClass="int">
+	<![CDATA[
+
+    SELECT COUNT(*) CNT
+    FROM TX2111_TB_DAMO A, TX2112_TB B, TX2211_TB C
+    WHERE   A.TAX_NO=B.TAX_NO
+        AND B.TAX_NO=C.TAX_NO
+        AND B.TAX_CNT=C.TAX_CNT
+        AND A.SGG_COD=B.SGG_COD
+    	AND A.SGG_COD=#SGG_COD#
+        AND A.EPAY_NO=#EPAY_NO#
+        AND C.SNTG IN ('1','2')
+
+	]]>
+	</select>
+
+	
+
+	<!-- 표준세외수입 부과 건수 TAX_NO -->
+	<select id="SELECT_TX2111_CNT_TAX_NO" parameterClass="mapForm" resultClass="int">
+	<![CDATA[
+
+    SELECT COUNT(*) CNT
+    FROM TX2111_TB_DAMO A
+    WHERE A.SGG_COD=#SGG_COD#
+    	AND A.TAX_NO=#TAX_NO#
+
+	]]>
+	</select>
+	
+	
+	<!-- 표준세외수입 상세 부과 건수 TAX_NO -->
+	<select id="SELECT_TX2112_CNT_TAX_NO" parameterClass="mapForm" resultClass="int">
+	<![CDATA[
+
+    SELECT COUNT(*) CNT
+    FROM TX2112_TB A
+    WHERE A.SGG_COD=#SGG_COD#
+    	AND A.TAX_NO=#TAX_NO#
+
+	]]>
+	</select>
+	
+	
+	<!-- 표준세외수입 수납 건수 TAX_NO -->
+	<select id="SELECT_TX2211_CNT_TAX_NO" parameterClass="mapForm" resultClass="int">
+	<![CDATA[
+
+    SELECT COUNT(*) CNT
+    FROM TX2111_TB_DAMO A, TX2112_TB B, TX2211_TB C
+    WHERE A.TAX_NO=#TAX_NO#
+        AND A.TAX_NO=B.TAX_NO
+        AND B.TAX_NO=C.TAX_NO
+        AND B.TAX_CNT=C.TAX_CNT
+        AND A.SGG_COD=B.SGG_COD
+        AND A.SGG_COD=#SGG_COD#
+        AND C.SNTG IN ('1','2')
+
+	]]>
+	</select>
+
+	
+
+	<!-- 표준세외수입 TAX_NO -->
+	<select id="SELECT_TX2111_TAX_NO" parameterClass="mapForm" resultClass="String">
+	<![CDATA[
+
+    SELECT A.TAX_NO TAX_NO
+    FROM TX2111_TB_DAMO A
+    WHERE A.SGG_COD=#SGG_COD#
+    	AND A.EPAY_NO=#EPAY_NO#
+
+	]]>
+	</select>
+
+
+	
+	<!-- CYBER -->
+    <!-- 표준세외수입 부과자료 입력  -->
+	<insert id="INSERT_TX2111" parameterClass="mapForm">
+	<![CDATA[
+
+            INSERT INTO TX2111_TB_DAMO
+            (
+                 TAX_NO
+                ,SGG_COD
+                ,EPAY_NO
+                ,TAX_NOTICE_TITLE
+                ,PART_CODE
+                ,ORG_PART_CODE
+                ,ACCOUNT_YEAR
+                ,ACCT_COD
+                ,ACCOUNT_NAME
+                ,TAX_ITEM
+                ,TAX_NM
+                ,TAX_SNO
+                ,DIVIDED_PAYMENT_SEQNUM
+                ,TAX_YM
+                ,TAX_DIV
+                ,REG_NM
+                ,REG_TEL
+                ,REG_ZIPCD
+                ,ADDRESS
+                ,TAX_GDS
+                ,LEVY_DETAIL1
+                ,LEVY_DETAIL2
+                ,LEVY_DETAIL3
+                ,LEVY_DETAIL4
+                ,LEVY_DETAIL5
+                ,LEVY_DETAIL6
+                ,BUGWA_BUSEONAME
+                ,SUNAP_BUSEONAME
+                ,USER_NAME
+                ,USER_TEL_NO
+                ,TAX_GB
+                ,ABKU
+                ,BU_ADD_YN
+                ,SEC_REG_NO
+            )
+            VALUES
+            (
+                 #TAX_NO#
+                ,#SGG_COD#
+                ,#EPAY_NO#
+                ,#TAX_NOTICE_TITLE#
+                ,#PART_CODE#
+                ,#ORG_PART_CODE#
+                ,#ACCOUNT_YEAR#
+                ,#ACCT_COD#
+                ,#ACCOUNT_NAME#
+                ,#TAX_ITEM#
+                ,#TAX_NM#
+                ,#TAX_SNO#
+                ,#DIVIDED_PAYMENT_SEQNUM#
+                ,#TAX_YM#
+                ,#TAX_DIV#
+                ,#REG_NM#
+                ,#REG_TEL#
+                ,#REG_ZIPCD#
+                ,#ADDRESS#
+                ,#TAX_GDS#
+                ,#LEVY_DETAIL1#
+                ,#LEVY_DETAIL2#
+                ,#LEVY_DETAIL3#
+                ,#LEVY_DETAIL4#
+                ,#LEVY_DETAIL5#
+                ,#LEVY_DETAIL6#
+                ,#BUGWA_BUSEONAME#
+                ,#SUNAP_BUSEONAME#
+                ,#USER_NAME#
+                ,#USER_TEL_NO#
+                ,#TAX_GB#
+                ,#ABKU#
+                ,#BU_ADD_YN#
+                ,FC_DAMO(#REG_NO#)
+            )
+
+    ]]>           
+	</insert>	
+
+	
+	<!-- CYBER -->
+    <!-- 표준세외수입 부과상세 입력  -->
+	<insert id="INSERT_TX2112" parameterClass="mapForm">
+	<![CDATA[
+	
+            INSERT INTO TX2112_TB
+            (
+                 SGG_COD
+                ,TAX_NO
+                ,TAX_CNT
+                ,BUGWA_STAT
+                ,NATN_TAX
+                ,NATN_RATE
+                ,SIDO_TAX
+                ,SIDO_RATE
+                ,SIGUNGU_TAX
+                ,SIGUNGU_RATE
+                ,SUBJECT_NAME1
+                ,PAYMENT_DATE1
+                ,AFTPAYMENT_DATE1
+                ,SUBJECT_NAME2
+                ,PAYMENT_DATE2
+                ,AFTPAYMENT_DATE2
+                ,SUBJECT_NAME3
+                ,PAYMENT_DATE3
+                ,AFTPAYMENT_DATE3
+                ,DUE_DT
+                ,DUE_F_DT
+                ,OCR_BD
+                ,SNTG
+                ,THAP_GBN
+                ,PAID_DATE
+                ,LVY_NO
+                ,BDNG_MGT_NO
+                ,OWNER_MGT_NO
+                ,CUD_OPT
+                ,PROC_CLS
+                ,DEL_YN
+                ,VIR_ACC_NO
+                ,SGG_TR_TG
+                ,DEL_DT
+                ,TAX_ITEM
+                ,VIR_DTM
+                ,ARS_YN
+                ,AUTO_TRNF_YN
+                ,CSEN
+                ,VAT_AMT
+            )
+            VALUES
+            (
+                 #SGG_COD#
+                ,#TAX_NO#
+                ,#TAX_CNT#
+                ,#BUGWA_STAT#
+                ,#NATN_TAX#
+                ,#NATN_RATE#
+                ,#SIDO_TAX#
+                ,#SIDO_RATE#
+                ,#SIGUNGU_TAX#
+                ,#SIGUNGU_RATE#
+                ,#SUBJECT_NAME1#
+                ,#PAYMENT_DATE1#
+                ,#AFTPAYMENT_DATE1#
+                ,#SUBJECT_NAME2#
+                ,#PAYMENT_DATE2#
+                ,#AFTPAYMENT_DATE2#
+                ,#SUBJECT_NAME3#
+                ,#PAYMENT_DATE3#
+                ,#AFTPAYMENT_DATE3#
+                ,#DUE_DT#
+                ,#DUE_F_DT#
+                ,FC_CHECK_OCR(#TAX_NO#||'0'||SUBSTR(#BUGWA_STAT#,2,1)||LPAD(#OCR_PAYMENT_DATE1#,11,'0')||#DUE_DT#||#OCR_VAT#||'0'
+                ||LPAD(#OCR_NATN_TAX#,10,'0')||LPAD(#NATN_RATE#,2,'0')
+                ||LPAD(#OCR_SIDO_TAX#,10,'0')||LPAD(#SIDO_RATE#,2,'0')
+                ||LPAD(#OCR_SIGUNGU_TAX#,10,'0')||LPAD(#SIGUNGU_RATE#,2,'0')
+                ||'0'||SUBSTR(#TAX_YM#,5,2)||#DUE_DF_OPT#||LPAD(#OCR_AFTPAYMENT_DATE1#,12,'0')||'0'||'0')
+                ,#SNTG#
+                ,#THAP_GBN#
+                ,#PAID_DATE#
+                ,#LVY_NO#
+                ,#BDNG_MGT_NO#
+                ,#OWNER_MGT_NO#
+                ,#CUD_OPT#
+                ,#PROC_CLS#
+                ,#DEL_YN#
+                ,#VIR_ACC_NO#
+                ,#SGG_TR_TG#
+                ,#DEL_DT#
+                ,#TAX_ITEM#
+                ,#VIR_DTM#
+                ,#ARS_YN#
+                ,#AUTO_TRNF_YN#
+                ,#CSEN#
+                ,#VAT_AMT#
+            )
+    ]]>           
+	</insert>	
+
+
+	<!-- 표준세외수입 부과자료 업데이트 EPAY_NO  -->
+	<!-- CYBER -->
+	<update id="UPDATE_TX2111_EPAY_NO" parameterClass="mapForm">
+    <![CDATA[
+
+        UPDATE TX2111_TB_DAMO
+            SET  LAST_DTM=SYSDATE
+                ,TAX_NO=#TAX_NO#
+                ,SGG_COD=#SGG_COD#
+                ,EPAY_NO=#EPAY_NO#
+                ,TAX_NOTICE_TITLE=#TAX_NOTICE_TITLE#
+                ,PART_CODE=#PART_CODE#
+                ,ORG_PART_CODE=#ORG_PART_CODE#
+                ,ACCOUNT_YEAR=#ACCOUNT_YEAR#
+                ,ACCT_COD=#ACCT_COD#
+                ,ACCOUNT_NAME=#ACCOUNT_NAME#
+                ,TAX_ITEM=#TAX_ITEM#
+                ,TAX_NM=#TAX_NM#
+                ,TAX_SNO=#TAX_SNO#
+                ,DIVIDED_PAYMENT_SEQNUM=#DIVIDED_PAYMENT_SEQNUM#
+                ,TAX_YM=#TAX_YM#
+                ,TAX_DIV=#TAX_DIV#
+                ,REG_NM=#REG_NM#
+                ,REG_TEL=#REG_TEL#
+                ,REG_ZIPCD=#REG_ZIPCD#
+                ,ADDRESS=#ADDRESS#
+                ,TAX_GDS=#TAX_GDS#
+                ,LEVY_DETAIL1=#LEVY_DETAIL1#
+                ,LEVY_DETAIL2=#LEVY_DETAIL2#
+                ,LEVY_DETAIL3=#LEVY_DETAIL3#
+                ,LEVY_DETAIL4=#LEVY_DETAIL4#
+                ,LEVY_DETAIL5=#LEVY_DETAIL5#
+                ,LEVY_DETAIL6=#LEVY_DETAIL6#
+                ,BUGWA_BUSEONAME=#BUGWA_BUSEONAME#
+                ,SUNAP_BUSEONAME=#SUNAP_BUSEONAME#
+                ,USER_NAME=#USER_NAME#
+                ,USER_TEL_NO=#USER_TEL_NO#
+                ,TAX_GB=#TAX_GB#
+                ,ABKU=#ABKU#
+                ,BU_ADD_YN=#BU_ADD_YN#
+                ,SEC_REG_NO=FC_DAMO(#REG_NO#)
+            WHERE SGG_COD=#SGG_COD#
+				AND EPAY_NO=#EPAY_NO#
+         
+    ]]>
+	</update>
+
+
+	<!-- 표준세외수입 부과상세 업데이트 EPAY_NO -->
+	<!-- CYBER -->
+	<update id="UPDATE_TX2112_EPAY_NO" parameterClass="mapForm">
+    <![CDATA[
+    
+        UPDATE TX2112_TB
+        SET  LAST_DTM=SYSDATE
+            ,SGG_COD=#SGG_COD#
+            ,TAX_NO=#TAX_NO#
+            ,TAX_CNT=#TAX_CNT#
+            ,BUGWA_STAT=#BUGWA_STAT#
+            ,NATN_TAX=#NATN_TAX#
+            ,NATN_RATE=#NATN_RATE#
+            ,SIDO_TAX=#SIDO_TAX#
+            ,SIDO_RATE=#SIDO_RATE#
+            ,SIGUNGU_TAX=#SIGUNGU_TAX#
+            ,SIGUNGU_RATE=#SIGUNGU_RATE#
+            ,SUBJECT_NAME1=#SUBJECT_NAME1#
+            ,PAYMENT_DATE1=#PAYMENT_DATE1#
+            ,AFTPAYMENT_DATE1=#AFTPAYMENT_DATE1#
+            ,SUBJECT_NAME2=#SUBJECT_NAME2#
+            ,PAYMENT_DATE2=#PAYMENT_DATE2#
+            ,AFTPAYMENT_DATE2=#AFTPAYMENT_DATE2#
+            ,SUBJECT_NAME3=#SUBJECT_NAME3#
+            ,PAYMENT_DATE3=#PAYMENT_DATE3#
+            ,AFTPAYMENT_DATE3=#AFTPAYMENT_DATE3#
+            ,DUE_DT=#DUE_DT#
+            ,DUE_F_DT=#DUE_F_DT#
+            ,OCR_BD=FC_CHECK_OCR(#TAX_NO#||'0'||SUBSTR(#BUGWA_STAT#,2,1)||LPAD(#OCR_PAYMENT_DATE1#,11,'0')||#DUE_DT#||#OCR_VAT#||'0'
+            ||LPAD(#OCR_NATN_TAX#,10,'0')||LPAD(#NATN_RATE#,2,'0')
+            ||LPAD(#OCR_SIDO_TAX#,10,'0')||LPAD(#SIDO_RATE#,2,'0')
+            ||LPAD(#OCR_SIGUNGU_TAX#,10,'0')||LPAD(#SIGUNGU_RATE#,2,'0')
+            ||'0'||SUBSTR(#TAX_YM#,5,2)||#DUE_DF_OPT#||LPAD(#OCR_AFTPAYMENT_DATE1#,12,'0')||'0'||'0')
+            ,SNTG=#SNTG#
+            ,THAP_GBN=#THAP_GBN#
+            ,PAID_DATE=#PAID_DATE#
+            ,LVY_NO=#LVY_NO#
+            ,BDNG_MGT_NO=#BDNG_MGT_NO#
+            ,OWNER_MGT_NO=#OWNER_MGT_NO#
+            ,CUD_OPT=#CUD_OPT#
+            ,PROC_CLS=#PROC_CLS#
+            ,DEL_YN=#DEL_YN#
+            ,SGG_TR_TG=#SGG_TR_TG#
+            ,DEL_DT=#DEL_DT#
+            ,TAX_ITEM=#TAX_ITEM#
+            ,ARS_YN=#ARS_YN#
+            ,AUTO_TRNF_YN=#AUTO_TRNF_YN#
+            ,CSEN=#CSEN#
+            ,VAT_AMT=#VAT_AMT#
+        WHERE SGG_COD=#SGG_COD#
+        	AND TAX_NO=#V_TAX_NO#
+
+    ]]>
+	</update>
+	
+
+	<!-- 표준세외수입 부과자료 업데이트 TAX_NO -->
+	<!-- CYBER -->
+	<update id="UPDATE_TX2111_TAX_NO" parameterClass="mapForm">
+    <![CDATA[
+
+        UPDATE TX2111_TB_DAMO
+            SET  LAST_DTM=SYSDATE
+                ,TAX_NO=#TAX_NO#
+                ,SGG_COD=#SGG_COD#
+                ,EPAY_NO=#EPAY_NO#
+                ,TAX_NOTICE_TITLE=#TAX_NOTICE_TITLE#
+                ,PART_CODE=#PART_CODE#
+                ,ORG_PART_CODE=#ORG_PART_CODE#
+                ,ACCOUNT_YEAR=#ACCOUNT_YEAR#
+                ,ACCT_COD=#ACCT_COD#
+                ,ACCOUNT_NAME=#ACCOUNT_NAME#
+                ,TAX_ITEM=#TAX_ITEM#
+                ,TAX_NM=#TAX_NM#
+                ,TAX_SNO=#TAX_SNO#
+                ,DIVIDED_PAYMENT_SEQNUM=#DIVIDED_PAYMENT_SEQNUM#
+                ,TAX_YM=#TAX_YM#
+                ,TAX_DIV=#TAX_DIV#
+                ,REG_NM=#REG_NM#
+                ,REG_TEL=#REG_TEL#
+                ,REG_ZIPCD=#REG_ZIPCD#
+                ,ADDRESS=#ADDRESS#
+                ,TAX_GDS=#TAX_GDS#
+                ,LEVY_DETAIL1=#LEVY_DETAIL1#
+                ,LEVY_DETAIL2=#LEVY_DETAIL2#
+                ,LEVY_DETAIL3=#LEVY_DETAIL3#
+                ,LEVY_DETAIL4=#LEVY_DETAIL4#
+                ,LEVY_DETAIL5=#LEVY_DETAIL5#
+                ,LEVY_DETAIL6=#LEVY_DETAIL6#
+                ,BUGWA_BUSEONAME=#BUGWA_BUSEONAME#
+                ,SUNAP_BUSEONAME=#SUNAP_BUSEONAME#
+                ,USER_NAME=#USER_NAME#
+                ,USER_TEL_NO=#USER_TEL_NO#
+                ,TAX_GB=#TAX_GB#
+                ,ABKU=#ABKU#
+                ,BU_ADD_YN=#BU_ADD_YN#
+                ,SEC_REG_NO=FC_DAMO(#REG_NO#)
+            WHERE SGG_COD=#SGG_COD#
+            	AND TAX_NO=#TAX_NO#
+         
+    ]]>
+	</update>
+
+
+	<!-- 표준세외수입 부과상세 업데이트 TAX_NO -->
+	<!-- CYBER -->
+	<update id="UPDATE_TX2112_TAX_NO" parameterClass="mapForm">
+    <![CDATA[
+    
+        UPDATE TX2112_TB
+        SET  LAST_DTM=SYSDATE
+            ,SGG_COD=#SGG_COD#
+            ,TAX_NO=#TAX_NO#
+            ,TAX_CNT=#TAX_CNT#
+            ,BUGWA_STAT=#BUGWA_STAT#
+            ,NATN_TAX=#NATN_TAX#
+            ,NATN_RATE=#NATN_RATE#
+            ,SIDO_TAX=#SIDO_TAX#
+            ,SIDO_RATE=#SIDO_RATE#
+            ,SIGUNGU_TAX=#SIGUNGU_TAX#
+            ,SIGUNGU_RATE=#SIGUNGU_RATE#
+            ,SUBJECT_NAME1=#SUBJECT_NAME1#
+            ,PAYMENT_DATE1=#PAYMENT_DATE1#
+            ,AFTPAYMENT_DATE1=#AFTPAYMENT_DATE1#
+            ,SUBJECT_NAME2=#SUBJECT_NAME2#
+            ,PAYMENT_DATE2=#PAYMENT_DATE2#
+            ,AFTPAYMENT_DATE2=#AFTPAYMENT_DATE2#
+            ,SUBJECT_NAME3=#SUBJECT_NAME3#
+            ,PAYMENT_DATE3=#PAYMENT_DATE3#
+            ,AFTPAYMENT_DATE3=#AFTPAYMENT_DATE3#
+            ,DUE_DT=#DUE_DT#
+            ,DUE_F_DT=#DUE_F_DT#
+            ,OCR_BD=FC_CHECK_OCR(#TAX_NO#||'0'||SUBSTR(#BUGWA_STAT#,2,1)||LPAD(#OCR_PAYMENT_DATE1#,11,'0')||#DUE_DT#||#OCR_VAT#||'0'
+            ||LPAD(#OCR_NATN_TAX#,10,'0')||LPAD(#NATN_RATE#,2,'0')
+            ||LPAD(#OCR_SIDO_TAX#,10,'0')||LPAD(#SIDO_RATE#,2,'0')
+            ||LPAD(#OCR_SIGUNGU_TAX#,10,'0')||LPAD(#SIGUNGU_RATE#,2,'0')
+            ||'0'||SUBSTR(#TAX_YM#,5,2)||#DUE_DF_OPT#||LPAD(#OCR_AFTPAYMENT_DATE1#,12,'0')||'0'||'0')
+            ,SNTG=#SNTG#
+            ,THAP_GBN=#THAP_GBN#
+            ,PAID_DATE=#PAID_DATE#
+            ,LVY_NO=#LVY_NO#
+            ,BDNG_MGT_NO=#BDNG_MGT_NO#
+            ,OWNER_MGT_NO=#OWNER_MGT_NO#
+            ,CUD_OPT=#CUD_OPT#
+            ,PROC_CLS=#PROC_CLS#
+            ,DEL_YN=#DEL_YN#
+            ,SGG_TR_TG=#SGG_TR_TG#
+            ,DEL_DT=#DEL_DT#
+            ,TAX_ITEM=#TAX_ITEM#
+            ,ARS_YN=#ARS_YN#
+            ,AUTO_TRNF_YN=#AUTO_TRNF_YN#
+            ,CSEN=#CSEN#
+            ,VAT_AMT=#VAT_AMT#
+        WHERE SGG_COD=#SGG_COD#
+        	AND TAX_NO=#TAX_NO#
+
+    ]]>
+	</update>
+	
+
+	<!-- 구청의 수납된 자료를 삭제Flag 를 업데이트 한다.  -->
+	<!-- CYBER -->
+	<update id="UPDATE_TX2112_DEL_YN" parameterClass="mapForm">
+    <![CDATA[
+
+    	UPDATE TX2112_TB
+    	SET  LAST_DTM = SYSDATE
+    	    ,DEL_DT   = SYSDATE
+    	    ,DEL_YN   = 'Y'
+    	    ,PROC_CLS = '3'
+    	WHERE SGG_COD = #SGG_COD#
+    	  AND TAX_NO  = #V_TAX_NO#
+
+    ]]>
+	</update>	
+
+	
+
+	<!-- 연계오류자료 조회 -->
+	<select id="SELECT_SP_TX2111_NOT_SEQ" parameterClass="mapForm" resultClass="mapForm">
+    <![CDATA[
+	
+		SELECT TO_NUMBER(SEQ) AS NOTSEQ
+		FROM SP_TX2111_NOT_SEQ
+		WHERE SGG_COD=#SGG#
+		AND DAEMON='TXDM2411'
+         
+    ]]>
+    </select>
+    
+
+	
+	<!-- 연계오류자료 를 인서트 한다.  -->
+	<!-- CYBER -->
+	<insert id="INSERT_SP_TX2111_NOT_SEQ" parameterClass="mapForm">
+    <![CDATA[
+
+    	INSERT INTO SP_TX2111_NOT_SEQ
+    	(
+    	 	 SGG_COD
+    	 	,DAEMON
+    		,SEQ
+    	)
+    	VALUES
+    	(
+    	 	 #SGG_COD#
+    	 	,'TXDM2411'
+    		,TO_CHAR(#SEQ#)
+    	)
+
+    ]]>
+	</insert>	
+
+
+	<!-- NID -->
+	<!-- 연계테이블 업데이트  -->
+	<update id="UPDATE_SPNT200_TRN_YN" parameterClass="mapForm">
+    <![CDATA[
+
+        UPDATE SPNT200
+        SET TRN_YN=#TRN_YN#
+        WHERE SEQ=#SEQ#
+        	AND TRNN_ID=#TRNN_ID#
+
+    ]]>
+	</update>	
+
+</sqlMap>

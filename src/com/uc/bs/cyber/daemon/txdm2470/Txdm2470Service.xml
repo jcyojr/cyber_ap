@@ -1,0 +1,354 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXDM2470" >
+
+
+    <!-- 연계 -->
+    <!-- 주정차위반과태료 부과내역을 가져온다. -->
+    <!-- DIVIDED_PAYMENT_SEQNUM : 주정차위반 과태료 중 사전고지납부일때 해당 달이 기록된다. -->
+	<select id="SELECT_PARKING_LEVY_LIST"   parameterClass="mapForm"  resultClass="mapForm">
+	<![CDATA[    
+    SELECT SEQ                                                                                    AS SEQ                      /* 자료순번                                         */
+		 , LVY_KEY                                                                                AS TAX_NO                   /* 조합키필드(납세번호)                         */
+		 , TRANS_SGCD                                                                             AS SGG_COD                  /* 구청코드                                         */
+		 , ELEC_BILL_NUM                                                                          AS EPAY_NO                  /* 전자납부번호                                     */
+		 , TAX_NOTICE_TITLE                                                                       AS TAX_NOTICE_TITLE         /* 고지서제목                                       */
+		 , PART_CODE                                                                              AS PART_CODE                /* 부서코드                                         */
+		 , ORG_PART_CODE                                                                          AS ORG_PART_CODE            /* 기관부서코드명                                   */
+		 , ACCOUNT_YEAR                                                                           AS ACCOUNT_YEAR             /* 회계년도                                         */
+		 , ACCOUNT_CODE                                                                           AS ACCT_COD                 /* 회계코드                                         */
+		 , ACCOUNT_NAME                                                                           AS ACCOUNT_NAME             /* 회계명                                           */
+		 , TAX_SUBJECT_CODE                                                                       AS TAX_ITEM                 /* 과세목                                           */
+		 , TAX_SUBJECT_NAME                                                                       AS TAX_NM                   /* 과세목명                                         */
+		 , TAX_NOTICE_NUM                                                                         AS TAX_SNO                  /* 고지번호                                         */
+		 , DIVIDED_PAYMENT_SEQNUM                                                                 AS DIVIDED_PAYMENT_SEQNUM   /* 분납순번                                         */
+		 , LEVY_YEAR_MONTH                                                                        AS TAX_YM                   /* 부과년월                                         */
+		 , LEVY_DIV                                                                               AS LEVY_DIV                 /* 한글                                             */
+		 , DECODE(LEVY_DIV,'수시','1','자납','2','체납','3','1')                                    AS TAX_DIV                  /* 정기/수시(부과)구분                             */
+		 , BUGWA_STAT                                                                             AS BUGWA_STAT               /* 부과상태                                         */  
+		 , NVL(PAYER_NAME, ' ')                                                                   AS REG_NM                   /* 납부자성명                                       */
+		 , PAYER_TEL_NO                                                                           AS REG_TEL                  /* 납부자전화번호                                   */
+		 , NVL(REPLACE(PAYER_JUMIN,' ',''), ' ')                                                  AS REG_NO                   /* 납부자주민번호                                   */
+		 , PAYER_ZIPCODE                                                                          AS REG_ZIPCD                /* 우편번호                                         */
+		 , PAYER_ADDR                                                                             AS ADDRESS                  /* 주소                                             */
+		 , LEVY_ITEM                                                                              AS TAX_GDS                  /* 과세대상                                         */
+		 , SUBSTR(LEVY_DETAIL1,1,50)                                                              AS LEVY_DETAIL1             /* 물건내용(부과내역)1                          */
+		 , SUBSTR(LEVY_DETAIL2,1,50)                                                              AS LEVY_DETAIL2             /* 물건내용(부과내역)2                          */
+		 , SUBSTR(LEVY_DETAIL3,1,50)                                                              AS LEVY_DETAIL3             /* 물건내용(부과내역)3                          */
+		 , SUBSTR(LEVY_DETAIL4,1,50)                                                              AS LEVY_DETAIL4             /* 물건내용(부과내역)4                          */
+		 , SUBSTR(LEVY_DETAIL5,1,50)                                                              AS LEVY_DETAIL5             /* 물건내용(부과내역)5                          */
+		 , SUBSTR(LEVY_DETAIL6,1,50)                                                              AS LEVY_DETAIL6             /* 물건내용(부과내역)6                          */
+		 , TAX_PAYMENT_DATE1                                                                      AS DUE_DT                   /* 납부기한(납기내)                             */
+		 , NVL(TAX_PAYMENT_DATE2, TAX_PAYMENT_DATE1)                                              AS DUE_F_DT                 /* 납부기한(납기후)                             */
+		 , NATN_TAX                                                                                                           /* 국세                                             */
+		 , NATN_RATE                                                                                                          /* 국세요율                                         */
+		 , SIDO_TAX                                                                                                           /* 시도세                                           */
+		 , SIDO_RATE                                                                                                          /* 시도세요율                                       */
+		 , SIGUNGU_TAX                                                                                                        /* 시군구세                                         */
+		 , SIGUNGU_RATE                                                                                                       /* 시군구세요율                                     */
+		 , SUBJECT_NAME1                                                                                                      /* 과목명칭1                                   */
+		 , PAYMENT_DATE1                                                                                                      /* 납기내금액1                                 */
+		 , AFTPAYMENT_DATE1                                                                                                   /* 납기후금액1                                 */
+		 , SUBJECT_NAME2                                                                                                      /* 과목명칭2                                   */
+		 , PAYMENT_DATE2                                                                                                      /* 납기내금액2                                 */
+		 , AFTPAYMENT_DATE2                                                                                                   /* 납기후금액2                                 */
+		 , SUBJECT_NAME3                                                                                                      /* 과목명칭3                                   */
+		 , PAYMENT_DATE3                                                                                                      /* 납기내금액3                                 */
+		 , AFTPAYMENT_DATE3                                                                                                   /* 납기후금액3                                 */
+		 , BUGWA_BUSEONAME                                                                                                    /* 부과부서명                                       */
+		 , SUNAP_BUSEONAME                                                                                                    /* 수납부서명                                       */
+		 , USER_NAME                                                                                                          /* 사용자명                                         */
+		 , USER_TEL_NO                                                                                                        /* 담당자전화번호                                   */
+		 , TRIM(DPOSL_STAT) SNTG                                                                                              /* 납부여부(상태) 0:미수납, 1:수납처리중, 2:수납  */
+		 , PAID_DATE                                                                                                          /* 납기후납기일                                     */
+		 , TRIM(SPCS_TAX_ITEM)                                                                     AS TAX_GB                  /* 세금구분                                         */
+		 , TRIM(OCR1) || TRIM(OCR2)                                                                AS OCR_BD                  /* OCR_BAND                                   */
+		 , DECODE(ABKU_STAT,'01','02','02','02','02')                                              AS ABKU_STAT               /* 압류구분                                         */
+		 , DECODE(ELEC_BILL_NUM,'','',SUBSTR(ELEC_BILL_NUM,1,8)||
+		          DECODE(SUBSTR(ELEC_BILL_NUM,9,2),'31','1','2')||
+                  SUBSTR(ELEC_BILL_NUM,11,8)) ELEC_GRNO, DECODE(THAP_GBN,'01','01','02','02','02') AS THAP_GBN                /* 통합고지구분                                     */
+		 , BNON_SNTG                                                                                                          /* 상태FLAG I:INSERT, UPDATE D : DELETE        */
+		 , NVL(BNON_TRTG,'0')                                                                      AS BNON_TRTG               /* 전송FALG 0:미전송, 1: 전송                      */
+		 , PAYMENT_DATE1 + AFTPAYMENT_DATE1                                                        AS AFTAM
+      FROM JUCHA_TAB
+     WHERE TRANS_SGCD =  #TRANS_SGCD#                          
+       AND (BNON_TRTG =  '0' OR BNON_TRTG IS NULL)  
+       AND THAP_GBN   IN ('01','02')
+       AND ROWNUM     <= 10000                 
+     ORDER BY SEQ                    
+    ]]>  
+	</select>
+	
+	
+	<select id="SELECT_PARKING_LEVY_CNT" parameterClass="mapForm" resultClass="int">
+	<![CDATA[    
+
+		 SELECT                       
+		        COUNT(*) CNT      
+		  FROM JUCHA_TAB
+		 WHERE TRANS_SGCD = #TRANS_SGCD#                          
+		   AND (BNON_TRTG = '0' OR BNON_TRTG IS NULL)  
+		   AND THAP_GBN IN ('01','02')                  
+
+    ]]>  
+	</select>	
+
+
+    <!-- 사이버 -->
+    <!-- 주정차위반과태료 연계데이터 입력 -->
+	<insert id="INSERT_PARKING_LEVY" parameterClass="mapForm">
+    INSERT INTO TX2111_TB_DAMO (
+                TAX_NO                       /* 납세번호         (31 ) */
+              , SGG_COD                      /* 구청코드         (3  ) */
+              , EPAY_NO                      /* 전자납부번호     (19 ) */
+              , TAX_NOTICE_TITLE             /* 고지서제목       (80 ) */
+              , PART_CODE                    /* 부서코드         (11 ) */
+              , ORG_PART_CODE                /* 기관부서코드명   (80 ) */
+              , ACCOUNT_YEAR                 /* 회계년도         (4  ) */
+              , ACCT_COD                     /* 회계코드         (2  ) */
+              , ACCOUNT_NAME                 /* 회계명           (20 ) */
+              , TAX_ITEM                     /* 과세목           (6  ) */
+              , TAX_NM                       /* 과세목명         (80 ) */
+              , TAX_SNO                      /* 과세번호1       (6  ) */
+              , DIVIDED_PAYMENT_SEQNUM       /* 과세번호2       (2  ) */
+              , TAX_YM                       /* 부과년월         (6  ) */
+              , TAX_DIV                      /* 기분             (1  ) */
+              , REG_NM                       /* 성명(법인명)    (40 ) */
+              , REG_TEL                      /* 납세자전화번호   (20 ) */
+              , SEC_REG_NO                   /* 주민법인번호     (13 ) */
+              , REG_ZIPCD                    /* 납세자우편번호   (6  ) */
+              , ADDRESS                      /* 주소             (200) */
+              , TAX_GDS                      /* 과세대상         (100) */
+              , LEVY_DETAIL1                 /* 물건내용1       (50 ) */
+              , LEVY_DETAIL2                 /* 물건내용2       (50 ) */
+              , LEVY_DETAIL3                 /* 물건내용3       (50 ) */
+              , LEVY_DETAIL4                 /* 물건내용4       (50 ) */
+              , LEVY_DETAIL5                 /* 물건내용5       (50 ) */
+              , LEVY_DETAIL6                 /* 물건내용6       (50 ) */
+              , BUGWA_BUSEONAME              /* 부과부서명       (40 ) */
+              , SUNAP_BUSEONAME              /* 수납부서명       (40 ) */
+              , USER_NAME                    /* 사용자명         (40 ) */
+              , USER_TEL_NO                  /* 담당자전화번호   (20 ) */
+              , TAX_GB                       /* 세금구분         (1  ) */
+              , ABKU                         /* 압류구분         (2  ) */
+              , BU_ADD_YN                    /* 부가가치세구분   (1  ) */
+     ) VALUES ( #TAX_NO#                
+              , #SGG_COD#               
+              , #EPAY_NO#               
+              , #TAX_NOTICE_TITLE#      
+              , #PART_CODE#             
+              , #ORG_PART_CODE#         
+              , #ACCOUNT_YEAR#          
+              , #ACCT_COD#              
+              , #ACCOUNT_NAME#          
+              , #TAX_ITEM#              
+              , #TAX_NM#                
+              , #TAX_SNO#               
+              , #DIVIDED_PAYMENT_SEQNUM#
+              , #TAX_YM#                
+              , #TAX_DIV#               
+              , #REG_NM#                
+              , #REG_TEL#               
+              , FC_DAMO(#REG_NO#)                
+              , #REG_ZIPCD#             
+              , #ADDRESS#               
+              , #TAX_GDS#               
+              , #LEVY_DETAIL1#
+              , #LEVY_DETAIL2#
+              , #LEVY_DETAIL3#
+              , #LEVY_DETAIL4#
+              , #LEVY_DETAIL5#
+              , #LEVY_DETAIL6#
+              , #BUGWA_BUSEONAME#
+              , #SUNAP_BUSEONAME#
+              , #USER_NAME#
+              , #USER_TEL_NO#
+              , #TAX_GB#
+              , #ABKU#
+              , #BU_ADD_YN#
+    )
+	</insert>	
+	
+	
+    <!-- 사이버 -->
+    <!-- 주정차위반과태료 연계데이터 업데이트 -->
+	<update id="UPDATE_PARKING_LEVY" parameterClass="mapForm">
+    UPDATE TX2111_TB_DAMO
+       SET SGG_COD                 = #SGG_COD#                 /* 구청코드         (3  )    */
+         , EPAY_NO                 = #EPAY_NO#                 /* 전자납부번호     (19 )    */
+         , TAX_NOTICE_TITLE        = #TAX_NOTICE_TITLE#        /* 고지서제목       (80 )    */
+         , PART_CODE               = #PART_CODE#               /* 부서코드         (11 )    */
+         , ORG_PART_CODE           = #ORG_PART_CODE#           /* 기관부서코드명   (80 )    */
+         , ACCOUNT_YEAR            = #ACCOUNT_YEAR#            /* 회계년도         (4  )    */
+         , ACCT_COD                = #ACCT_COD#                /* 회계코드         (2  )    */
+         , ACCOUNT_NAME            = #ACCOUNT_NAME#            /* 회계명           (20 )    */
+         , TAX_ITEM                = #TAX_ITEM#                /* 과세목           (6  )    */
+         , TAX_NM                  = #TAX_NM#                  /* 과세목명         (80 )    */
+         , TAX_SNO                 = #TAX_SNO#                 /* 과세번호1       (6  )    */
+         , DIVIDED_PAYMENT_SEQNUM  = #DIVIDED_PAYMENT_SEQNUM#  /* 과세번호2       (2  )    */
+         , TAX_YM                  = #TAX_YM#                  /* 부과년월         (6  )    */
+         , TAX_DIV                 = #TAX_DIV#                 /* 기분             (1  )    */
+         , REG_NM                  = #REG_NM#                  /* 성명(법인명)    (40 )    */
+         , REG_TEL                 = #REG_TEL#                 /* 납세자전화번호   (20 )    */
+         , SEC_REG_NO              = FC_DAMO(#REG_NO#)         /* 주민법인번호     (13 )    */
+         , REG_ZIPCD               = #REG_ZIPCD#               /* 납세자우편번호   (6  )    */
+         , ADDRESS                 = #ADDRESS#                 /* 주소             (200)    */
+         , TAX_GDS                 = #TAX_GDS#                 /* 과세대상         (100)    */
+         , LEVY_DETAIL1            = #LEVY_DETAIL1#            /* 물건내용1       (50 )    */
+         , LEVY_DETAIL2            = #LEVY_DETAIL2#            /* 물건내용2       (50 )    */
+         , LEVY_DETAIL3            = #LEVY_DETAIL3#            /* 물건내용3       (50 )    */
+         , LEVY_DETAIL4            = #LEVY_DETAIL4#            /* 물건내용4       (50 )    */
+         , LEVY_DETAIL5            = #LEVY_DETAIL5#            /* 물건내용5       (50 )    */
+         , LEVY_DETAIL6            = #LEVY_DETAIL6#            /* 물건내용6       (50 )    */
+         , BUGWA_BUSEONAME         = #BUGWA_BUSEONAME#         /* 부과부서명       (40 )    */
+         , SUNAP_BUSEONAME         = #SUNAP_BUSEONAME#         /* 수납부서명       (40 )    */
+         , USER_NAME               = #USER_NAME#               /* 사용자명         (40 )    */
+         , USER_TEL_NO             = #USER_TEL_NO#             /* 담당자전화번호   (20 )    */
+         , TAX_GB                  = #TAX_GB#                  /* 세금구분         (1  )    */
+         , ABKU                    = #ABKU#                    /* 압류구분         (2  )    */
+         , BU_ADD_YN               = #BU_ADD_YN#               /* 부가가치세구분   (1  )    */
+         , LAST_DTM                = SYSDATE                   /* 최종수정일시               */      
+     WHERE TAX_NO                  = #TAX_NO#                  /* 납세번호         (31 ) pk */ 
+	</update>		
+	
+	
+    <!-- 사이버 -->
+    <!-- 주정차위반과태료 연계상세데이터 입력 -->
+	<insert id="INSERT_PARKING_DETAIL_LEVY" parameterClass="mapForm">
+    INSERT INTO TX2112_TB (
+                TAX_NO               /* 납세번호             (31)1 */ 
+              , SGG_COD              /* 구청코드             (3 )  */
+              , TAX_CNT              /* 부과순번             (3 )2 */ 
+              , BUGWA_STAT           /* 부과상태             (2 )3 */ 
+              , NATN_TAX             /* 국세                 (22)4 */ 
+              , NATN_RATE            /* 국세요율             (22)5 */ 
+              , SIDO_TAX             /* 시도세               (22)6 */ 
+              , SIDO_RATE            /* 시도세요율           (22)7 */ 
+              , SIGUNGU_TAX          /* 시군구세             (22)8 */ 
+              , SIGUNGU_RATE         /* 시군구세요율         (22)9  */ 
+              , SUBJECT_NAME1        /* 과목명칭1           (40)10 */ 
+              , PAYMENT_DATE1        /* 납기내금액1         (22)11 */ 
+              , AFTPAYMENT_DATE1     /* 납기후금액1         (22)12 */ 
+              , SUBJECT_NAME2        /* 과목명칭2           (40)13 */ 
+              , PAYMENT_DATE2        /* 납기내금액2         (22)14 */ 
+              , AFTPAYMENT_DATE2     /* 납기후금액2         (22)15 */ 
+              , SUBJECT_NAME3        /* 과목명칭3           (40)16 */ 
+              , PAYMENT_DATE3        /* 납기내금액3         (22)17 */ 
+              , AFTPAYMENT_DATE3     /* 납기후금액3         (22)18 */ 
+              , DUE_DT               /* 납기일자             (8 )19 */ 
+              , DUE_F_DT             /* 납기후납기일         (8 )20 */ 
+              , OCR_BD               /* OCR_BAND          (200)21 */ 
+              , SNTG                 /* 납부상태             (1 )22 */ 
+              , TAX_ITEM             /* 세목                 (6)    */
+              , THAP_GBN             /* 통합고지구분         (2 )23 */ 
+              , PAID_DATE            /* 납기후납기일         (8 )24 */   
+              , CUD_OPT              /* 자료등록구분         (1 )25 */            
+              , PROC_CLS             /* 가상계좌체번구분     (1 )26 */ 
+              , VIR_ACC_NO           /* 가상계좌번호         (30)27 */ 
+              , SGG_TR_TG            /* 구청전송처리구분코드 (1 )28 */ 
+              , DEL_YN               /* 삭제여부             (1 )29 */ 
+              , DEL_DT               /* 삭제일시             (7 )30 */ 
+     ) VALUES ( #TAX_NO#
+              , #SGG_COD# 
+              , #TAX_CNT#
+              , #BUGWA_STAT#
+              , #NATN_TAX#
+              , #NATN_RATE#
+              , #SIDO_TAX#
+              , #SIDO_RATE#
+              , #SIGUNGU_TAX#
+              , #SIGUNGU_RATE#
+              , #SUBJECT_NAME1#
+              , #PAYMENT_DATE1#
+              , #AFTPAYMENT_DATE1#
+              , #SUBJECT_NAME2#
+              , #PAYMENT_DATE2#
+              , #AFTPAYMENT_DATE2#
+              , #SUBJECT_NAME3#
+              , #PAYMENT_DATE3#
+              , #AFTPAYMENT_DATE3#
+              , #DUE_DT#
+              , #DUE_F_DT#
+              , FC_CHECK_OCR(#OCR_BD#)
+              , #SNTG#
+              , #TAX_ITEM#
+              , #THAP_GBN#
+              , #PAID_DATE#
+              , #CUD_OPT#
+              , #PROC_CLS#
+              , #VIR_ACC_NO#
+              , #SGG_TR_TG#
+              , #DEL_YN#
+              , #DEL_DT#
+    )
+	</insert>	
+	
+	
+    <!-- 사이버 -->
+    <!-- 주정차위반과태료 연계데이터 업데이트 -->
+	<update id="UPDATE_PARKING_DETAIL_LEVY" parameterClass="mapForm">
+    UPDATE TX2112_TB
+       SET TAX_CNT          = #TAX_CNT#                                                               /*부과순번            (22)*/ 
+         , BUGWA_STAT       = #BUGWA_STAT#                                                            /*부과상태            (2 )*/ 
+         , NATN_TAX         = #NATN_TAX#                                                              /*국세                (22)*/ 
+         , NATN_RATE        = #NATN_RATE#                                                             /*국세요율            (22)*/ 
+         , SIDO_TAX         = #SIDO_TAX#                                                              /*시도세              (22)*/ 
+         , SIDO_RATE        = #SIDO_RATE#                                                             /*시도세요율          (22)*/ 
+         , SIGUNGU_TAX      = #SIGUNGU_TAX#                                                           /*시군구세            (22)*/ 
+         , SIGUNGU_RATE     = #SIGUNGU_RATE#                                                          /*시군구세요율        (22)*/ 
+         , SUBJECT_NAME1    = #SUBJECT_NAME1#                                                         /*과목명칭1           (40)*/ 
+         , PAYMENT_DATE1    = #PAYMENT_DATE1#                                                         /*납기내금액1         (22)*/ 
+         , AFTPAYMENT_DATE1 = #AFTPAYMENT_DATE1#                                                      /*납기후금액1         (22)*/ 
+         , SUBJECT_NAME2    = #SUBJECT_NAME2#                                                         /*과목명칭2           (40)*/ 
+         , PAYMENT_DATE2    = #PAYMENT_DATE2#                                                         /*납기내금액2         (22)*/ 
+         , AFTPAYMENT_DATE2 = #AFTPAYMENT_DATE2#                                                      /*납기후금액2         (22)*/ 
+         , SUBJECT_NAME3    = #SUBJECT_NAME3#                                                         /*과목명칭3           (40)*/ 
+         , PAYMENT_DATE3    = #PAYMENT_DATE3#                                                         /*납기내금액3         (22)*/ 
+         , AFTPAYMENT_DATE3 = #AFTPAYMENT_DATE3#                                                      /*납기후금액3         (22)*/ 
+         , DUE_DT           = #DUE_DT#                                                                /*납기일자            (8 )*/ 
+         , DUE_F_DT         = #DUE_F_DT#                                                              /*납기후납기일        (8 )*/ 
+         , SNTG             = #SNTG#                                                                  /*납부상태            (1 )*/ 
+         , THAP_GBN         = #THAP_GBN#                                                              /*통합고지구분        (2 )*/ 
+         , PAID_DATE        = #PAID_DATE#                                                             /*납기후납기일        (8 )*/ 
+         , CUD_OPT          = CASE WHEN VIR_ACC_NO IS NULL THEN '1' ELSE '2' END                      /*자료등록구분(1)*/
+         , PROC_CLS         = #PROC_CLS#                                                              /*가상계좌체번구분    (1 )*/ 
+         , SGG_TR_TG        = CASE WHEN VIR_ACC_NO IS NULL THEN '0' ELSE '1' END                      /*구청전송처리구분코드(1 )*/ 
+         , DEL_YN           = #DEL_YN#                                                                /*삭제여부            (1 )*/ 
+         , DEL_DT           = #DEL_DT#                                                                /*삭제일시            (7 )*/ 
+         , OCR_BD           = FC_CHECK_OCR(#OCR_BD#)
+         , LAST_DTM         = SYSDATE                                                                 /*최종수정일시        (7 )*/
+     WHERE TAX_NO           = #TAX_NO#                                                                /*납세번호            (31) pk*/ 
+       AND TAX_CNT          = #TAX_CNT#                                                               /*부과순번            (22) pk*/ 
+       AND SNTG             IN ('0', '9')
+	</update>	
+	
+	
+	<!-- 연계 -->
+	<!-- 주정차위반과태료 부과건 업데이트 -->
+	<update id="UPDATE_PARKING_LEVY_RESULT" parameterClass="mapForm">	
+	UPDATE JUCHA_TAB 
+	   SET BNON_TRTG  = '1' 
+	 WHERE TRANS_SGCD = #SGG_COD# 
+	   AND SEQ        = #SEQ#
+	</update>
+	
+	
+	<!-- 사이버 -->
+	<!-- 주정차위반과태료 수납건 삭제 업데이트 -->
+	<update id="UPDATE_DEL_PARKING_LEVY" parameterClass="mapForm">
+    UPDATE TX2112_TB                          
+       SET DEL_YN     =  'Y'     /*삭제여부*/
+         , DEL_DT     =  TO_CHAR(SYSDATE, 'yyyyMMdd')
+         , LAST_DTM   =  SYSDATE
+     WHERE TAX_NO     =  #TAX_NO#
+       AND TAX_CNT    =  #TAX_CNT#
+       AND EXISTS ( SELECT 'Y'
+                      FROM TX2111_TB
+                     WHERE SGG_COD    =  #SGG_COD#
+                       AND TAX_NO     =  #TAX_NO#
+                  )
+	</update>
+	
+	
+</sqlMap>

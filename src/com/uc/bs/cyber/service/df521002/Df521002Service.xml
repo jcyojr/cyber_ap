@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DF521002" >
+
+    <!-- 지방세(구세외수입) 상세내역 가져온다. -->
+	<select id="SELECT_TAX_SEARCH_LIST" resultClass="mapForm" parameterClass="mapForm">
+       SELECT   '2' TAX_GBN
+            , A.SGG_COD
+            , C.SGNM
+            , A.ACCT_COD
+            , A.TAX_ITEM
+            , B.TAX_NM
+            , A.TAX_YY||A.TAX_MM TAX_YM
+            , A.TAX_DIV
+            , A.TAX_SNO
+            , FC_DAMO(A.REG_NO) REG_NO
+            , A.REG_NM
+            , A.TAX_GDS||' '||A.ZW_AREA||' '||A.ZW_DT||A.ZW_TM  MLGN
+            , '' GIRO_SGG
+            , '1' DLQ_DIV   /*체납구분*/
+            , 0 MNTX        /*본세*/
+            , 0 MNTX_ADTX   /*본세가산금*/
+            , 0 CPTX	    /*도시계획세*/
+            , 0 CPTX_ADTX
+            , 0 CFTX        /*공동시설세*/
+            , 0 CFTX_ADTX
+            , 0 LETX        /*교육세*/
+            , 0 LETX_ADTX
+            , 0 ASTX        /*농특세*/
+            , 0 ASTX_ADTX 
+            , A.DUE_DT
+            , A.DUE_F_DT 
+            , A.BUTT SUM_B_AMT
+            , A.BUTT SUM_F_AMT
+            , A.EPAY_NO
+            , SUBSTR(A.OCR_BD, 1, 31) TAXNO
+            , A.TAX_DT
+            , 0 TAX_STD
+            , 'N' AUTO_TRNF_YN
+            , A.HACD
+            , A.TAX_GDS||' '||A.ZW_AREA||' '||to_char(to_date(A.zw_dt), 'yyyy-mm-dd')||' '||substr(A.zw_tm, 1,2)||':'||substr(A.zw_tm, 3,4) MLGN /*A.TAX_GDS 과세대상 , A.ZW_AREA 적발장소, A.ZW_DT 적발일자, A.ZW_TM 적발시간*/
+         FROM TX2121_VW_OCR A /*구 세외수입 view Table */
+            , CO3301_TB B     /*세목코드*/
+            , (SELECT GUBUN_NM SGNM, GUBUN_CD SGG_COD FROM CO3102_TB WHERE GUBUN_ID = 'SGG_COD') C  /*공통코드*/
+	    WHERE A.TAX_ITEM = B.TAX_ITEM
+          AND A.SGG_COD  = C.SGG_COD
+          AND A.EPAY_NO IS NOT NULL
+          AND A.SNTG     IN ('0', '9')                                               /*납부상태 미수납 및 취소*/
+          AND F_GET_GYMD(LPAD(A.DUE_F_DT, 8, '0')) >= TO_CHAR(SYSDATE, 'YYYYMMDD')   /*납부가능한 것만...*/
+          <!-- 조건 -->
+          <isNotEmpty property="TAX_ITEM">
+            AND A.SGG_COD  = #SGG_COD#
+            AND A.ACCT_COD = #ACCT_COD#
+            AND A.TAX_ITEM = #TAX_ITEM#
+            AND A.TAX_YY   = #TAX_YY#
+            AND A.TAX_MM   = #TAX_MM#
+            AND A.TAX_DIV  = #TAX_DIV#
+            AND A.HACD     = #HACD#
+            AND A.TAX_SNO  = #TAX_SNO#
+          </isNotEmpty>
+          <isNotEmpty prepend = "AND" property="EPAY_NO">
+            RPAD(A.EPAY_NO,19,'0')   = #EPAY_NO#           /*전자납부번호 */
+          </isNotEmpty>
+             
+	    UNION ALL
+	    
+       SELECT '1' TAX_GBN
+            , A.SGG_COD
+            , C.SGNM
+            , A.ACCT_COD
+            , A.TAX_ITEM
+            , B.TAX_NM
+            , A.TAX_YY||A.TAX_MM TAX_YM
+            , A.TAX_DIV
+            , A.TAX_SNO
+            , FC_DAMO(A.REG_NO) REG_NO
+            , A.REG_NM
+            , A.MLGN
+            , A.GIRO_SGG
+            , A.DLQ_DIV
+            , A.MNTX
+            , A.MNTX_ADTX
+            , A.CPTX
+            , A.CPTX_ADTX
+            , A.CFTX
+            , A.CFTX_ADTX
+            , A.LETX
+            , A.LETX_ADTX
+            , A.ASTX
+            , A.ASTX_ADTX 
+            , F_GET_GYMD(A.DUE_DT) AS DUE_DT
+            , F_GET_GYMD(A.GGYM) AS DUE_F_DT 
+            , A.SUM_B_AMT
+            , A.SUM_F_AMT
+            , A.EPAY_NO
+            , SUBSTR(A.TAX_NO, 1, 31) TAXNO
+            , A.TAX_DT
+            , A.TAX_STD 
+            , A.AUTO_TRNF_YN   /*자동이체 등록여부*/
+            , A.HACD
+            , A.MLGN
+         FROM TX1101_VW_OCR A /*지방세 view Table */
+            , CO3301_TB B     /*세목코드*/
+            , (SELECT GUBUN_NM SGNM, GUBUN_CD SGG_COD FROM CO3102_TB WHERE GUBUN_ID = 'SGG_COD') C /*공통코드*/
+        WHERE A.TAX_ITEM = B.TAX_ITEM
+          AND A.SGG_COD  = C.SGG_COD
+          AND A.EPAY_NO  IS NOT NULL                              /*전자납부번호는 무조건 있어야된다.*/
+          <!-- 조건 -->
+          <isNotEmpty property="TAX_ITEM">
+            AND A.SGG_COD  = #SGG_COD#
+            AND A.ACCT_COD = #ACCT_COD#
+            AND A.TAX_ITEM = #TAX_ITEM#
+            AND A.TAX_YY   = #TAX_YY#
+            AND A.TAX_MM   = #TAX_MM#
+            AND A.TAX_DIV  = #TAX_DIV#
+            AND A.HACD     = #HACD#
+            AND A.TAX_SNO  = #TAX_SNO#
+          </isNotEmpty>
+          <isNotEmpty prepend = "AND" property="EPAY_NO">
+              RPAD(A.EPAY_NO,19,'0')   = RPAD(#EPAY_NO#, 19, '0')   /*전자납부번호 */
+          </isNotEmpty>
+	</select>
+	
+    <!-- 지방세(구세외수입) 전자수납내역을 가져온다. -->
+    <select id="SELECT_TAX_PAY_LIST" resultClass="mapForm" parameterClass="mapForm">
+       SELECT '2' TAX_GBN
+            , A.SNTG
+         FROM TX2221_TB A /*구 세외수입 전자수납 */
+            , TX2122_TB B /*구 세외수입 부과상세 */
+        WHERE A.SGG_COD  = B.SGG_COD
+          AND A.ACCT_COD = B.ACCT_COD
+          AND A.TAX_ITEM = B.TAX_ITEM
+          AND A.TAX_YY   = B.TAX_YY
+          AND A.TAX_MM   = B.TAX_MM
+          AND A.TAX_DIV  = B.TAX_DIV
+          AND A.HACD     = B.HACD
+          AND A.TAX_SNO  = B.TAX_SNO
+          AND A.TAX_CNT  = B.TAX_CNT
+          AND B.EPAY_NO IS NOT NULL
+          AND A.SNTG     IN ('1', '2', '9') /*납부상태 가수납 및 수납 취소*/
+          <!-- 조건 -->
+          <isNotEmpty property="TAX_ITEM">
+            AND A.SGG_COD  = #SGG_COD#
+            AND A.ACCT_COD = #ACCT_COD#
+            AND A.TAX_ITEM = #TAX_ITEM#
+            AND A.TAX_YY   = #TAX_YY#
+            AND A.TAX_MM   = #TAX_MM#
+            AND A.TAX_DIV  = #TAX_DIV#
+            AND A.HACD     = #HACD#
+            AND A.TAX_SNO  = #TAX_SNO#
+          </isNotEmpty>
+          <isNotEmpty prepend = "AND" property="EPAY_NO">
+                RPAD(B.EPAY_NO,19,'0') = RPAD(#EPAY_NO#, 19, '0')   /*전자납부번호 */
+          </isNotEmpty>
+             
+        UNION ALL
+        
+       SELECT '1' TAX_GBN
+            , A.SNTG
+         FROM TX1201_TB A /*지방세 전자수납 */
+            , TX1102_TB B /*지방세 부과상세 */
+        WHERE A.SGG_COD  = B.SGG_COD
+          AND A.ACCT_COD = B.ACCT_COD
+          AND A.TAX_ITEM = B.TAX_ITEM
+          AND A.TAX_YY   = B.TAX_YY
+          AND A.TAX_MM   = B.TAX_MM
+          AND A.TAX_DIV  = B.TAX_DIV
+          AND A.HACD     = B.HACD
+          AND A.TAX_SNO  = B.TAX_SNO
+          AND A.RCP_CNT  = B.RCP_CNT
+          AND B.EPAY_NO  IS NOT NULL        /*전자납부번호는 무조건 있어야된다.*/
+          AND A.SNTG     IN ('1', '2', '9') /*납부상태 가수납 및 수납, 취소*/
+          <!-- 조건 -->
+          <isNotEmpty property="TAX_ITEM">
+            AND A.SGG_COD  = #SGG_COD#
+            AND A.ACCT_COD = #ACCT_COD#
+            AND A.TAX_ITEM = #TAX_ITEM#
+            AND A.TAX_YY   = #TAX_YY#
+            AND A.TAX_MM   = #TAX_MM#
+            AND A.TAX_DIV  = #TAX_DIV#
+            AND A.HACD     = #HACD#
+            AND A.TAX_SNO  = #TAX_SNO#
+          </isNotEmpty>
+          <isNotEmpty prepend = "AND" property="EPAY_NO">
+                RPAD(B.EPAY_NO,19,'0') = RPAD(#EPAY_NO#, 19, '0')   /*전자납부번호 */
+          </isNotEmpty>
+    </select>
+</sqlMap>

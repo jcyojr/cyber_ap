@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXDM2416">
+
+    <!-- 가상계좌 없는 부과자료 뷰 -->
+    <select id="getVirAccNoLinkCount" parameterClass="mapForm"  resultClass="Integer">
+    SELECT COUNT(*) AS CNT
+      FROM V_VIRACC_NTAX5_CYBER
+     WHERE 1 = 1
+       AND FST_NAP_YMD >= TO_CHAR(SYSDATE,'YYYYMMDD')
+       AND BON_JAN > 0
+       AND THAP_GBN IN ('통합','미통합')
+       AND DIV_GBN = '미분납'
+       AND PAY_GBN = '미수납'
+       AND NOT (ACC_GBN = '16' OR (ACC_GBN = '31' AND SEMOK_CODE = '299099') OR (ACC_GBN = '61' AND SEMOK_CODE IN ('281041','288230','281020','281048','288348')) OR (ACC_GBN = '51' AND SEMOK_CODE IN ('216099','238001','238099','280001','285001','288050','288346','294099','281043') ) )
+       AND NOT (ACC_GBN = '51' AND DEP_CODE IN ('62600760000','62601770000','62601850000','62601960000','62602040000','62602160000','62602240000','62602330000','62602400000','62602430000','62604740000','62605700000','62609490000','62610550000') )
+       AND LVY_KEY LIKE #SGG_COD# || '%'
+       AND SUBSTR(OCR_2, 1, 10) = '0000000000'
+       AND SUBSTR(OCR_1,44,1) = '0'
+       AND SUBSTR(OCR_2,22,1) = '0'
+       AND SUBSTR(OCR_2,34,1) = '0'
+       AND SUBSTR(OCR_2,52,1) = '0'
+       AND ROWNUM = 1    
+    </select>
+
+	
+	<!-- 가상계좌번호없는 부과내역 뷰 -->
+	<select id="getVirAccNoDataList" parameterClass="mapForm" resultClass="mapForm">
+	SELECT #SGG_COD#   AS SGG_COD
+	     , X5.LVY_KEY  AS TAX_NO    
+         , 0           AS TAX_CNT    
+         , X5.DIV_SNO     
+         , ENIS.FN_SDB_DEC(X5.PER_PID) AS PER_PID          
+	     , X5.PER_NM           
+	     , X5.PER_POST
+	     , X5.ADDR
+	     , X5.PER_TEL
+	     , X5.PER_CELL
+	     , X5.SITE_CODE
+	     , X5.DEP_CODE
+	     , X5.ACC_YEAR
+	     , X5.ACC_GBN
+	     , X5.SEMOK_CODE
+	     , X5.LVY_NO	     
+	     , X5.LVY_GBN
+	     , X5.OBJ_NM
+	     , X5.LVY_YMD
+	     , X5.FST_NAP_YMD
+	     , DECODE(X5.AFT_NAP_YMD,'',X5.FST_NAP_YMD,'0',X5.FST_NAP_YMD,X5.AFT_NAP_YMD) AFT_NAP_YMD
+	     , X5.SE_GU
+	     , X5.DEP_NM
+	     , X5.SEMOK_NM
+	     , X5.FST_AMT
+	     , X5.LST_AMT
+	     , X5.LST_ADD_AMT
+	     , TO_NUMBER(SUBSTR(X5.OCR_2,13,10)) + TO_NUMBER(SUBSTR(X5.OCR_2,25,10)) AS BON_JAN
+	     , TO_NUMBER(SUBSTR(X5.OCR_2,13,10)) + TO_NUMBER(SUBSTR(X5.OCR_2,25,10)) + X5.LST_ADD_AMT AS AFT_NAP_AMT
+	     , X5.LVY_STT_GBN
+	     , X5.PAY_GBN
+	     , X5.DIV_GBN
+	     , X5.THAP_GBN
+	     , X5.ATT_GBN     
+	     , X5.SITE_NM
+	     , X5.ERC_NO
+	     , X5.GAM_GBN
+	     , OCR_1 || OCR_2 AS OCR_BD
+	  FROM V_VIRACC_NTAX5_CYBER X5
+     WHERE 1 = 1
+	   AND X5.FST_NAP_YMD >= TO_CHAR(SYSDATE,'YYYYMMDD')
+       AND X5.BON_JAN > 0
+       AND X5.THAP_GBN IN ('통합','미통합')
+       AND X5.DIV_GBN = '미분납'
+       AND X5.PAY_GBN = '미수납'
+       AND NOT (X5.ACC_GBN = '16' OR (X5.ACC_GBN = '31' AND X5.SEMOK_CODE = '299099') OR (X5.ACC_GBN = '61' AND X5.SEMOK_CODE IN ('281041','288230','281020','281048','288348')) OR (X5.ACC_GBN = '51' AND X5.SEMOK_CODE IN ('216099','238001','238099','280001','285001','288050','288346','294099','281043') ) )
+       AND NOT (X5.ACC_GBN = '51' AND X5.DEP_CODE IN ('62600760000','62601770000','62601850000','62601960000','62602040000','62602160000','62602240000','62602330000','62602400000','62602430000','62604740000','62605700000','62609490000','62610550000') )
+       AND SUBSTR(OCR_2, 1, 10) = '0000000000' 
+       AND X5.LVY_KEY LIKE #SGG_COD# || '%'
+       AND SUBSTR(X5.OCR_1,44,1) = '0'
+       AND SUBSTR(X5.OCR_2,22,1) = '0'
+       AND SUBSTR(X5.OCR_2,34,1) = '0'
+       AND SUBSTR(X5.OCR_2,52,1) = '0'
+       and ROWNUM <![CDATA[ < ]]> 3000
+	</select>
+	
+	
+	<!-- 사이버 표준세외수입 가상계좌 체번테이블 등록 -->
+	<insert id="insertTx2114VirAccNoData" parameterClass="mapForm">
+	INSERT INTO TX2114_TB_DAMO (
+	            SGG_COD
+	          , TAX_NO
+              , TAX_CNT
+              , SEC_REG_NO
+              , PER_NM
+              , PER_POST
+              , ADDR
+              , PER_TEL
+              , PER_CELL
+              , SITE_CODE
+              , DEP_CODE
+              , ACC_YEAR
+              , ACC_GBN
+              , SEMOK_CODE
+              , LVY_NO
+              , LVY_GBN
+              , OBJ_NM
+              , LVY_YMD
+              , FST_NAP_YMD
+              , AFT_NAP_YMD
+              , SE_GU
+              , DEP_NM
+              , SEMOK_NM
+              , FST_AMT
+              , LST_AMT
+              , LST_ADD_AMT
+              , BON_JAN
+              , AFT_NAP_AMT
+              , LVY_STT_GBN 
+              , PAY_GBN
+              , DIV_GBN
+              , THAP_GBN
+              , ATT_GBN
+              , SITE_NM
+              , ERC_NO
+              , VIR_ACC_NO
+              , GAM_GBN
+              , PROC_CLS
+              , SGG_TR_TG
+              , REG_DTM
+              , LAST_DTM
+              , OCR_BD
+              , DIV_SNO
+	 ) VALUES ( #SGG_COD#
+	          , #TAX_NO#
+              , #TAX_CNT#
+              , FC_DAMO(#PER_PID#)
+              , #PER_NM#
+              , #PER_POST#
+              , #ADDR#
+              , #PER_TEL#
+              , #PER_CELL#
+              , #SITE_CODE#
+              , #DEP_CODE#
+              , #ACC_YEAR#
+              , #ACC_GBN#
+              , #SEMOK_CODE#
+              , #LVY_NO#
+              , #LVY_GBN#
+              , #OBJ_NM#
+              , #LVY_YMD#
+              , #FST_NAP_YMD#
+              , #AFT_NAP_YMD#
+              , #SE_GU#
+              , #DEP_NM#
+              , #SEMOK_NM#
+              , #FST_AMT#
+              , #LST_AMT#
+              , #LST_ADD_AMT#
+              , #BON_JAN#
+              , #AFT_NAP_AMT#
+              , #LVY_STT_GBN# 
+              , #PAY_GBN#
+              , #DIV_GBN#
+              , #THAP_GBN#
+              , #ATT_GBN#
+              , #SITE_NM#
+              , #ERC_NO#
+              , ''
+              , #GAM_GBN#
+              , '1'
+              , '0'
+              , SYSDATE
+              , SYSDATE
+              , #OCR_BD#
+              , #DIV_SNO#
+	)
+	</insert>
+
+
+    <!-- 오류건중 OCR밴드 변경 건은 새로 채번준비 -->
+	<select id="getDuplicatekeyOcrBd" parameterClass="mapForm" resultClass="String">
+	SELECT OCR_BD
+	  FROM TX2114_TB_DAMO
+	 WHERE 1 = 1
+	   AND SGG_COD     = #SGG_COD#
+	   AND TAX_NO      = #TAX_NO#
+	   AND TAX_CNT     = #TAX_CNT#
+	   AND PROC_CLS    = '5'
+	   AND SGG_TR_TG   = '0'
+	   AND CYBER_TR_TG = '0'
+	</select>
+	
+	
+	<!-- 오류건중 변경분 채번 준비 -->
+	<update id="updateOCRBDandETC" parameterClass="mapForm">
+    UPDATE TX2114_TB_DAMO 
+       SET OCR_BD      = #OCR_BD#         
+         , FST_NAP_YMD = #FST_NAP_YMD#
+         , AFT_NAP_YMD = #AFT_NAP_YMD#
+         , BON_JAN     = #BON_JAN#
+         , AFT_NAP_AMT = #AFT_NAP_AMT#
+         , PER_NM      = #PER_NM#
+         , SEMOK_NM    = #SEMOK_NM#
+         , PROC_CLS    = '1'
+         , LAST_DTM    = SYSDATE
+     WHERE 1 = 1
+       AND SGG_COD     = #SGG_COD#
+       AND TAX_NO      = #TAX_NO#
+       AND TAX_CNT     = #TAX_CNT#
+       AND PROC_CLS    = '5'
+    </update> 
+	
+
+</sqlMap>

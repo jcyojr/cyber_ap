@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="EUC-KR"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xmlns:context="http://www.springframework.org/schema/context"
+	   xmlns:jee="http://www.springframework.org/schema/jee"
+	   xmlns:tx="http://www.springframework.org/schema/tx"
+	   xsi:schemaLocation="http://www.springframework.org/schema/jee 
+	   http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+	   http://www.springframework.org/schema/beans 
+	   http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+	   http://www.springframework.org/schema/tx 
+	   http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+	   http://www.springframework.org/schema/context 
+	   http://www.springframework.org/schema/context/spring-context-3.0.xsd">	
+	<context:annotation-config />
+	
+	<!-- Connection pool 등에서 사용할 JDBC 설정 Load -->
+	<bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations">
+        <list>
+        	<value>/config/jdbc.properties</value>
+        </list>
+        </property>
+        <property name="fileEncoding">
+        	<value>EUC-KR</value>
+        </property>
+	</bean> 
+
+	<bean id="baseDataSource" class="org.apache.commons.dbcp.BasicDataSource" init-method="" destroy-method="close" abstract="true">
+		<property name="driverClassName" value="${jdbc.old.driverClassName}"/>
+	</bean>
+
+	<bean id="dataSource_cyber" parent="baseDataSource">
+		<property name="driverClassName" value="${jdbc.old.driverClassName}"/>
+        <property name="url" value="${jdbc.url}"/>
+        <property name="username" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+        <property name="maxActive" value="20"/>
+	</bean>
+
+	<bean id="dataSource1" parent="baseDataSource">
+	    <property name="url" value="${jdbc1.url}"/>
+        <property name="username" value="${jdbc1.username}"/>
+        <property name="password" value="${jdbc1.password}"/>
+        <property name="maxActive" value="20"/>
+	</bean>
+
+	<bean id="dataSource2" parent="baseDataSource">
+	    <property name="url" value="${jdbc2.url}"/>
+        <property name="username" value="${jdbc1.username}"/>
+        <property name="password" value="${jdbc1.password}"/>
+        <property name="maxActive" value="20"/>
+	</bean>
+	
+	<bean id="dataSource3" parent="baseDataSource">
+	    <property name="url" value="${jdbc3.url}"/>
+        <property name="username" value="${jdbc1.username}"/>
+        <property name="password" value="${jdbc1.password}"/>
+        <property name="maxActive" value="20"/>
+	</bean>
+	
+	<bean id="dataSource4" parent="baseDataSource">
+	    <property name="url" value="${jdbc4.url}"/>
+        <property name="username" value="${jdbc1.username}"/>
+        <property name="password" value="${jdbc1.password}"/>
+        <property name="maxActive" value="20"/>
+	</bean>
+	
+	<bean id="dataSource5" parent="baseDataSource">
+	    <property name="url" value="${jdbc5.url}"/>
+        <property name="username" value="${jdbc1.username}"/>
+        <property name="password" value="${jdbc1.password}"/>
+        <property name="maxActive" value="20"/>
+	</bean>
+	
+	<bean id="dataSource6" parent="baseDataSource">
+	    <property name="url" value="${jdbc6.url}"/>
+        <property name="username" value="${jdbc1.username}"/>
+        <property name="password" value="${jdbc1.password}"/>
+        <property name="maxActive" value="20"/>
+	</bean>
+	
+	<bean id="dataSource7" parent="baseDataSource">
+	    <property name="url" value="${jdbc7.url}"/>
+        <property name="username" value="${jdbc1.username}"/>
+        <property name="password" value="${jdbc1.password}"/>
+        <property name="maxActive" value="20"/>
+	</bean>
+	
+	<bean id="dataSource8" parent="baseDataSource">
+	    <property name="url" value="${jdbc8.url}"/>
+        <property name="username" value="${jdbc1.username}"/>
+        <property name="password" value="${jdbc1.password}"/>
+        <property name="maxActive" value="20"/>
+	</bean>
+	
+	<bean id="dataSource9" parent="baseDataSource">
+	    <property name="url" value="${jdbc9.url}"/>
+        <property name="username" value="${jdbc1.username}"/>
+        <property name="password" value="${jdbc1.password}"/>
+        <property name="maxActive" value="20"/>
+	</bean>
+	
+	<bean id="dataSource10" parent="baseDataSource">
+	    <property name="url" value="${jdbc10.url}"/>
+        <property name="username" value="${jdbc1.username}"/>
+        <property name="password" value="${jdbc1.password}"/>
+        <property name="maxActive" value="20"/>
+	</bean>
+	
+	<bean id="dataSource11" parent="baseDataSource">
+	    <property name="url" value="${jdbc11.url}"/>
+        <property name="username" value="${jdbc1.username}"/>
+        <property name="password" value="${jdbc1.password}"/>
+        <property name="maxActive" value="20"/>
+	</bean>
+	
+	<bean id="dataSource12" parent="baseDataSource">
+	    <property name="url" value="${jdbc12.url}"/>
+        <property name="username" value="${jdbc1.username}"/>
+        <property name="password" value="${jdbc1.password}"/>
+        <property name="maxActive" value="20"/>
+	</bean>
+	
+	<bean id="dataSource13" parent="baseDataSource">
+	    <property name="url" value="${jdbc13.url}"/>
+        <property name="username" value="${jdbc1.username}"/>
+        <property name="password" value="${jdbc1.password}"/>
+        <property name="maxActive" value="20"/>
+	</bean>
+	
+	<bean id="dataSource14" parent="baseDataSource">
+	    <property name="url" value="${jdbc14.url}"/>
+        <property name="username" value="${jdbc1.username}"/>
+        <property name="password" value="${jdbc1.password}"/>
+        <property name="maxActive" value="20"/>
+	</bean>
+	
+	<bean id="dataSource15" parent="baseDataSource">
+	    <property name="url" value="${jdbc15.url}"/>
+        <property name="username" value="${jdbc1.username}"/>
+        <property name="password" value="${jdbc1.password}"/>
+        <property name="maxActive" value="20"/>
+	</bean>
+	
+	<bean id="dataSource16" parent="baseDataSource">
+	    <property name="url" value="${jdbc16.url}"/>
+        <property name="username" value="${jdbc1.username}"/>
+        <property name="password" value="${jdbc1.password}"/>
+        <property name="maxActive" value="20"/>
+	</bean>
+	
+	<bean id="dataSource17" parent="baseDataSource">
+	    <property name="url" value="${jdbc17.url}"/>
+        <property name="username" value="${jdbc2.username}"/>
+        <property name="password" value="${jdbc2.password}"/>
+        <property name="maxActive" value="20"/>
+	</bean>
+	
+	<bean id="orgDataSource" class="com.uc.core.spring.service.RoutingDataSource">
+		<property name="targetDataSources">
+			<map key-type="java.lang.String">
+                 <!-- 지방세(구청별) -->
+                 <entry key="JI_110" value-ref="dataSource1"/>
+                 <entry key="JI_140" value-ref="dataSource2"/>
+                 <entry key="JI_170" value-ref="dataSource3"/>
+                 <entry key="JI_200" value-ref="dataSource4"/>
+                 <entry key="JI_230" value-ref="dataSource5"/>
+                 <entry key="JI_260" value-ref="dataSource6"/>
+                 <entry key="JI_290" value-ref="dataSource7"/>
+                 <entry key="JI_320" value-ref="dataSource8"/>                                                                                                                               
+                 <entry key="JI_350" value-ref="dataSource9"/>                                                                                                                               
+                 <entry key="JI_380" value-ref="dataSource10"/>                                                                                                                               
+                 <entry key="JI_410" value-ref="dataSource11"/>                                                                                                                               
+                 <entry key="JI_440" value-ref="dataSource12"/>                                                                                                                               
+                 <entry key="JI_470" value-ref="dataSource13"/>                                                                                                                               
+                 <entry key="JI_500" value-ref="dataSource14"/>                                                                                                                               
+                 <entry key="JI_530" value-ref="dataSource15"/>                                                                                                                               
+                 <entry key="JI_710" value-ref="dataSource16"/>  
+                 <!-- 지방세(시청,차량등록사업소) -->    
+                 <entry key="JI_000" value-ref="dataSource17"/>
+                 <entry key="JI_042" value-ref="dataSource17"/>
+			</map>
+		</property>
+	</bean>
+
+	<!-- Spring Transaction Manager 사용 -->
+	<bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource">
+           <ref local="dataSource_cyber"/>
+        </property>
+	</bean>
+	
+	<!-- Spring Transaction Manager 사용 -->
+	<bean id="txManager2" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource">
+           <ref local="orgDataSource"/>
+        </property>
+	</bean>
+	
+	<!-- Annotation 기반 트랜젝션 사용... -->	
+	<tx:annotation-driven transaction-manager="txManager"/>
+
+	<!-- Annotation 기반 트랜젝션 사용... -->	
+	<tx:annotation-driven transaction-manager="txManager2"/>
+
+	<bean id="nativeJdbcExtractor" class="org.springframework.jdbc.support.nativejdbc.SimpleNativeJdbcExtractor" lazy-init="true"/>
+	 
+	<bean id="oracleLobHandler"  class="org.springframework.jdbc.support.lob.OracleLobHandler" lazy-init="true">
+	 	<property name="nativeJdbcExtractor">
+	  	  <ref local="nativeJdbcExtractor"/>
+	 	</property>
+	</bean>
+    
+	<!-- Spring 에서 제공하는 IBATIS client plug_in 사용 -->
+	<bean id="sqlMapClient" class="com.uc.core.spring.service.SqlMapClient">
+          <property name="configLocation">
+          	<value>config/sqlmapConfig.xml</value>
+          </property>
+          <property name="dataSource" ref="orgDataSource"/>
+          <property name="lobHandler" ref="oracleLobHandler"/>
+	</bean>
+	
+	<!-- Spring 에서 제공하는 IBATIS client plug_in 사용 -->
+	<bean id="sqlMapClient_cyber" class="com.uc.core.spring.service.SqlMapClient">
+          <property name="configLocation">
+          	<value>config/sqlmapConfig.xml</value>
+          </property>
+          <property name="dataSource" ref="dataSource_cyber"/>
+          <property name="lobHandler" ref="oracleLobHandler"/>
+	</bean>
+	
+	<!-- IBATIS를 사용하기 위한 기본 서비스...(여러개의 쿼리를 하나의 트랜젝션에 묶을때는 서비스를 새로 만들자 그 외는 전부 이것) -->
+	<bean id="ibatisService" class="com.uc.core.spring.service.IbatisServiceImpl">
+          <property name="sqlMapClient" ref="sqlMapClient"/>
+	</bean>
+
+	<bean id="ibatisService_cyber" class="com.uc.core.spring.service.IbatisServiceImpl">
+          <property name="sqlMapClient" ref="sqlMapClient_cyber"/>
+	</bean>
+
+	<!-- 배치처리용 Service 개별 메소드에 트랜젝션이 없다. -->
+	<bean id="baseService" class="com.uc.core.spring.service.IbatisBaseService">
+          <property name="sqlMapClient" ref="sqlMapClient"/>
+	</bean>
+
+	<bean id="baseService_cyber" class="com.uc.core.spring.service.IbatisBaseService">
+          <property name="sqlMapClient" ref="sqlMapClient_cyber"/>
+	</bean>
+
+	<!-- 배치처리(여러개의 쿼리를 트랜젝션에 묶기) 테스트 서비스 -->
+
+	<!-- 배치처리(여러개의 쿼리를 트랜젝션에 묶기) 공통 서비스 -->
+	<bean id="ibatisBatchService" class="com.uc.core.spring.service.IbatisBatchServiceImpl">
+
+	</bean>
+	
+</beans>
+
+

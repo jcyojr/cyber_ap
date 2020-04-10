@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXBT2650" >
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+<!-- 1. TXBT2650 : 일괄납부 익일 자동풀림                                        -->
+<!-- 2. 납부되지 않은 일괄납부 내역을 해제한다.                                  -->
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+
+    <!-- 수납되지 않은 일괄납부(지방세,환경,세외수입) 내역 조회 -->
+	<select id="SELECT_TX1301" resultClass="mapForm">
+    <![CDATA[	
+		SELECT TONG_NO, 
+		       TONG_CNT, 
+		       FC_DAMO(SEC_REG_NO) AS REG_NO, 
+		       JOB_GB
+		  FROM TX1301_TB_DAMO
+		 WHERE TONG_PAY_CD = '1' 
+		   AND DATA_GB     = '1'
+		   AND DUE_DT < TO_CHAR(SYSDATE, 'YYYYMMDD')
+    ]]>		   
+	</select>
+
+    <!-- 수납되지 않은 일괄납부 상세내역 조회(지방세,환경) -->
+	<select id="SELECT_TX1302" resultClass="mapForm" parameterClass="mapForm">
+		SELECT TONG_NO,
+		       SGG_COD,
+		       ACCT_COD,
+		       TAX_ITEM,
+		       TAX_YY,
+		       TAX_MM,
+		       TAX_DIV,
+		       HACD,
+		       TAX_SNO,
+		       RCP_CNT
+		  FROM TX1302_TB
+		 WHERE TONG_NO = #TONG_NO#
+	</select>
+	
+	
+	<!-- 수납되지 않은 일괄납부 상세내역(세외수입) 조회 -->
+	<select id="SELECT_TX2312" resultClass="mapForm" parameterClass="mapForm">
+		SELECT TAX_NO
+		  FROM TX2312_TB
+		 WHERE TONG_NO = #TONG_NO#
+	</select>	
+	
+	
+	<!-- 수납되지않은 일괄납부(지방세,환경,세외수입) 내역의 상태를 삭제로 UPDATE 한다 -->
+	<update id="UPDATE_TX1301" parameterClass="mapForm">
+    <![CDATA[
+		 UPDATE TX1301_TB 
+		    SET DATA_GB  = '6', 
+		        LAST_DTM = SYSDATE
+		  WHERE TONG_NO  = #TONG_NO#
+		    AND DATA_GB  = '1'
+    ]]>	
+	</update>
+
+	<!-- 수납되지않은 일괄납부(지방세,환경) 상세내역의 상태를 삭제로 UPDATE 한다 -->
+	<update id="UPDATE_TX1302" parameterClass="mapForm">
+    <![CDATA[
+		 UPDATE TX1302_TB 
+		    SET DEL_YN = 'Y', 
+		        LAST_DTM = SYSDATE
+		  WHERE TONG_NO  = #TONG_NO#
+    ]]>	
+	</update>	
+
+	
+	<!-- 수납되지않은 일괄납부(지방세) 상세내역의 상태를 삭제로 UPDATE 한다 -->
+	<update id="UPDATE_TX1102" parameterClass="mapForm">
+    <![CDATA[
+		UPDATE TX1102_TB
+		   SET TONG_DIV = '2',
+		       LAST_DTM = SYSDATE
+		 WHERE     SGG_COD  = #SGG_COD#
+		       AND ACCT_COD = #ACCT_COD#
+		       AND TAX_ITEM = #TAX_ITEM#
+		       AND TAX_YY   = #TAX_YY#
+		       AND TAX_MM   = #TAX_MM#
+		       AND TAX_DIV  = #TAX_DIV#
+		       AND HACD     = #HACD#
+		       AND TAX_SNO  = #TAX_SNO#
+		       AND RCP_CNT  = #RCP_CNT#
+    ]]>	
+	</update>
+	
+	<!-- 수납되지않은 일괄납부(환경) 상세내역의 상태를 삭제로 UPDATE 한다 -->
+	<update id="UPDATE_TX2132" parameterClass="mapForm">
+    <![CDATA[
+		UPDATE TX2132_TB
+		   SET TONG_DIV = '2',
+		       LAST_DTM = SYSDATE
+		 WHERE     SGG_COD  = #SGG_COD#
+		       AND ACCT_COD = #ACCT_COD#
+		       AND TAX_ITEM = #TAX_ITEM#
+		       AND TAX_YY   = #TAX_YY#
+		       AND TAX_MM   = #TAX_MM#
+		       AND TAX_DIV  = #TAX_DIV#
+		       AND HACD     = #HACD#
+		       AND TAX_SNO  = #TAX_SNO#
+		       AND TAX_CNT  = #RCP_CNT#	 
+    ]]>	
+	</update>
+	
+	<!-- 수납되지않은 일괄납부(세외수입) 상세내역의 상태를 삭제로 UPDATE 한다 -->
+	<update id="UPDATE_TX2112" parameterClass="mapForm">
+    <![CDATA[
+		UPDATE TX2112_TB
+		   SET TONG_DIV = '2',
+		       LAST_DTM = SYSDATE
+		 WHERE TAX_NO   = #TAX_NO#
+    ]]>	
+	</update>		
+	
+</sqlMap>

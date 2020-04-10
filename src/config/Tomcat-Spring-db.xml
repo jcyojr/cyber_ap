@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="EUC-KR"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xmlns:context="http://www.springframework.org/schema/context"
+	   xmlns:jee="http://www.springframework.org/schema/jee"
+	   xmlns:tx="http://www.springframework.org/schema/tx"
+	   xsi:schemaLocation="http://www.springframework.org/schema/jee 
+	   http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+	   http://www.springframework.org/schema/beans 
+	   http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+	   http://www.springframework.org/schema/tx 
+	   http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+	   http://www.springframework.org/schema/context 
+	   http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+		
+	<context:annotation-config />
+	
+    <!-- Connection pool 등에서 사용할 JDBC 설정 Load -->
+    <bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations">
+        <list>
+        	<value>/config/jdbc.properties</value>
+        </list>
+        </property>
+        <property name="fileEncoding">
+        	<value>EUC-KR</value>
+        </property>
+	</bean>
+
+	<bean id="baseDataSource" class="com.atomikos.jdbc.AtomikosDataSourceBean" init-method="init" destroy-method="close" abstract="true">
+		<property name="xaDataSourceClassName" value="oracle.jdbc.xa.client.OracleXADataSource" />
+
+		<property name="poolSize" value="20" />
+		
+		<property name="borrowConnectionTimeout" value="3600" />
+	</bean>
+
+	<bean id="dataSource_cyber" parent="baseDataSource">
+		<property name="uniqueResourceName" value="oracle_cyber" />
+		<property name="xaProperties">
+			<props>
+		        <prop key="URL" >${dev_jdbc.url}</prop>
+		        <prop key="user">${dev_jdbc.username}</prop>			
+		        <prop key="password">${dev_jdbc.password}</prop>		        
+			</props>
+		</property>
+	</bean>
+
+	<bean id="dataSource1" parent="baseDataSource">
+		<property name="uniqueResourceName" value="oracle" />
+		<property name="xaProperties">
+			<props>
+		        <prop key="URL" >${dev_jdbc1.url}</prop>
+		        <prop key="user">${dev_jdbc1.username}</prop>			
+		        <prop key="password">${dev_jdbc1.password}</prop>		        
+			</props>
+		</property>
+	</bean>
+
+	
+	<bean id="dataSource3" parent="baseDataSource">
+		<property name="uniqueResourceName" value="oracle3" />
+		<property name="xaProperties">
+			<props>
+		        <prop key="URL" >${dev_jdbc3.url}</prop>
+		        <prop key="user">${dev_jdbc3.username}</prop>
+		        <prop key="password">${dev_jdbc3.password}</prop>
+			</props>
+		</property>
+	</bean>	
+	
+	<!-- 교통유발 -->
+	<bean id="dataSource34" parent="baseDataSource">
+		<property name="uniqueResourceName" value="oracle34" />
+		<property name="xaProperties">
+			<props>
+		        <prop key="URL" >${jdbc34.url}</prop>
+		        <prop key="user">${jdbc4.username}</prop>
+		        <prop key="password">${jdbc4.password}</prop>
+			</props>
+		</property>
+	</bean>		
+	
+	<!-- 버스전용 -->
+	<!-- 
+	<bean id="dataSource36" parent="baseDataSource">
+		<property name="uniqueResourceName" value="oracle36" />
+		<property name="xaProperties">
+			<props>
+		        <prop key="URL" >${jdbc36.url}</prop>
+		        <prop key="user">${jdbc6.username}</prop>
+		        <prop key="password">${jdbc6.password}</prop>
+			</props>
+		</property>
+	</bean>	
+    -->
+    
+	<!-- 주거지(유시티/부비카) --> 
+	<bean id="dataSource38" parent="baseDataSource">
+		<property name="uniqueResourceName" value="oracle38" />
+		<property name="xaProperties">
+			<props>
+		        <prop key="URL" >${jdbc38.url}</prop>
+		        <prop key="user">${jdbc38.username}</prop>
+		        <prop key="password">${jdbc38.password}</prop>
+			</props>
+		</property>
+	</bean>	
+        
+	<bean id="orgDataSource" class="com.uc.core.spring.service.RoutingDataSource">
+		<property name="targetDataSources">
+			<map key-type="java.lang.String">
+			
+				<entry key="LT_470" value-ref="dataSource1"/>
+				<entry key="LT_etax" value-ref="dataSource1"/>
+
+				<!-- 표준세외수입(시청) -->
+				<entry key="CI_626" value-ref="dataSource3"/>
+	
+                <!--표준세외수입 시청(구청코드별) 구분 -->
+				<entry key="CI_325" value-ref="dataSource3"/>
+				<entry key="CI_326" value-ref="dataSource3"/>
+				<entry key="CI_327" value-ref="dataSource3"/>
+				<entry key="CI_328" value-ref="dataSource3"/>
+				<entry key="CI_329" value-ref="dataSource3"/>
+				<entry key="CI_330" value-ref="dataSource3"/>
+				<entry key="CI_331" value-ref="dataSource3"/>
+				<entry key="CI_332" value-ref="dataSource3"/>
+				<entry key="CI_333" value-ref="dataSource3"/>
+				<entry key="CI_334" value-ref="dataSource3"/>
+				<entry key="CI_335" value-ref="dataSource3"/>
+				<entry key="CI_336" value-ref="dataSource3"/>
+				<entry key="CI_337" value-ref="dataSource3"/>
+				<entry key="CI_338" value-ref="dataSource3"/>
+				<entry key="CI_339" value-ref="dataSource3"/>
+				<entry key="CI_340" value-ref="dataSource3"/>
+				<!-- 환경개선 -->
+				<entry key="HI_000" value-ref="dataSource3"/>
+				<!-- 버스전용차료 위반과태료 -->
+				<entry key="BI_000" value-ref="dataSource3"/>
+				<!-- 교통유발, 주정차 -->
+				<entry key="TI_325" value-ref="dataSource34"/>
+				<entry key="TI_326" value-ref="dataSource34"/>
+				<entry key="TI_327" value-ref="dataSource34"/>
+				<entry key="TI_328" value-ref="dataSource34"/>
+				<entry key="TI_329" value-ref="dataSource34"/>
+				<entry key="TI_330" value-ref="dataSource34"/>
+				<entry key="TI_331" value-ref="dataSource34"/>
+				<entry key="TI_332" value-ref="dataSource34"/>
+				<entry key="TI_333" value-ref="dataSource34"/>
+				<entry key="TI_334" value-ref="dataSource34"/>
+				<entry key="TI_335" value-ref="dataSource34"/>
+				<entry key="TI_336" value-ref="dataSource34"/>
+				<entry key="TI_337" value-ref="dataSource34"/>
+				<entry key="TI_338" value-ref="dataSource34"/>
+				<entry key="TI_339" value-ref="dataSource34"/>
+				<entry key="TI_340" value-ref="dataSource34"/>
+				
+				<!-- 주거지(유시티/부비카) -->
+				<entry key="JUGEOJI" value-ref="dataSource38"/>
+				
+			</map>
+		</property>
+	</bean>
+
+	<!-- JTA -->
+	<bean id="atomikosTransactionManager" class="com.atomikos.icatch.jta.UserTransactionManager" init-method="init" destroy-method="close">
+		<property name="forceShutdown"><value>true</value></property>
+	</bean>
+	
+	<bean id="atomikosUserTransaction" class="com.atomikos.icatch.jta.UserTransactionImp">
+	    <property name="transactionTimeout"><value>300</value></property>
+	</bean>
+	
+	<bean id="txManager" class="org.springframework.transaction.jta.JtaTransactionManager">
+		<property name="transactionManager"><ref bean="atomikosTransactionManager"  /></property>
+		<property name="userTransaction"><ref bean="atomikosUserTransaction"  /></property>
+	</bean>
+
+	<!-- Annotation 기반 트랜젝션 사용... -->	
+	<tx:annotation-driven transaction-manager="txManager"/>
+
+	<bean id="nativeJdbcExtractor" class="org.springframework.jdbc.support.nativejdbc.SimpleNativeJdbcExtractor" lazy-init="true"/>
+	 
+	<bean id="oracleLobHandler"  class="org.springframework.jdbc.support.lob.OracleLobHandler" lazy-init="true">
+	 <property name="nativeJdbcExtractor">
+	  <ref local="nativeJdbcExtractor"/>
+	 </property>
+	</bean>
+    
+    <!-- Spring 에서 제공하는 ibatis client plugin 사용 -->
+    <bean id="sqlMapClient" class="com.uc.core.spring.service.SqlMapClient">
+           <property name="configLocation">
+           		<value>config/sqlmapConfig.xml</value>
+           </property>
+           <property name="dataSource" ref="orgDataSource"/>
+           <property name="lobHandler" ref="oracleLobHandler"/>
+	</bean>
+	
+    <!-- Spring 에서 제공하는 ibatis client plugin 사용 -->
+    <bean id="sqlMapClient_cyber" class="com.uc.core.spring.service.SqlMapClient">
+           <property name="configLocation">
+           		<value>config/sqlmapConfig.xml</value>
+           </property>
+           <property name="dataSource" ref="dataSource_cyber"/>
+           <property name="lobHandler" ref="oracleLobHandler"/>
+	</bean>
+	
+	<!-- Ibatis를 사용하기 위한 기본 서비스...(여러개의 쿼리를 하나의 트랜젝션에 묶을때는 서비스를 새로 만들자 그 외는 전부 이것) -->	
+	<bean id="ibatisService" class="com.uc.core.spring.service.IbatisServiceImpl">
+		<property name="sqlMapClient" ref="sqlMapClient"/>
+	</bean>
+
+	<bean id="ibatisService_cyber" class="com.uc.core.spring.service.IbatisServiceImpl">
+		<property name="sqlMapClient" ref="sqlMapClient_cyber"/>
+	</bean>
+	
+	<!-- 배치처리용 Service 개별 메소드에 트랜젝션이 없다. -->
+	<bean id="baseService" class="com.uc.core.spring.service.IbatisBaseService">
+		<property name="sqlMapClient" ref="sqlMapClient"/>
+	</bean>
+
+	<bean id="baseService_cyber" class="com.uc.core.spring.service.IbatisBaseService">
+		<property name="sqlMapClient" ref="sqlMapClient_cyber"/>
+	</bean>	
+
+	<!-- 배치처리(여러개의 쿼리를 트랜젝션에 묶기) 테스트 서비스 -->
+ 
+	<!-- 배치처리(여러개의 쿼리를 트랜젝션에 묶기) 공통 서비스 --> 
+	<bean id="ibatisBatchService" class="com.uc.core.spring.service.IbatisBatchServiceImpl">
+
+	</bean>
+	
+</beans>
+
+

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="DF201002" >
+
+    <!-- 환경개선부담금 조회내역 가져온다. -->
+	<select id="SELECT_ENV_SEARCH_LIST" resultClass="mapForm">
+	<![CDATA[    
+      SELECT 
+             'A.ENVTAX' AS TAX_GB /*세금구분       */
+           , A.SGG_COD            /*구청코드       */
+           , C.SGNM               /*과세기관명 -구청명*/
+           , A.ACCT_COD           /*회계코드       */
+           , A.TAX_ITEM           /*과세목         */
+           , B.TAX_NM             /*과세목 명      */
+           , A.TAX_YY             /*부과년도       */
+           , A.TAX_MM             /*부과월         */
+           , A.TAX_DIV            /*기분           */
+           , A.HACD               /*행정동코드     */
+           , A.TAX_SNO            /*과세번호       */
+           , A.TAX_CNT            /*부과순번       */
+           , A.MLGN_IF1           /*물건정보1    */
+           , A.MLGN_IF2           /*물건정보2    */
+           , A.MLGN_IF3           /*물건정보3    */
+           , A.MLGN_IF4           /*물건정보4    */
+           , A.MLGN_IF5           /*물건정보5    */
+           , FC_DAMO(A.REG_NO) REG_NO       /*주민법인번호   */
+           , A.REG_NM             /*납세자이름     */
+           , A.REG_ZIPCD          /*납세자우편번호 */
+           , A.ADDRESS            /*주소           */
+           , DECODE(A.DLQ_DIV, '1', A.BUTT + A.ADD_AMT, A.BUTT) ENV_AMT   /*부담금*/
+           , A.MI_AMT
+           , DECODE(A.DLQ_DIV, '1', 0, A.ADD_AMT) ADD_AMT  /*가산금*/
+           , A.MIADD_AMT                                   /*ENV_MIADD_AMT */
+           , A.CNAP_AMT                                    /*ENV_CNAP_AMT  */
+           , ' ' AS SUNAP_DT                               /*수납일자*/
+           , A.TAX_DT                                      /*부과일자*/
+           , F_GET_GYMD(A.DUE_DT) DUE_DT                   /*납기일자*/
+           , F_GET_GYMD(A.DUE_F_DT) DUE_F_DT               /*납기후일자*/ 
+           , A.DEADLINE_DT                                 /*납부기한*/
+           , A.OCR_BD 
+           , A.EPAY_NO                                     /*전자납부번호*/
+           , A.SNTG                                        /*납부상태*/
+           , A.DECODE(A.DLQ_DIV, '1', '4', '0') DLQ_DIV    /*고지형태 결제원 0 정상 4 체납*/
+        FROM TX2131_VW_OCR A           /*환경개선 View TBL*/
+           , CO3301_TB B     /*세목코드 TBL*/
+           , (SELECT GUBUN_NM SGNM, GUBUN_CD SGG_COD FROM CO3102_TB WHERE GUBUN_ID = 'SGG_COD') C  /*공통코드*/
+       WHERE A.EPAY_NO  IS NOT NULL    /*전자납부번호*/
+         AND A.TAX_ITEM = B.TAX_ITEM
+         AND A.SGG_COD  = C.SGG_COD
+    ]]>      
+          AND A.SNTG     IN ('0', '9')  /*납부상태 미수납 및 취소*/
+          AND F_GET_GYMD(A.DEADLINE_DT) >= TO_CHAR(SYSDATE, 'YYYYMMDD')   /*납부가능한 것만...*/
+          /*조건 납세번호*/
+          <isNotEmpty property="TAX_ITEM">
+            AND A.SGG_COD  = #SGG_COD#
+            AND A.ACCT_COD = #ACCT_COD#
+            AND A.TAX_ITEM = #TAX_ITEM#
+            AND A.TAX_YY   = #TAX_YY#
+            AND A.TAX_MM   = #TAX_MM#
+            AND A.TAX_DIV  = #TAX_DIV#
+            AND A.HACD     = #HACD#
+            AND A.TAX_SNO  = #TAX_SNO#
+          </isNotEmpty>
+          <isNotEmpty prepend = "AND" property="EPAY_NO">
+             RPAD(A.EPAY_NO, 19, '0') = RPAD(#EPAY_NO#, 19, '0')      /*전자납부번호 */
+          </isNotEmpty>
+
+	</select>
+	
+</sqlMap>

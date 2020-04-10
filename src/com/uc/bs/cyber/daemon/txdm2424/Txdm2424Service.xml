@@ -1,0 +1,550 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXDM2424" >
+
+	
+	<!-- 부과건수 계산 -->
+	<select id="SELECT_ROAD_CNT" parameterClass="mapForm" resultClass="int">
+	<![CDATA[
+		SELECT COUNT(*) CNT
+		FROM ROTTNARECEIPTINFO
+		WHERE TRN_YN IN ('0','P')
+    ]]> 
+	<isNotEmpty prepend = "AND" property="SGG_COD">
+            SUBSTR(REL_TRANS_CGG_CODE,1,3)=#SGG_COD#         
+	</isNotEmpty>  
+	</select>
+
+	
+	<!-- 부과를 연계 대기상태로 변경 -->
+	<update id="UPDATE_ROAD_START" parameterClass="mapForm">
+	<![CDATA[
+
+        UPDATE ROTTNARECEIPTINFO
+        SET TRN_YN='P'
+        WHERE TRN_YN IN ('0','P')
+        AND LVY_NO IN
+        (
+            SELECT LVY_NO
+            FROM
+            (
+                SELECT LVY_NO, ROWNUM RNUM
+                FROM ROTTNARECEIPTINFO
+                WHERE TRN_YN IN ('0','P')
+    ]]> 
+	<isNotEmpty prepend = "AND" property="SGG_COD">
+            		SUBSTR(REL_TRANS_CGG_CODE,1,3)=#SGG_COD#       
+	</isNotEmpty>  
+	<![CDATA[
+                ORDER BY LAST_MOD_TS
+            )
+			WHERE RNUM<5001
+        )
+	]]>
+	</update>
+	
+
+
+	<!-- 부과를 연계 완료상태로 변경 -->
+	<update id="UPDATE_ROAD_END" parameterClass="mapForm">
+	<![CDATA[
+	    UPDATE ROTTNARECEIPTINFO
+    	SET TRN_YN='E'
+    	WHERE TRN_YN='P'
+    ]]> 
+	<isNotEmpty prepend = "AND" property="SGG_COD">
+            SUBSTR(REL_TRANS_CGG_CODE,1,3)=#SGG_COD#        
+	</isNotEmpty>  
+	</update>
+	
+	
+
+    <!-- 부과내역 가져오기 -->
+	<select id="SELECT_ROAD_LIST" parameterClass="mapForm" resultClass="mapForm">
+	<![CDATA[    
+
+		SELECT 
+			 A.LVY_DEP_CODE||SUBSTR(A.LVY_NO,1,4)||'51281005'||LPAD(TO_CHAR(A.TXTN_SNO),6,'0')||LPAD(A.INSTMT_CHASU,2,'0')
+									    						TAX_NO
+			,A.LVY_DEP_CODE||SUBSTR(A.LVY_NO,1,4)||'51281005'||LPAD(TO_CHAR(A.TXTN_SNO),6,'0')||LPAD(A.INSTMT_CHASU,2,'0')
+									    						TAX_NO_KEY
+			,SUBSTR(A.LVY_DEP_CODE,1,3)                         SGG_COD
+			,NVL(A.NAPBU_NO,' ')                                EPAY_NO
+			,A.LVY_DEP_CODE                                     PART_CODE
+			,SUBSTR(A.LVY_NO,1,4)                               ACCOUNT_YEAR
+			,CASE
+			 WHEN A.LVY_ACCT_CODE='51' THEN '51'
+			 ELSE '51'
+			 END                                                ACCT_COD
+			,LPAD(TO_CHAR(A.TXTN_SNO),6,'0')                    TAX_SNO
+			,LPAD(A.INSTMT_CHASU,2,'0')                         DIVIDED_PAYMENT_SEQNUM
+			,SUBSTR(A.LVY_NO,1,6)                               TAX_YM
+			,CASE
+			 WHEN A.TXTN_SE_CODE='1' THEN '정기'
+			 WHEN A.TXTN_SE_CODE='2' THEN '수시'
+			 WHEN A.TXTN_SE_CODE='3' THEN '자납'
+			 END                                                LEVY_DIV
+			,A.TXTN_SE_CODE                                     TAX_DIV
+			,CASE
+			 WHEN A.LVY_STATE_SE_CODE='210' THEN '02'
+			 ELSE '01'
+			 END                                                BUGWA_STAT
+			,RTRIM(B.OWNER_NM)                                  REG_NM
+			,FC_CMM_DEC(A.OWNER_SID,'ROT','1','T')				REG_NO
+			,SUBSTRB(NVL(TRIM(A.LVY_INFO_DTL),'정보없음'),1,80)	TAX_GDS 
+			,CASE
+			 WHEN A.LVY_STATE_SE_CODE='210' THEN NVL(A.NAPGI_INSD_YMD,'00000000')
+			 ELSE 
+			    CASE
+			    WHEN A.NAPGI_INSD_YMD IS NULL THEN '00000000'
+			    ELSE A.NAPGI_INSD_YMD
+			    END
+			 END                                                DUE_DT
+			,CASE
+			 WHEN A.LVY_STATE_SE_CODE='210' THEN '00000000'
+			 ELSE 
+			    CASE
+			    WHEN NVL(A.RECPT_GBN,'0')='4' THEN '00000000'
+			    ELSE NVL(A.NAPGI_AF_YMD,NVL(A.NAPGI_INSD_YMD,'00000000'))
+			    END
+			 END                                                DUE_F_DT
+			,CASE
+			 WHEN A.LVY_STATE_SE_CODE='210' THEN
+			    CASE
+			    WHEN NVL(A.ADD_AM,0)=0 THEN
+				CASE
+				WHEN NVL(A.NAPGI_AF_AM,0)>NVL(A.NAPGI_INSD_AM,0) THEN NVL(A.NAPGI_AF_AM,0)-NVL(A.NAPGI_INSD_AM,0)+NVL(A.LVY_AM,0)
+				ELSE NVL(A.LVY_AM,0)
+				END 
+			    ELSE NVL(A.ADD_AM,0)+NVL(A.LVY_AM,0)
+			    END
+			 ELSE NVL(A.LVY_AM,0)
+			 END                                                SIGUNGU_TAX
+			,CASE
+			 WHEN A.LVY_STATE_SE_CODE='210' THEN 0
+			 ELSE 
+			    CASE
+			    WHEN NVL(A.ADD_AM,0)=0 THEN 
+				CASE
+				WHEN NVL(A.NAPGI_AF_AM,0)>NVL(A.NAPGI_INSD_AM,0) THEN TRUNC(ROUND(((NVL(A.NAPGI_AF_AM,0)-NVL(A.NAPGI_INSD_AM,0))/NULLIF(NVL(A.LVY_AM,0),0))*100,1),0)
+				ELSE 0
+				END
+			    ELSE TRUNC(ROUND((NVL(A.ADD_AM,0)/NULLIF(NVL(A.LVY_AM,0),0))*100,1),0)
+			    END
+			 END                                                SIGUNGU_RATE
+			,CASE
+			 WHEN A.LVY_STATE_SE_CODE='210' THEN
+			    CASE
+			    WHEN NVL(A.ADD_AM,0)=0 THEN
+				CASE
+				WHEN NVL(A.NAPGI_AF_AM,0)>NVL(A.NAPGI_INSD_AM,0) THEN NVL(A.NAPGI_AF_AM,0)-NVL(A.NAPGI_INSD_AM,0)+NVL(A.LVY_AM,0)
+				ELSE NVL(A.LVY_AM,0)
+				END 
+			    ELSE NVL(A.ADD_AM,0)+NVL(A.LVY_AM,0)
+			    END 
+			 ELSE NVL(A.LVY_AM,0)
+			 END                                                PAYMENT_DATE1
+			,CASE
+			 WHEN (A.LVY_STATE_SE_CODE='210' OR NVL(A.NAPGI_INSD_AM,0)>=NVL(A.NAPGI_AF_AM,0)) THEN 0
+			 ELSE NVL(A.NAPGI_AF_AM,0)-NVL(A.NAPGI_INSD_AM,0)
+			 END                                                AFTPAYMENT_DATE1
+			,CASE
+			 WHEN (A.LVY_STATE_SE_CODE='210' OR NVL(A.NAPGI_INSD_AM,0)>=NVL(A.NAPGI_AF_AM,0)) THEN
+				A.LVY_DEP_CODE
+				||SUBSTR(A.LVY_YM,1,4)
+				||'51281005'
+				||LPAD(TO_CHAR(A.TXTN_SNO),6,'0')
+				||'00'
+				||'X'
+				||'3'
+				||LPAD(TO_CHAR(NVL(A.LVY_AM,0)+NVL(A.ADD_AM,0)),11,'0')
+				||
+				    CASE
+				    WHEN NVL(A.NAPGI_INSD_YMD,'0')='0' THEN TO_CHAR(LAST_DAY(TO_DATE(A.LVY_YMD,'YYYYMMDD')),'YYYYMMDD')
+				    ELSE A.NAPGI_INSD_YMD
+				    END
+				||'0'
+				||'X'
+				||'0000000000'||'00'||'0000000000'||'00'
+				||LPAD(TO_CHAR(NVL(A.LVY_AM,0)+NVL(A.ADD_AM,0)),10,'0')
+				||'00'
+				||'X'
+				||SUBSTR(A.LVY_YM,5,2)
+				||
+				    CASE
+				    WHEN NVL(A.RECPT_GBN,'0')='4' THEN '0'
+				    ELSE '1'
+				    END
+				||LPAD(TO_CHAR(NVL(A.LVY_AM,0)+NVL(A.ADD_AM,0)),12,'0')
+				||'X'
+				||'X'
+			 ELSE
+				A.LVY_DEP_CODE
+				||SUBSTR(A.LVY_YM,1,4)
+				||'51281005'
+				||LPAD(TO_CHAR(A.TXTN_SNO),6,'0')
+				||'00'
+				||'X'
+				||'1'
+				||LPAD(NVL(A.LVY_AM,0),11,'0')
+				||
+				    CASE WHEN NVL(A.NAPGI_INSD_YMD,'0')='0' THEN TO_CHAR(LAST_DAY(TO_DATE(A.LVY_YMD,'YYYYMMDD')),'YYYYMMDD')
+				    ELSE A.NAPGI_INSD_YMD
+				    END
+				||'0'
+				||'X'
+				||'0000000000'||'00'||'0000000000'||'00'
+				||LPAD(NVL(A.LVY_AM,0),10,'0')
+				||LPAD(TRUNC(ROUND(((NVL(A.NAPGI_AF_AM,0)-NVL(A.NAPGI_INSD_AM,0))/NULLIF(NVL(A.LVY_AM,0),0))*100,1),0),2,'0')
+				||'X'
+				||SUBSTR(A.LVY_YM,5,2)
+				||
+				    CASE WHEN NVL(A.RECPT_GBN,'0')='4' THEN '0'
+				    ELSE '1'
+				    END
+				||LPAD(NVL(A.NAPGI_AF_AM,0),12,'0')
+				||'X'
+				||'X'
+			 END                                                OCR_BD
+			,CASE WHEN NVL(A.ATMT_SE_CODE,'N')='N' THEN '02'
+			 ELSE '01'
+			 END                                                ABKU
+			,A.REL_TRANS_CGG_CODE                               REL_TRANS_CGG_CODE
+			,A.LVY_NO                                           LVY_NO
+			,A.BDNG_MGT_NO                                      BDNG_MGT_NO
+			,A.OWNER_MGT_NO                                     OWNER_MGT_NO
+			,NVL(A.LVY_AM,0)                                    LVY_AM
+			,A.LVY_STATE_SE_CODE                                LVY_STATE_SE_CODE
+			,NVL(TRIM(A.NAPGI_INSD_YMD),' ')                    NAPGI_INSD_YMD
+			,'2'                                                TAX_GB
+			,'02'                                               THAP_GBN
+			,0                                                  TAX_CNT
+			,'281005'                                           TAX_ITEM
+			,'교통유발부담금'                                   	TAX_NOTICE_TITLE
+			,'교통유발부담금'                                   	TAX_NM
+			,'시군구세'                                         	ACCOUNT_NAME
+			,0                                                  NATN_TAX
+			,0                                                  NATN_RATE
+			,0                                                  SIDO_TAX
+			,0                                                  SIDO_RATE
+			,NVL(B.HPNO,B.TELNO)                                REG_TEL
+			,NVL(A.ADDR,B.SPEC_ADDR)                            ADDRESS
+			,NVL(A.POST_NO,B.POST_NO)                           REG_ZIPCD
+			,'1'                                                CUD_OPT
+			,'0'                                                SNTG
+			,'N'                                                BU_ADD_YN
+			,C.RECPT_CHASU										RECPT_CHASU
+			,C.RECPT_AM											RECPT_AM
+			,C.RECPT_YMD										RECPT_YMD
+			,CASE WHEN C.RECPT_SR_CODE IN ('B','C','D','E','F','I','M','N','O','P','S','T','V','W','Y') THEN 'Y'
+			 ELSE 'N'
+			 END                                                WETAX_YN
+			,'Y'												DEL_YN
+		FROM ROTTNALVYINFO A, ROTTNAOWNER B, ROTTNARECEIPTINFO C
+		WHERE C.TRN_YN='P'
+			AND NVL(C.RECPT_AM,0)>0
+	]]>
+	<isNotEmpty prepend = "AND" property="SGG_COD">
+    		SUBSTR(A.REL_TRANS_CGG_CODE,1,3)=#SGG_COD#
+	</isNotEmpty>  
+	<![CDATA[
+       		AND A.REL_TRANS_CGG_CODE = B.REL_TRANS_CGG_CODE
+       		AND A.BDNG_MGT_NO = B.BDNG_MGT_NO
+       		AND A.OWNER_MGT_NO = B.OWNER_MGT_NO
+       		AND A.OWNER_SID = B.OWNER_SID
+       		AND A.OWNER_SID_SNO = B.OWNER_SID_SNO
+       		AND A.REL_TRANS_CGG_CODE = C.REL_TRANS_CGG_CODE
+       		AND A.LVY_NO = C.LVY_NO
+       		AND A.ANC_YMD = C.ANC_YMD
+       	ORDER BY C.LAST_MOD_TS
+     ]]>
+	</select>
+
+
+
+	<!-- 교통유발부담금 부과 건수 EPAY_NO -->
+	<select id="SELECT_TX2111_CNT_EPAY_NO" parameterClass="mapForm" resultClass="int">
+	<![CDATA[
+
+    	SELECT COUNT(*) CNT
+    	FROM TX2111_TB_DAMO A
+    	WHERE A.SGG_COD=#SGG_COD#
+			AND A.EPAY_NO=#EPAY_NO#
+
+	]]>
+	</select>
+	
+	
+
+	<!-- 교통유발부담금 부과 건수 TAX_NO -->
+	<select id="SELECT_TX2111_CNT_TAX_NO" parameterClass="mapForm" resultClass="int">
+	<![CDATA[
+
+    	SELECT COUNT(*) CNT
+    	FROM TX2111_TB_DAMO A
+    	WHERE A.SGG_COD=#SGG_COD#
+    		AND A.TAX_NO=#TAX_NO_KEY#
+
+	]]>
+	</select>
+	
+
+
+	<!-- 교통유발부담금 수납 건수 TAX_NO -->
+	<select id="SELECT_TX2211_CNT_TAX_NO" parameterClass="mapForm" resultClass="int">
+	<![CDATA[
+
+    	SELECT COUNT(*) CNT
+    	FROM TX2211_TB C
+    	WHERE C.TAX_NO=#TAX_NO_KEY#
+        	AND C.TAX_CNT=#TAX_CNT#
+        	AND C.SNTG IN ('1','2')
+        	AND C.SNSU='1'
+
+	]]>
+	</select>
+
+	
+	
+	<!-- 교통유발부담금 TAX_NO -->
+	<select id="SELECT_TX2111_TAX_NO" parameterClass="mapForm" resultClass="String">
+	<![CDATA[
+
+    	SELECT A.TAX_NO TAX_NO
+    	FROM TX2111_TB_DAMO A
+    	WHERE A.SGG_COD=#SGG_COD#
+    		AND A.EPAY_NO=#EPAY_NO#
+
+	]]>
+	</select>
+
+
+
+	<!-- 교통유발부담금 MAX_PAY_CNT -->
+	<select id="SELECT_TX2211_MAX_PAY_CNT" parameterClass="mapForm" resultClass="int">
+	<![CDATA[
+
+        SELECT NVL(MAX(PAY_CNT),-1)+1 MAX_PAY_CNT
+        FROM TX2211_TB
+        WHERE TAX_NO=#TAX_NO#
+            AND TAX_CNT=#TAX_CNT#
+
+	]]>
+	</select>
+
+
+	
+    <!-- 교통유발부담금 부과자료 입력  -->
+	<insert id="INSERT_TX2111" parameterClass="mapForm">
+	<![CDATA[
+
+		INSERT INTO TX2111_TB_DAMO
+		(
+			 TAX_NO
+			,SGG_COD
+			,EPAY_NO
+			,TAX_NOTICE_TITLE
+			,PART_CODE
+			,ACCOUNT_YEAR
+			,ACCT_COD
+			,ACCOUNT_NAME
+			,TAX_ITEM
+			,TAX_NM
+			,TAX_SNO
+			,DIVIDED_PAYMENT_SEQNUM
+			,TAX_YM
+			,TAX_DIV
+			,REG_NM
+			,REG_TEL
+			,REG_ZIPCD
+			,ADDRESS
+			,TAX_GDS
+			,TAX_GB
+			,ABKU
+			,BU_ADD_YN
+			,SEC_REG_NO
+		)
+		VALUES
+		(
+			 #TAX_NO#
+			,#SGG_COD#
+			,#EPAY_NO#
+			,#TAX_NOTICE_TITLE#
+			,#PART_CODE#
+			,#ACCOUNT_YEAR#
+			,#ACCT_COD#
+			,#ACCOUNT_NAME#
+			,#TAX_ITEM#
+			,#TAX_NM#
+			,#TAX_SNO#
+			,#DIVIDED_PAYMENT_SEQNUM#
+			,#TAX_YM#
+			,#TAX_DIV#
+			,#REG_NM#
+			,#REG_TEL#
+			,#REG_ZIPCD#
+			,#ADDRESS#
+			,#TAX_GDS#
+			,#TAX_GB#
+			,#ABKU#
+			,#BU_ADD_YN#
+			,FC_DAMO(#REG_NO#)
+		)
+
+    ]]>           
+	</insert>	
+
+	
+
+    <!-- 교통유발부담금 부과상세 입력  -->
+	<insert id="INSERT_TX2112" parameterClass="mapForm">
+	<![CDATA[
+
+		INSERT INTO TX2112_TB
+		(
+			 TAX_NO
+			,SGG_COD
+			,TAX_CNT
+			,BUGWA_STAT
+			,NATN_TAX
+			,NATN_RATE
+			,SIDO_TAX
+			,SIDO_RATE
+			,SIGUNGU_TAX
+			,SIGUNGU_RATE
+			,PAYMENT_DATE1
+			,AFTPAYMENT_DATE1
+			,DUE_DT
+			,DUE_F_DT
+			,OCR_BD
+			,SNTG
+			,TAX_ITEM
+			,THAP_GBN
+			,CUD_OPT
+			,LVY_NO
+			,BDNG_MGT_NO
+			,OWNER_MGT_NO
+			,PROC_CLS
+			,VIR_ACC_NO
+			,SGG_TR_TG
+			,DEL_YN
+		)
+		VALUES
+		(
+			 #TAX_NO#
+			,#SGG_COD#
+			,#TAX_CNT#
+			,#BUGWA_STAT#
+			,#NATN_TAX#
+			,#NATN_RATE#
+			,#SIDO_TAX#
+			,#SIDO_RATE#
+			,#SIGUNGU_TAX#
+			,#SIGUNGU_RATE#
+			,#PAYMENT_DATE1#
+			,#AFTPAYMENT_DATE1#
+			,#DUE_DT#
+			,#DUE_F_DT#
+			,FC_CHECK_OCR(#OCR_BD#)
+			,#SNTG#
+			,#TAX_ITEM#
+			,#THAP_GBN#
+			,#CUD_OPT#
+			,#LVY_NO#
+			,#BDNG_MGT_NO#
+			,#OWNER_MGT_NO#
+			,#PROC_CLS#
+			,#VIR_ACC_NO#
+			,#SGG_TR_TG#
+			,#DEL_YN#
+		)
+
+    ]]>           
+	</insert>	
+
+
+
+    <!-- 교통유발부담금 수납내역 입력  -->
+	<insert id="INSERT_TX2211" parameterClass="mapForm">
+	<![CDATA[
+
+		INSERT INTO TX2211_TB
+		(
+     		 TAX_NO
+    		,TAX_CNT
+    		,PAY_CNT
+    		,SUM_RCP
+    		,PAY_DT
+    		,SNTG
+    		,SNSU
+    		,BANK_CD
+    		,BRC_NO
+    		,OCR_BD
+		)
+		VALUES
+		(
+     		 #TAX_NO#
+    		,#TAX_CNT#
+    		,#PAY_CNT#
+    		,#RECPT_AM#
+    		,#RECPT_YMD#
+    		,'2'
+    		,'1'
+    		,'100'
+    		,'1000000'
+    		,FC_CHECK_OCR(#OCR_BD#)
+		)
+
+    ]]>           
+	</insert>	
+
+
+
+	<!-- 위택스 수납자료의 삭제Flag 를 업데이트 한다.  -->
+	<update id="UPDATE_TX2112_DEL_YN_N" parameterClass="mapForm">
+    <![CDATA[
+
+    	UPDATE TX2112_TB
+    	SET  DEL_DT=SYSDATE
+    	    ,DEL_YN='N'
+    	    ,SNTG='2'
+    	WHERE SGG_COD=#SGG_COD#
+    		AND TAX_NO=#TAX_NO_KEY#
+    		AND TAX_CNT=#TAX_CNT#
+
+    ]]>
+	</update>	
+
+
+
+	<!-- 구청의 수납된 자료를 삭제Flag 를 업데이트 한다.  -->
+	<update id="UPDATE_TX2112_DEL_YN" parameterClass="mapForm">
+    <![CDATA[
+
+    	UPDATE TX2112_TB
+    	SET  DEL_DT=SYSDATE
+    	    ,DEL_YN='Y'
+    	WHERE SGG_COD=#SGG_COD#
+    		AND TAX_NO=#TAX_NO_KEY#
+    		AND TAX_CNT=#TAX_CNT#
+
+    ]]>
+	</update>	
+
+	
+
+	<!-- 연계테이블 업데이트  -->
+	<update id="UPDATE_ROAD_TRN_YN" parameterClass="mapForm">
+    <![CDATA[
+
+        UPDATE ROTTNARECEIPTINFO
+        SET TRN_YN=#TRN_YN#
+        WHERE REL_TRANS_CGG_CODE=#REL_TRANS_CGG_CODE#
+        	AND LVY_NO=#LVY_NO#
+        	AND RECPT_CHASU=#RECPT_CHASU#
+
+    ]]>
+	</update>	
+
+</sqlMap>

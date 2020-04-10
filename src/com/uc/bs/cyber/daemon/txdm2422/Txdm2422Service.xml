@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXDM2422" >
+    
+    
+    <!-- 교통유발부담금 수납 실시간 자료 -->
+    <select id="getSunapDataList" parameterClass="mapForm" resultClass="mapForm">
+    SELECT 
+           A.SGG_COD || '0000'                                         				 AS SF_TEAM_CODE
+         , CASE WHEN A.TAX_ITEM='281005' THEN '21503001' END                         AS TAXIN_CODE
+         , B.LVY_NO       						                                     AS LVY_NO
+         , (SELECT NVL(MAX(B.TAX_CNT), C.TAX_CNT) FROM TX2112_TB B 
+             WHERE 1 = 1
+               AND A.TAX_ITEM       = B.TAX_ITEM
+               AND A.TAX_NO         = B.TAX_NO
+               AND (CASE WHEN F_GET_GYMD(B.DUE_DT) >= C.PAY_DT THEN B.PAYMENT_DATE1 ELSE B.PAYMENT_DATE1 + B.AFTPAYMENT_DATE1 END) =  C.SUM_RCP)     AS ANC_CHASU
+         , C.PAY_CNT                                                                 AS RECPT_CHASU
+         , C.PAY_DT                                                                  AS RECPT_YMD
+         , C.SUM_RCP                                                                 AS RECPT_AM
+         , SUBSTR(A.TAX_YM,1,4)                                                      AS LVY_YY
+         , SUBSTR(A.TAX_YM,5,2)                                                      AS LVY_MM
+         , PART_CODE                                                                 AS DEP_CODE
+         , TAX_DIV                                                                   AS GUBUN
+         , FC_DAMO(SEC_REG_NO)                                                       AS OWNER_SID
+         , (SELECT CASE WHEN LENGTH(GUBUN_NM) > 15 THEN SUBSTR(GUBUN_NM,0,14) ELSE GUBUN_NM END 
+              FROM CO3102_TB 
+             WHERE GUBUN_ID IN ('BNK_CD', 'CARD_CO') 
+               AND GUBUN_CD = CASE WHEN TRIM(C.BANK_CD)='99' THEN '032' ELSE TRIM(C.BANK_CD) END
+           )																		 AS RECPT_BANK_NM
+         , F_GET_ICHEYMD(C.PAY_DT, TRIM(C.BANK_CD))                                  AS TRANSFER_YMD
+         , FC_GET_WDT(C.PAY_DT,'1')                                                  AS ACCT_YMD
+         , CASE WHEN C.SNTG='9' THEN '2' ELSE '1' END								 AS RECPT_GUBUN
+         , CASE WHEN C.SNTG='9' THEN C.PAY_DT ELSE ' ' END							 AS RECPT_CANCEL_YMD
+         , CASE WHEN C.SNTG='9' THEN C.SUM_RCP ELSE 0 END							 AS RECPT_CANCEL_AM
+         , ' '                                                                       AS LAST_MOD_TS
+         , CASE
+				WHEN C.SNSU='2' THEN '05'
+				WHEN C.SNSU='4' THEN '07'
+				WHEN C.SNSU='5' THEN '11'
+		   ELSE '07'
+		   END																		 AS RECPT_SR_CODE
+		 , ' '                                                                       AS ASGNMT_LIST1
+		 , ' '                                                                       AS ASGNMT_LIST2  
+		 , ' '                                                                       AS ASGNMT_LIST3  
+		 , ' '                                                                       AS ASGNMT_LIST4    
+		 , ' '                                                                       AS ASGNMT_LIST5 
+         , C.TAX_NO                                                                  AS TAX_NO
+         , C.TAX_CNT                                                                 AS TAX_CNT
+         , C.PAY_CNT                                                                 AS PAY_CNT
+         , C.PAY_DT                                                                  AS PAY_DT
+      FROM TX2111_TB_DAMO A
+         , TX2112_TB B
+         , TX2211_TB C
+     WHERE  C.PAY_DT         >= '20150800'       
+       AND A.SGG_COD        = B.SGG_COD
+       AND A.TAX_NO         = B.TAX_NO
+       AND A.TAX_NO         = C.TAX_NO
+       AND B.TAX_NO         = C.TAX_NO
+       AND C.SNSU           NOT IN ('1','6')
+       AND A.TAX_ITEM         = '281005'
+       AND C.TRTG = '0'
+       AND A.SGG_COD        = #SGG_COD#
+    </select>    
+    
+    
+    <!-- 전송완료 상태 변경 -->
+	<update id="updateWsdlTrtgData" parameterClass="mapForm">
+
+	UPDATE TX2211_TB
+	   SET TRTG      = #TRTG#
+	     , LAST_DTM  = SYSDATE
+	 WHERE PAY_DT    = #PAY_DT#
+       AND TAX_NO    = #TAX_NO#
+       AND TAX_CNT   = #TAX_CNT#
+       AND PAY_CNT   = #PAY_CNT#
+
+	</update>
+
+</sqlMap>

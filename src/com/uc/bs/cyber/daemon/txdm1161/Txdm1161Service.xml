@@ -1,0 +1,393 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXDM1161" >
+
+    <!-- 실시간 수납/취소 건수 구하기  -->
+	<select id="SELECT_COUNT"  resultClass="int"  parameterClass="mapForm">
+	<![CDATA[   
+	
+		SELECT COUNT(SEQ) CNT
+		   FROM SCON745
+		WHERE DEAL_STATE IN ('P')
+			AND PAY_DT=TO_CHAR(SYSDATE,'YYYYMMDD')
+			AND (TRN_YN IS NULL OR TRN_YN IN ('0','8','9'))
+		              
+	]]>	   
+	</select>
+	
+	
+	<!-- 실시간 수납/취소 리스트 -->
+	<select id="SELECT_LIST" parameterClass="mapForm" resultClass="mapForm">
+	<![CDATA[
+	
+		SELECT SEQ,                                                                            
+		       IH_REGNO,                                                                           
+		       TAX_NO,                                                                         
+		       EPAY_NO,                                                                    
+		       SUM_RCP,                                                                        
+		       PAY_DT,                                                                         
+		       SUBSTR(BANK_COD, 1, 3) BANK_CD,                                                 
+		       BANK_COD BRC_NO,                                                                    
+		       CO_BKNUM ,                                                                          
+		       DECODE(PAY_FORM, 'R', 'Y', 'N') RSN_YN,
+		       RAISE_TIME,
+		       '1' GBN                                              
+		  FROM SCON745                                                               
+		WHERE DEAL_STATE IN ('P')
+			AND PAY_DT=TO_CHAR(SYSDATE,'YYYYMMDD')
+			AND (TRN_YN IS NULL OR TRN_YN IN ('0','8','9'))
+		      
+	]]>
+	</select>
+	
+    <!-- 전자납부번호에 해당하는 분납순번을 가져온다  -->
+    <!-- 그지같은 사업단 부과자료때문에 쿼리가 무지 어려워졌다 -->
+    <!-- 602, 743 두개의 테이블에서 최대값을 가져오도록 한다 -->	
+	<!-- 실시간 수납/취소 리스트 -->
+	<select id="TXSV3161_SELECT_ALL" parameterClass="mapForm" resultClass="mapForm">
+	<![CDATA[
+	
+		SELECT RCP_CNT, OCRBD FROM(
+		            SELECT      S3.SEQ,
+		                        NVL(S3.RCP_CNT,0) RCP_CNT,
+		                        S3.SIDO_COD ||
+		                        S3.SGG_COD ||
+		                        S3.CHK1 ||
+		                        S3.ACCT_COD ||
+		                        S3.TAX_ITEM ||
+		                        S3.TAX_YY ||
+		                        S3.TAX_MM ||
+		                        S3.TAX_DIV ||
+		                        S3.ADONG_COD ||
+		                        S3.TAX_SNO ||
+		                        S3.CHK2 ||
+		                        TO_CHAR(S3.SUM_B_AMT, 'FM09999999999') ||
+		                        TO_CHAR(S3.SUM_F_AMT, 'FM09999999999') ||
+		                        S3.CHK3 ||
+		                        TO_CHAR(S3.MNTX,'FM09999999999') ||
+		                        TO_CHAR(S3.CPTX,'FM0999999999') ||
+		                        TO_CHAR(S3.CFTX_ASTX,'FM0999999999') ||
+		                        TO_CHAR(S3.LETX,'FM09999999999') ||
+		                        S3.DUE_DT ||
+		                        S3.CHK4 ||
+		                        S3.FILLER ||
+		                        S3.GOJI_DIV ||
+		                        S3.CHK5    OCRBD
+		            FROM   
+		                SCON602 S3
+		            WHERE   
+		                S3.EPAY_NO = #EPAY_NO#
+		                AND S3.SEQ = (
+		                    SELECT                                                          
+		                        MAX(SEQ)                                                    
+		                    FROM                                                            
+		                        SCON602                                                     
+		                    WHERE  EPAY_NO = S3.EPAY_NO                                     
+		                        AND CUD_OPT <> '3'                                          
+		                        AND (SUM_B_AMT > 0 OR SUM_F_AMT > 0)                        
+		                )     
+		           UNION ALL
+		            SELECT      S3.SEQ,
+		                        NVL(S3.RCP_CNT,0) RCP_CNT,
+		                        S3.SIDO_COD ||
+		                        S3.SGG_COD ||
+		                        S3.CHK1 ||
+		                        S3.ACCT_COD ||
+		                        S3.TAX_ITEM ||
+		                        S3.TAX_YY ||
+		                        S3.TAX_MM || 
+		                        S3.TAX_DIV ||
+		                        S3.ADONG_COD ||
+		                        S3.TAX_SNO ||
+		                        S3.CHK2 ||
+		                        TO_CHAR(S3.SUM_B_AMT, 'FM09999999999') ||
+		                        TO_CHAR(S3.SUM_F_AMT, 'FM09999999999') ||
+		                        S3.CHK3 ||
+		                        TO_CHAR(S3.MNTX,'FM09999999999') ||
+		                        TO_CHAR(S3.CPTX,'FM0999999999') ||
+		                        TO_CHAR(S3.CFTX_ASTX,'FM0999999999') ||
+		                        TO_CHAR(S3.LETX,'FM09999999999') ||
+		                        S3.DUE_DT ||
+		                        S3.CHK4 ||
+		                        S3.FILLER ||
+		                        S3.GOJI_DIV ||
+		                        S3.CHK5    OCRBD
+		            FROM   
+		                SCON743 S3
+		            WHERE   
+		                S3.EPAY_NO = #EPAY_NO#
+		                AND S3.SEQ = (
+		                    SELECT
+		                        MAX(SEQ)
+		                    FROM
+		                        SCON743
+		                    WHERE   
+		                        EPAY_NO = S3.EPAY_NO
+		                        AND CUD_OPT <> '3' 
+		                        AND (SUM_B_AMT > 0 OR SUM_F_AMT > 0)
+		                )
+		          ORDER BY SEQ DESC)
+		   WHERE ROWNUM=1  
+		      
+	]]>
+	</select>	
+	
+	<select id="TXSV3161_SELECT_ALL_000" parameterClass="mapForm" resultClass="mapForm">
+	<![CDATA[
+	
+		SELECT RCP_CNT, OCRBD FROM(
+		            SELECT      S3.SEQ,
+		                        NVL(S3.RCP_CNT,0) RCP_CNT,
+		                        S3.SIDO_COD ||
+		                        S3.SGG_COD ||
+		                        S3.CHK1 ||
+		                        S3.ACCT_COD ||
+		                        S3.TAX_ITEM ||
+		                        S3.TAX_YY ||
+		                        S3.TAX_MM || 
+		                        S3.TAX_DIV ||
+		                        S3.ADONG_COD ||
+		                        S3.TAX_SNO ||
+		                        S3.CHK2 ||
+		                        TO_CHAR(S3.SUM_B_AMT, 'FM09999999999') ||
+		                        TO_CHAR(S3.SUM_F_AMT, 'FM09999999999') ||
+		                        S3.CHK3 ||
+		                        TO_CHAR(S3.MNTX,'FM09999999999') ||
+		                        TO_CHAR(S3.CPTX,'FM0999999999') ||
+		                        TO_CHAR(S3.CFTX_ASTX,'FM0999999999') ||
+		                        TO_CHAR(S3.LETX,'FM09999999999') ||
+		                        S3.DUE_DT ||
+		                        S3.CHK4 ||
+		                        S3.FILLER ||
+		                        S3.GOJI_DIV ||
+		                        S3.CHK5    OCRBD
+		            FROM   
+		                SCON743 S3
+		            WHERE   
+		                S3.EPAY_NO = #EPAY_NO#
+		                AND S3.SEQ = (
+		                    SELECT
+		                        MAX(SEQ)
+		                    FROM
+		                        SCON743
+		                    WHERE   
+		                        EPAY_NO = S3.EPAY_NO
+		                        AND CUD_OPT <> '3' 
+		                        AND (SUM_B_AMT > 0 OR SUM_F_AMT > 0)
+		                )
+		          ORDER BY SEQ DESC)
+		   WHERE ROWNUM=1  
+		      
+	]]>
+	</select>		
+	
+	<!-- 지방소득세 특별징수 수납처리  -->
+	<update id="INSERT_140004_RECEIPT" parameterClass="mapForm">
+    <![CDATA[
+    
+		UPDATE ES1111_TB 
+		      SET SNTG = '2'
+		 WHERE EPAY_NO = #EPAY_NO#
+		      AND SNTG = '0'
+        
+    ]]>
+	</update>	
+	
+	<!-- 지방소득세 종합소득 수납처리  -->
+	<update id="INSERT_140001_RECEIPT" parameterClass="mapForm">
+    <![CDATA[
+    
+		UPDATE ES1121_TB
+		      SET SNTG = '2'
+		 WHERE EPAY_NO = #EPAY_NO#
+		      AND SNTG = '0'
+        
+    ]]>
+	</update>		
+	
+	<!-- 지방소득세 양도소득 수납처리  -->
+	<update id="INSERT_140002_RECEIPT" parameterClass="mapForm">
+    <![CDATA[
+    
+		UPDATE ES1131_TB
+		      SET SNTG = '2'
+		 WHERE EPAY_NO = #EPAY_NO#
+		      AND SNTG = '0'
+        
+    ]]>
+	</update>			
+	
+	<!-- 지방소득세 법인세분 수납처리  -->
+	<update id="INSERT_140003_RECEIPT" parameterClass="mapForm">
+    <![CDATA[
+    
+		UPDATE ES1141_TB
+		      SET SNTG = '2'
+		 WHERE EPAY_NO = #EPAY_NO#
+		      AND SNTG = '0'
+        
+    ]]>
+	</update>		
+	
+    <!-- 지방소득세 법인세분 수납처리 NEW  -->
+    <update id="INSERT_140003_RECEIPT_NEW" parameterClass="mapForm">
+    <![CDATA[
+    
+        UPDATE ES5001_TB
+           SET STATUS = '2'
+             , SUNAP_DT = TO_CHAR(SYSDATE, 'YYYYMMDD')
+         WHERE EPAY_NO = #EPAY_NO#
+           AND STATUS = '0'
+        
+    ]]>
+    </update>       
+    
+	<!-- 지방소득세 종업원분 수납처리  -->
+	<update id="INSERT_140011_RECEIPT" parameterClass="mapForm">
+    <![CDATA[
+    
+		UPDATE ES1151_TB
+		      SET SNTG = '2'
+		 WHERE EPAY_NO = #EPAY_NO#
+		      AND SNTG = '0'
+        
+    ]]>
+	</update>		
+	
+	<!-- 지방소득세 재산분 수납처리  -->
+	<update id="INSERT_104009_RECEIPT" parameterClass="mapForm">
+    <![CDATA[
+    
+		UPDATE ES1151_TB
+		      SET SNTG = '2'
+		 WHERE EPAY_NO = #EPAY_NO#
+		      AND SNTG = '0'
+        
+    ]]>
+	</update>		
+	
+	<!-- 지방소득세 등록면허세 등록분  수납처리  -->
+	<update id="INSERT_114002_RECEIPT" parameterClass="mapForm">
+    <![CDATA[
+    
+		UPDATE ES1161_TB
+		      SET SNTG = '2'
+		 WHERE EPAY_NO = #EPAY_NO#
+		      AND SNTG = '0'
+        
+    ]]>
+	</update>	
+	
+	<!-- 지방소득세 레저세  수납처리  -->
+	<update id="INSERT_109000_RECEIPT" parameterClass="mapForm">
+    <![CDATA[
+    
+		UPDATE ES1171_TB
+		      SET SNTG = '2'
+		 WHERE EPAY_NO = #EPAY_NO#
+		      AND SNTG = '0'
+        
+    ]]>
+	</update>	
+	
+	<!-- 지역개발세 특자   수납처리  -->
+	<update id="INSERT_135001_RECEIPT" parameterClass="mapForm">
+    <![CDATA[
+    
+		UPDATE ES1181_TB
+		      SET SNTG = '2'
+		 WHERE EPAY_NO = #EPAY_NO#
+		      AND SNTG = '0'
+        
+    ]]>
+	</update>	
+	
+	<!-- 통합수납 처리완료  -->
+	<update id="TXSV3161_UPDATE_DONE" parameterClass="mapForm">
+    <![CDATA[
+    
+		UPDATE SCON745
+		      SET TRN_YN = #TRN_YN#
+		WHERE SEQ = #SEQ#
+        
+    ]]>
+	</update>		
+	
+	<!-- 지방세부과상세 테이블 변경한다. (수납플래그 설정)  -->
+	<update id="TX1102_TB_UPDATE_STATE" parameterClass="mapForm">
+    <![CDATA[
+    
+		UPDATE TX1102_TB                                                                                                      
+		   SET SNTG = '2'                                                                                                                                                                                                                       
+		 WHERE  SGG_COD = #SGG_COD#                                                                                       
+		   AND  ACCT_COD = #ACCT_COD#                                                                                   
+		   AND  TAX_ITEM = #TAX_ITEM#                                                                                   
+		   AND  TAX_YY = #TAX_YY#                                                                                  
+		   AND  TAX_MM = #TAX_MM#                                                                                    
+		   AND  TAX_DIV = #TAX_DIV#                                                                                     
+		   AND  HACD = #HACD#                                                                                      
+		   AND  TAX_SNO = #TAX_SNO#                                                                                    
+		   AND  RCP_CNT = #RCP_CNT# 
+        
+    ]]>
+	</update>   	
+	
+	<!-- 지방세전자수납 통합수납 -->
+	<insert id="TX1201_TB_INSERT_RECEIPT" parameterClass="mapForm">
+	<![CDATA[
+	
+	INSERT INTO TX1201_TB 
+		( 
+		    SGG_COD,   
+		    ACCT_COD,  
+		    TAX_ITEM,  
+		    TAX_YY,    
+		    TAX_MM,    
+		    TAX_DIV,   
+		    HACD,      
+		    TAX_SNO,   
+		    RCP_CNT,   
+		    PAY_CNT,  
+		    SNTG,       
+		    SUM_RCP,   
+		    PAY_DT,    
+		    SNSU,      
+		    BANK_CD,   
+		    BRC_NO,    
+		    TMSG_NO,   
+		    OCR_BD,    
+		    TRTG,      
+		    RSN_YN,    
+		    REG_DTM,   
+		    LAST_DTM   
+		) VALUES ( 
+		    #SGG_COD#,          
+		    #ACCT_COD#,
+		    #TAX_ITEM#,
+		    #TAX_YY#,  
+		    #TAX_MM#,  
+		    #TAX_DIV#, 
+		    #HACD#,    
+		    #TAX_SNO#, 
+		    #RCP_CNT#, 
+		    '0', 
+		    '2',    
+		    #SUM_RCP#, 
+		    #PAY_DT#,  
+		    '1',    
+		    #BANK_CD#, 
+		    #BRC_NO#,  
+		    '', 
+		    #OCRBD#,  
+		    '1',    
+		    #RSN_YN#,  
+		    SYSDATE,
+		    SYSDATE
+		)
+
+   
+    ]]>       
+    </insert>  	
+	
+</sqlMap>

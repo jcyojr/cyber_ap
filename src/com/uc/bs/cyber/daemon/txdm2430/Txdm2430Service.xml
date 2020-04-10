@@ -1,0 +1,455 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXDM2430" >
+
+
+    <!-- 연계 -->
+    <!-- 버스전용차로위반과태료 부과자료를 가져온다. -->
+	<select id="SELECT_C_BUS_FINE_LIST" resultClass="mapForm">
+	<![CDATA[    
+
+       SELECT  SEQ                                 AS SEQ
+             , NON_SGCD                            AS SGG_COD   /*구청코드*/ 
+             , NON_ACKU                            AS ACCT_COD  /*회계코드*/
+             , NON_SMCD                            AS TAX_ITEM  /*과세목(6)*/
+             , NON_BYYY                            AS TAX_YY    /*부과년도*/
+             , NON_BNGI                            AS TAX_MM    /*분기(부과월)*/
+             , NON_GIBN                            AS TAX_DIV   /*기분*/
+             , NON_HACD                            AS HACD      /*행정동*/
+             , TO_CHAR(NON_NPNO, 'FM099999')       AS TAX_SNO   /*과세번호 / 납세번호*/
+             , NON_NPNO                            AS NON_NPNO  /*과세번호 / 납세번호*/
+             , NON_STAT                            AS BUGWA_STAT  /*부과상태*/
+             , NON_MLGN                            AS TAX_GDS     /*부과(과세)대상*/
+             , NON_ZWDATE                          AS ZW_DT       /*위반일자*/
+             , NON_ZWTIME                          AS ZW_TM       /*위반시간*/
+             , NON_WJANGSO                         AS ZW_AREA     /*위반장소*/
+             , NON_INFO                            AS INFO        /*부과 관련정보1*/
+             , NON_INFO2                           AS BUT_INFO2   /*부과 관련정보2*/
+             , NVL(NON_GAMONEY, 0)                 AS GAMONEY     /*감액금액*/
+             , NON_BUTT                            AS BUTT        /*부과금액*/
+             , NON_GO_BYMD                         AS FTAX_DT     /*최초부과일자*/
+             , NON_GO_GYMD                         AS FDUE_DT     /*최초기한일자*/
+             , NON_CNAP_BYMD                       AS DL_TAX_DT   /*체납부과일자*/
+             , NON_CNAP_GYMD                       AS DL_DU_DT    /*체납기한일자*/
+             , REPLACE(NON_NAME,'"','')            AS REG_NM      /*납세자*/
+             , REPLACE(NON_JMO1,' ','')||REPLACE(NON_JMO2,' ','')	AS REG_NO      /*주민번호*/
+             , NON_POST                            AS ZIP_CD      /*우편번호*/
+             , NON_ADDR                            AS ADDRESS     /*주소*/
+             , NON_SNTG                            AS SNTG        /*납부상태*/
+             , NON_GRNO                            AS EPAY_NO     /*전자납부번호*/
+             , NON_BYMD                            AS TAX_DT      /*부과일자*/
+             , NON_GYMD                            AS DUE_DT      /*납기일자(기한일자)*/
+             , DEADLINE_DT                         AS DUE_F_DT    /*납기후 일자*/
+             , CUD_OPT                             AS CUD_OPT
+             , 0                                   AS TAX_CNT
+	     FROM
+    	 (
+		 	SELECT TMP.*,ROWNUM RNUM
+		 	FROM
+		 	(
+		        SELECT *
+        		FROM NONTAX_TAB
+         		WHERE NON_SNTG = '0'       /*납부상태*/
+           			AND NON_TRTG = '0'       /*자료전송(0:미전송,1:전송완료)*/
+           			AND NON_NPNO > 0         /*납세번호*/
+           			AND CUD_OPT NOT IN ('3')
+           			AND NON_JMO1 IS NOT NULL
+           			AND NON_JMO2 IS NOT NULL
+           			AND NON_GRNO IS NOT NULL
+           			AND NON_GYMD IS NOT NULL
+           			AND NON_BUTT > 0
+         		ORDER BY SEQ
+		 	) TMP
+		 	ORDER BY RNUM
+		 )
+		 WHERE RNUM<3000
+
+    ]]>  
+	</select>
+	
+    <!-- 연계 -->
+    <!-- 주거지전용주차 부과자료를 가져온다. -->
+	<select id="SELECT_C_JUGEOJI_FINE_LIST" resultClass="mapForm">
+	<![CDATA[    
+
+       SELECT  NON_SGCD                            AS SGG_COD   /*구청코드*/ 
+             , NON_ACKU                            AS ACCT_COD  /*회계코드*/
+             , NON_SMCD                            AS TAX_ITEM  /*과세목(6)*/
+             , NON_BYYY                            AS TAX_YY    /*부과년도*/
+             , NON_BNGI                            AS TAX_MM    /*분기(부과월)*/
+             , NON_GIBN                            AS TAX_DIV   /*기분*/
+             , NON_HACD                            AS HACD      /*행정동*/
+             , TO_CHAR(NON_NPNO, 'FM099999')       AS TAX_SNO   /*과세번호 / 납세번호*/
+             , NON_NPNO                            AS NON_NPNO  /*과세번호 / 납세번호*/
+             , NON_STAT                            AS BUGWA_STAT  /*부과상태*/
+             , NON_MLGN                            AS TAX_GDS     /*부과(과세)대상*/
+             , NON_ZWDATE                          AS ZW_DT       /*위반일자*/
+             , NON_ZWTIME                          AS ZW_TM       /*위반시간*/
+             , NON_WJANGSO                         AS ZW_AREA     /*위반장소*/
+             , NON_INFO                            AS INFO        /*부과 관련정보1*/
+             , NON_INFO2                           AS BUT_INFO2   /*부과 관련정보2*/
+             , NVL(NON_GAMONEY, 0)                 AS GAMONEY     /*감액금액*/
+             , NON_BUTT                            AS BUTT        /*부과금액*/
+             , NON_GO_BYMD                         AS FTAX_DT     /*최초부과일자*/
+             , NON_GO_GYMD                         AS FDUE_DT     /*최초기한일자*/
+             , NON_CNAP_BYMD                       AS DL_TAX_DT   /*체납부과일자*/
+             , NON_CNAP_GYMD                       AS DL_DU_DT    /*체납기한일자*/
+             , NON_NAME                            AS REG_NM      /*납세자*/
+             , REPLACE(NON_JMO1,' ','')||REPLACE(NON_JMO2,' ','')	AS REG_NO      /*주민번호*/
+             , NON_POST                            AS ZIP_CD      /*우편번호*/
+             , NON_ADDR                            AS ADDRESS     /*주소*/
+             , NON_SNTG                            AS SNTG        /*납부상태*/
+             , NON_GRNO                            AS EPAY_NO     /*전자납부번호*/
+             , NON_BYMD                            AS TAX_DT      /*부과일자*/
+             , NON_GYMD                            AS DUE_DT      /*납기일자(기한일자)*/
+             , '00000000'                          AS DUE_F_DT    /*납기후 일자*/
+             , '0'                                 AS CUD_OPT
+             , 0								   AS TAX_CNT
+         FROM NONTAX_TAB
+         WHERE NON_SNTG = '0'       /*납부상태*/
+           AND NON_TRTG = '0'       /*자료전송(0:미전송,1:전송완료)*/
+           AND NON_NPNO > 0         /*납세번호*/
+           AND NON_JMO1 IS NOT NULL
+           AND NON_JMO2 IS NOT NULL
+           AND NON_GRNO IS NOT NULL
+           AND NON_GYMD IS NOT NULL
+           AND NON_BUTT + NVL(NON_GAMONEY, 0) > 0
+           AND ROWNUM   <= 5000 
+         ORDER BY NON_GRNO
+
+    ]]>  
+	</select>	
+	
+    <!-- 연계 -->
+    <!-- 주거지전용주차 고지자료삭제를 위한 연계자료를 가져온다. -->
+	<select id="SELECT_C_JUGEOJI_FINE_GOJI_LIST" resultClass="mapForm">
+	<![CDATA[ 
+	
+       SELECT NON_SGCD    AS SGG_COD   /*구청코드*/ 
+            , NON_ACKU    AS ACCT_COD  /*회계코드*/
+            , NON_SMCD    AS TAX_ITEM  /*과세목(6)*/
+            , NON_BYYY    AS TAX_YY    /*부과년도*/
+            , NON_BNGI    AS TAX_MM    /*분기(부과월)*/
+            , NON_GIBN    AS TAX_DIV   /*기분*/
+            , NON_HACD    AS HACD      /*행정동*/
+            , TO_CHAR(NON_NPNO, 'FM099999')   AS TAX_SNO   /*과세번호 / 납세번호*/
+            , NON_NPNO    AS NON_NPNO                      /*과세번호 / 납세번호*/
+            , 0           AS TAX_CNT
+         FROM NONTAX_TAB
+        WHERE NON_SNTG  = '9'
+          AND NON_TRTG  = '0'
+	
+    ]]>  
+	</select>	   	
+	
+    <!-- 연계 -->
+    <!-- 버스전용차로위반과태료 고지자료삭제를 위한 연계자료를 가져온다. -->
+	<select id="SELECT_C_BUS_FINE_GOJI_LIST" resultClass="mapForm">
+	<![CDATA[ 
+	
+       SELECT NON_SGCD    AS SGG_COD   /*구청코드*/ 
+            , NON_ACKU    AS ACCT_COD  /*회계코드*/
+            , NON_SMCD    AS TAX_ITEM  /*과세목(6)*/
+            , NON_BYYY    AS TAX_YY    /*부과년도*/
+            , NON_BNGI    AS TAX_MM    /*분기(부과월)*/
+            , NON_GIBN    AS TAX_DIV   /*기분*/
+            , NON_HACD    AS HACD      /*행정동*/
+            , TO_CHAR(NON_NPNO, 'FM099999')  AS TAX_SNO   /*과세번호 / 납세번호*/
+            , NON_NPNO    AS NON_NPNO                     /*과세번호 / 납세번호*/
+            , 0           AS TAX_CNT
+         FROM NONTAX_TAB
+        WHERE CUD_OPT   = '3'
+          AND NON_TRTG  = '0'
+	
+    ]]>  
+	</select>		
+	
+    <!-- 사이버 -->
+    <!-- 금액 및 납기후일짜를 가져온다. -->
+	<select id="SELECT_GET_AMT_DATE" resultClass="mapForm">
+	<![CDATA[ 
+	
+        SELECT 
+             B.BUTT + NVL(B.GAMONEY, 0) AS V_AMT      /*부과금액 + 감액금액*/
+            ,B.DUE_F_DT                 AS V_DATE     /*납기후일자*/
+        FROM TX2121_TB_DAMO A, TX2122_TB B
+        WHERE A.SGG_COD    =  B.SGG_COD
+          AND A.ACCT_COD   =  B.ACCT_COD
+          AND A.TAX_ITEM   =  B.TAX_ITEM
+          AND A.TAX_YY     =  B.TAX_YY
+          AND A.TAX_MM     =  B.TAX_MM
+          AND A.TAX_DIV    =  B.TAX_DIV
+          AND A.HACD       =  B.HACD
+          AND A.TAX_SNO    =  B.TAX_SNO
+          AND B.SGG_COD    =  #SGG_COD#
+          AND B.ACCT_COD   =  #ACCT_COD#
+          AND B.TAX_ITEM   =  #TAX_ITEM#
+          AND B.TAX_YY     =  #TAX_YY#
+          AND B.TAX_MM     =  #TAX_MM#
+          AND B.TAX_DIV    =  #TAX_DIV#
+          AND B.HACD       =  #HACD#
+          AND B.TAX_SNO    =  #TAX_SNO#
+          AND B.TAX_CNT    =  #TAX_CNT#
+          AND ROWNUM       =  1
+         
+	
+    ]]>  
+	</select>	   		
+	
+	<!-- 구청 TABLE에 업데이트 한다.  -->
+	<!-- 구청 -->
+	<update id="UPDATE_NONTAX_TAB_LINK" parameterClass="mapForm">
+
+            UPDATE NONTAX_TAB       /*세외수입(주정차, 버스전용, 주거지)*/                   
+               SET 
+            <isEqual property="NON_UP_GB" compareValue="01">   
+               NON_TRTG           = '1'  /*납부상태*/
+            </isEqual>   
+            <isEqual property="NON_UP_GB" compareValue="02">   
+               NON_TRTG           = '1'  /*납부상태*/
+            </isEqual>  
+             WHERE NON_SGCD = #SGG_COD#
+               AND NON_ACKU = #ACCT_COD#
+               AND NON_SMCD = #TAX_ITEM#
+               AND NON_BYYY = #TAX_YY#
+               AND NON_BNGI = #TAX_MM#
+               AND NON_GIBN = #TAX_DIV#
+               AND NON_HACD = #HACD#
+               AND NON_NPNO = #NON_NPNO#
+
+	</update>		
+
+
+	<!-- 부과상세테이블에 업데이트 한다.  -->
+	<!-- 사이버 -->
+	<update id="UPDATE_TX2122_TB" parameterClass="mapForm">
+
+            UPDATE TX2122_TB                          
+               SET 
+               <isEqual property="UP_GB" compareValue="02">
+                  DEL_YN     = 'Y'     /*삭제여부*/
+                 ,DEL_DT     = TO_CHAR(SYSDATE, 'yyyyMMdd')
+               </isEqual>
+               <isEqual property="UP_GB" compareValue="01">
+				  SGG_TR_TG  = '0'     /*자료전송구분*/
+				 ,PROC_CLS   = '1'     /*가상계좌채번구분*/
+			   </isEqual>
+			     ,LAST_DTM   = SYSDATE
+            WHERE SGG_COD    =  #SGG_COD#
+              AND ACCT_COD   =  #ACCT_COD#
+              AND TAX_ITEM   =  #TAX_ITEM#
+              AND TAX_YY     =  #TAX_YY#
+              AND TAX_MM     =  #TAX_MM#
+              AND TAX_DIV    =  #TAX_DIV#
+              AND HACD       =  #HACD#
+              AND TAX_SNO    =  #TAX_SNO#
+              AND TAX_CNT    =  #TAX_CNT#
+              AND SNTG       NOT IN('1', '2')
+              AND EXISTS(
+                          SELECT 'Y'
+                          FROM TX2121_TB_DAMO
+                          WHERE SGG_COD    =  #SGG_COD#
+                            AND ACCT_COD   =  #ACCT_COD#
+                            AND TAX_ITEM   =  #TAX_ITEM#
+                            AND TAX_YY     =  #TAX_YY#
+                            AND TAX_MM     =  #TAX_MM#
+                            AND TAX_DIV    =  #TAX_DIV#
+                            AND HACD       =  #HACD#
+                            AND TAX_SNO    =  #TAX_SNO#
+                        )
+
+	</update>	
+
+    <!-- 사이버 -->
+    <!-- 버스전용차로위반과태료 연계데이터 입력 -->
+	<insert id="INSERT_BUS_FINE_LEVY" parameterClass="mapForm">
+	<![CDATA[
+	
+      INSERT INTO TX2121_TB_DAMO(
+        SGG_COD
+       ,ACCT_COD
+       ,TAX_ITEM
+       ,TAX_YY
+       ,TAX_MM
+       ,TAX_DIV
+       ,HACD
+       ,TAX_SNO
+       ,TAX_GDS
+       ,ZW_DT
+       ,ZW_TM
+       ,ZW_AREA
+       ,INFO
+       ,BUT_INFO2
+       ,REG_NM
+       ,SEC_REG_NO
+       ,ZIP_CD
+       ,ADDRESS)
+      VALUES( 
+        #SGG_COD#    
+       ,#ACCT_COD#
+       ,#TAX_ITEM#
+       ,#TAX_YY#  
+       ,#TAX_MM#  
+       ,#TAX_DIV# 
+       ,#HACD#    
+       ,#TAX_SNO# 
+       ,#TAX_GDS# 
+       ,#ZW_DT#   
+       ,#ZW_TM#   
+       ,#ZW_AREA# 
+       ,#INFO#    
+       ,#BUT_INFO2#
+       ,#REG_NM#  
+       ,FC_DAMO(#REG_NO#)  
+       ,#ZIP_CD#  
+       ,#ADDRESS#)
+	
+	]]>
+	</insert>	
+	
+    <!-- 사이버 -->
+    <!-- 버스전용차로위반과태료 연계데이터 입력 -->
+	<update id="UPDATE_BUS_FINE_LEVY" parameterClass="mapForm">
+
+      UPDATE TX2121_TB_DAMO
+      SET                          
+   
+        TAX_GDS    =  #TAX_GDS#    
+       ,ZW_DT      =  #ZW_DT#      
+       ,ZW_TM      =  #ZW_TM#      
+       ,ZW_AREA    =  #ZW_AREA#    
+       ,INFO       =  #INFO#       
+       ,BUT_INFO2  =  #BUT_INFO2#   
+       ,REG_NM     =  #REG_NM#     
+       ,SEC_REG_NO =  FC_DAMO(#REG_NO#)     
+       ,ZIP_CD     =  #ZIP_CD#     
+       ,ADDRESS    =  #ADDRESS#    
+       ,LAST_DTM   =  SYSDATE
+      WHERE SGG_COD    =  #SGG_COD#
+        AND ACCT_COD   =  #ACCT_COD#
+        AND TAX_ITEM   =  #TAX_ITEM#
+        AND TAX_YY     =  #TAX_YY# 
+        AND TAX_MM     =  #TAX_MM# 
+        AND TAX_DIV    =  #TAX_DIV#
+        AND HACD       =  #HACD#   
+        AND TAX_SNO    =  #TAX_SNO#
+
+
+	</update>		
+	
+    <!-- 사이버 -->
+    <!-- 버스전용차로위반과태료 연계상세데이터 입력 -->
+	<insert id="INSERT_BUS_FINE_DETAIL_LEVY" parameterClass="mapForm">
+	<![CDATA[
+	
+     INSERT INTO TX2122_TB(         
+        SGG_COD   
+       ,ACCT_COD  
+       ,TAX_ITEM  
+       ,TAX_YY    
+       ,TAX_MM    
+       ,TAX_DIV   
+       ,HACD      
+       ,TAX_SNO   
+       ,TAX_CNT   
+       ,BUGWA_STAT
+       ,GAMONEY   
+       ,BUTT      
+       ,FTAX_DT   
+       ,FDUE_DT   
+       ,DL_TAX_DT 
+       ,DL_DU_DT  
+       ,EPAY_NO   
+       ,TAX_DT    
+       ,DUE_DT   
+       ,DUE_F_DT 
+       ,SNTG      
+       ,PROC_CLS  
+       ,VIR_ACC_NO
+       ,SGG_TR_TG 
+       ,DEL_YN    
+       ,DEL_DT)    
+     VALUES(
+		#SGG_COD#
+       ,#ACCT_COD#
+       ,#TAX_ITEM#
+       ,#TAX_YY#
+       ,#TAX_MM#
+       ,#TAX_DIV#
+       ,#HACD#
+       ,#TAX_SNO#
+       ,#TAX_CNT#
+       ,#BUGWA_STAT#
+       ,#GAMONEY#
+       ,#BUTT#
+       ,#FTAX_DT#
+       ,#FDUE_DT#
+       ,#DL_TAX_DT#
+       ,#DL_DU_DT#
+       ,TRIM(#EPAY_NO#)
+       ,#TAX_DT#
+       ,#DUE_DT#
+       ,#DUE_F_DT#
+       ,#SNTG#  
+       ,#PROC_CLS#  
+       ,#VIR_ACC_NO#
+       ,#SGG_TR_TG# 
+       ,#DEL_YN#    
+       ,#DEL_DT# ) 	
+	
+	]]>
+	</insert>	
+	
+    <!-- 사이버 -->
+    <!-- 버스전용차로위반과태료 연계데이터 입력 -->
+	<update id="UPDATE_BUS_FINE_DETAIL_LEVY" parameterClass="mapForm">
+	<![CDATA[
+	
+      UPDATE TX2122_TB
+      SET
+         BUGWA_STAT =  #BUGWA_STAT#    
+        ,GAMONEY    =  #GAMONEY#       
+        ,BUTT       =  #BUTT#          
+        ,FTAX_DT    =  #FTAX_DT#       
+        ,FDUE_DT    =  #FDUE_DT#       
+        ,DL_TAX_DT  =  #DL_TAX_DT#     
+        ,DL_DU_DT   =  #DL_DU_DT#      
+        ,EPAY_NO    =  TRIM(#EPAY_NO#)       
+        ,TAX_DT     =  #TAX_DT#        
+        ,DUE_DT     =  #DUE_DT#        
+        ,DUE_F_DT   =  #DUE_F_DT#
+        ,SNTG       =  #SNTG#          
+        ,PROC_CLS   =  #PROC_CLS#      
+        ,SGG_TR_TG  =  #SGG_TR_TG#     
+        ,DEL_YN     =  #DEL_YN#        
+        ,LAST_DTM   =  SYSDATE
+      WHERE SGG_COD    =  #SGG_COD#
+        AND ACCT_COD   =  #ACCT_COD#
+        AND TAX_ITEM   =  #TAX_ITEM#
+        AND TAX_YY     =  #TAX_YY#
+        AND TAX_MM     =  #TAX_MM#
+        AND TAX_DIV    =  #TAX_DIV#
+        AND HACD       =  #HACD#
+        AND TAX_SNO    =  #TAX_SNO# 
+        AND TAX_CNT    =  #TAX_CNT# 
+        AND SNTG       IN ('0', '9')
+
+	]]>
+	</update>		
+	
+	<!-- OCR밴드 Update -->
+	<update id="UPDATE_BUS_FINE_LEVY_OCRBD" parameterClass="mapForm">
+	  UPDATE TX2122_TB SET OCR_BD=F_CREATE_NONOCR(#SGG_COD#, #ACCT_COD#, #TAX_ITEM#, #TAX_YY#, #TAX_MM#, #TAX_DIV#, #HACD#, #TAX_SNO#, #TAX_CNT#)    
+      WHERE SGG_COD    =  #SGG_COD#
+        AND ACCT_COD   =  #ACCT_COD#
+        AND TAX_ITEM   =  #TAX_ITEM#
+        AND TAX_YY     =  #TAX_YY#
+        AND TAX_MM     =  #TAX_MM#
+        AND TAX_DIV    =  #TAX_DIV#
+        AND HACD       =  #HACD#
+        AND TAX_SNO    =  #TAX_SNO# 
+        AND TAX_CNT    =  #TAX_CNT# 
+	</update>
+	
+</sqlMap>

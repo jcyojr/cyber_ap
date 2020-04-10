@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXSV4314" >
+
+
+    <select id="sudo_select_count" parameterClass="mapForm" resultClass ="int">
+    SELECT COUNT(*)
+	  FROM CYBER_PRTFEE
+	 WHERE SR_FLAG = '0'
+    </select>
+    
+    
+    <select id="select_count_page"  parameterClass="mapForm" resultClass="int">
+	<![CDATA[
+    SELECT CEIL(COUNT(*) / #PAGE_PER_CNT#) PAGE
+      FROM CYBER_PRTFEE
+	 WHERE SR_FLAG = #SR_FLAG#				/* 송수신플래그 */
+       AND LENGTH(TRIM(OCR_1)) = 54 
+       AND LENGTH(TRIM(OCR_2)) = 54
+       AND TRIM(ICHE_NO) IS NOT NULL
+       AND TRIM(CUST_NO) IS NOT NULL
+       AND ((TRIM(USE_STT_DATE) IS NOT NULL AND TRIM(USE_END_DATE) IS NOT NULL) OR (TRIM(USE_STT_DATE) IS NULL AND TRIM(USE_END_DATE) IS NULL))
+       AND ROWNUM <= 10000             /*최대 10000건씩 처리하게 한다.*/
+	]]>
+    </select>
+    
+    	
+    <select id="sudo_select_data"  parameterClass="mapForm" resultClass="mapForm">
+	<![CDATA[
+    SELECT NVL(PRT_YY, ' ') AS TAX_YY
+         , NVL(PRT_MM, ' ') AS TAX_MM
+         , PRT_NPNO AS PRT_NPNO
+         , NVL(ICHE_NO, ' ') AS EPAY_NO
+         , NVL(CUST_NO, ' ') AS CUST_NO
+         , NVL(GUBUN, ' ') AS GUBUN
+         , NVL(NAME, ' ') AS REG_NM
+         , NVL(PRT_TITLE, ' ') AS TAX_NOTICE_TITLE
+         , NVL(PRT_DATE, ' ') AS PRT_DATE
+         , NVL(PRT_DEL1, ' ') AS DUE_DT
+         , NVL(NOT_DATE, ' ') AS DL_TAX_DT
+         , NVL(NOT_DEL1, ' ') AS NOT_DEL1
+         , PRT_AMT AS SUM_B_AMT
+         , PRT_AMT2 AS SUM_F_AMT
+         , FEE_AMT1 AS FEE_AMT1
+         , FEE_AMT2 AS FEE_AMT2
+         , FEE_AMT3 AS FEE_AMT3
+         , FEE_AMT4 AS FEE_AMT4
+         , FEE_AMT1_H AS FEE_AMT1_H
+         , FEE_AMT2_H AS FEE_AMT2_H
+         , FEE_AMT3_H AS FEE_AMT3_H
+         , FEE_AMT4_H AS FEE_AMT4_H
+         , NVL(PRT_DEL2, ' ') AS DUE_F_DT
+         , NVL(PRT_GB, ' ') AS PRT_GB
+         , NVL(NOT_STT_DATE, ' ') AS NOT_STT_DATE
+         , NVL(NOT_END_DATE, ' ') AS NOT_END_DATE
+         , NVL(ADDR, ' ') AS ADDRESS
+         , NVL(USE_STT_DATE, ' ') AS USE_STT_DATE
+         , NVL(USE_END_DATE, ' ') AS USE_END_DATE
+         , NVL(BANK_CD, ' ') AS BANK_CD
+         , NVL(RCV_DATE, ' ') AS RCV_DATE
+         , NVL(RCV_GB, ' ') AS RCV_GB
+         , NVL(OCR_1, ' ') AS OCR_1
+         , NVL(OCR_2, ' ') AS OCR_2
+         , NVL(CARD_CODE, ' ') AS CARD_CODE
+         , NVL(SPRE_CNT, 0) AS SPRE_CNT
+         , NVL(SACT_CNT, 0) AS SACT_CNT
+         , NVL(SADJ_QTY, 0) AS SADJ_QTY
+         , NVL(HPRE_CNT, 0) AS HPRE_CNT
+         , NVL(HACT_CNT, 0) AS HACT_CNT
+         , NVL(HADJ_QTY, 0) AS HADJ_QTY
+         , NVL(USR_NUM, 0) AS USR_NUM
+         , NVL(SUB_NUM, 0) AS SUB_NUM
+         , NVL(UP_TYPE, ' ') AS UP_TYPE
+         , NVL(HUP_TYPE, ' ') AS HUP_TYPE
+         , NVL(CHK_DATE, ' ') AS CHK_DATE
+         , NVL(PRE_QTY, 0) AS PRE_QTY
+         , NVL(PRE_YEAR_QTY, 0) AS PRE_YEAR_QTY
+         , NVL(STATE_FLAG, ' ') AS STATE_FLAG
+         , NVL(SR_FLAG, ' ') AS SR_FLAG
+         , NVL(SACT_QTY, 0) AS SACT_QTY
+         , NVL(HACT_QTY, 0) AS HACT_QTY
+         , NVL(PRT_NO, ' ') AS PRT_NO
+         , NVL(ESYGA_NO, ' ') AS ESYGA_NO
+         , TRIM(REPLACE(PUBC_ACCNO,'-',''))        AS VIR_ACC_NO
+      FROM CYBER_PRTFEE
+     WHERE SR_FLAG = #SR_FLAG#				/* 송수신플래그 */
+       AND LENGTH(TRIM(OCR_1)) = 54 
+       AND LENGTH(TRIM(OCR_2)) = 54
+       AND TRIM(ICHE_NO) IS NOT NULL
+       AND TRIM(CUST_NO) IS NOT NULL
+       AND ((TRIM(USE_STT_DATE) IS NOT NULL AND TRIM(USE_END_DATE) IS NOT NULL) OR (TRIM(USE_STT_DATE) IS NULL AND TRIM(USE_END_DATE) IS NULL))
+       AND ROWNUM <= 10000             /*최대 10000건씩 처리하게 한다.*/
+	]]>
+    </select>
+    
+
+    <select id="sudo_update_srflag"  parameterClass="mapForm">
+    UPDATE CYBER_PRTFEE
+	   SET SR_FLAG = '1'
+	 WHERE PRT_NO = #PRT_NO#
+    </select>
+
+
+    <select id="sudo_update_data"  parameterClass="mapForm">
+    UPDATE TX3111_TB
+       SET EPAY_NO           = #EPAY_NO#
+         , CUST_NO           = #CUST_NO#
+         , GUBUN             = #GUBUN#
+         , REG_NM            = #REG_NM#
+         , TAX_NOTICE_TITLE  = #TAX_NOTICE_TITLE#
+         , PRT_DATE          = #PRT_DATE#
+         , DUE_DT            = #DUE_DT#
+         , DL_TAX_DT         = #DL_TAX_DT#
+         , NOT_DEL1          = #NOT_DEL1#
+         , SUM_B_AMT         = #SUM_B_AMT#
+         , SUM_F_AMT         = #SUM_F_AMT#
+         , FEE_AMT1          = #FEE_AMT1#
+         , FEE_AMT2          = #FEE_AMT2#
+         , FEE_AMT3          = #FEE_AMT3#
+         , FEE_AMT4          = #FEE_AMT4#
+         , FEE_AMT1_H        = #FEE_AMT1_H#
+         , FEE_AMT2_H        = #FEE_AMT2_H#
+         , FEE_AMT3_H        = #FEE_AMT3_H#
+         , FEE_AMT4_H        = #FEE_AMT4_H#
+         , DUE_F_DT          = #DUE_F_DT#
+         , PRT_GB            = #PRT_GB#
+         , NOT_STT_DATE      = #NOT_STT_DATE#
+         , NOT_END_DATE      = #NOT_END_DATE#
+         , ADDRESS           = #ADDRESS#
+         , USE_STT_DATE      = #USE_STT_DATE#
+         , USE_END_DATE      = #USE_END_DATE#
+         , BANK_CD           = #BANK_CD#
+         , RCV_DATE          = #RCV_DATE#
+         , RCV_GB            = #RCV_GB#
+         , OCR_1             = #OCR_1#
+         , OCR_2             = #OCR_2#
+         , CARD_CODE         = #CARD_CODE#
+         , SPRE_CNT          = #SPRE_CNT#
+         , SACT_CNT          = #SACT_CNT#
+         , SADJ_QTY          = #SADJ_QTY#
+         , HPRE_CNT          = #HPRE_CNT#
+         , HACT_CNT          = #HACT_CNT#
+         , HADJ_QTY          = #HADJ_QTY#
+         , USR_NUM           = #USR_NUM#
+         , SUB_NUM           = #SUB_NUM#
+         , UP_TYPE           = #UP_TYPE#
+         , HUP_TYPE          = #HUP_TYPE#
+         , CHK_DATE          = #CHK_DATE#
+         , PRE_QTY           = #PRE_QTY#
+         , PRE_YEAR_QTY      = #PRE_YEAR_QTY#
+         , STATE_FLAG        = #STATE_FLAG#
+         , SR_FLAG           = #SR_FLAG#
+         , SACT_QTY          = #SACT_QTY#
+         , HACT_QTY          = #HACT_QTY#
+         , PRT_NO            = #PRT_NO#
+         , ESYGA_NO          = #ESYGA_NO#
+         , LAST_DTM          = SYSDATE
+         , VIR_ACC_NO        = #VIR_ACC_NO#
+     WHERE SNTG     = '0'
+       AND TAX_CD   = '1'
+       AND TAX_YY   = #TAX_YY#
+       AND TAX_MM   = #TAX_MM#
+       AND PRT_NPNO = #PRT_NPNO#
+       AND GUBUN    = #GUBUN#
+    </select>
+    
+
+    <select id="sudo_insert_data"  parameterClass="mapForm">
+    INSERT INTO TX3111_TB (
+                TAX_YY
+              , TAX_MM
+              , PRT_NPNO
+              , TAX_CD
+              , EPAY_NO
+              , CUST_NO
+              , GUBUN
+              , REG_NM
+              , TAX_NOTICE_TITLE
+              , PRT_DATE
+              , DUE_DT
+              , DL_TAX_DT
+              , NOT_DEL1
+              , SUM_B_AMT
+              , SUM_F_AMT
+              , FEE_AMT1
+              , FEE_AMT2
+              , FEE_AMT3
+              , FEE_AMT4
+              , FEE_AMT1_H
+              , FEE_AMT2_H
+              , FEE_AMT3_H
+              , FEE_AMT4_H
+              , DUE_F_DT
+              , PRT_GB
+              , NOT_STT_DATE
+              , NOT_END_DATE
+              , ADDRESS
+              , USE_STT_DATE
+              , USE_END_DATE
+              , BANK_CD
+              , RCV_DATE
+              , RCV_GB
+              , OCR_1
+              , OCR_2
+              , CARD_CODE
+              , SPRE_CNT
+              , SACT_CNT
+              , SADJ_QTY
+              , HPRE_CNT
+              , HACT_CNT
+              , HADJ_QTY
+              , USR_NUM
+              , SUB_NUM
+              , UP_TYPE
+              , HUP_TYPE
+              , CHK_DATE
+              , PRE_QTY
+              , PRE_YEAR_QTY
+              , STATE_FLAG
+              , SR_FLAG
+              , SNTG
+              , SACT_QTY
+              , HACT_QTY
+              , PRT_NO
+              , ESYGA_NO
+              , VIR_ACC_NO
+     ) VALUES ( #TAX_YY#
+              , #TAX_MM#
+              , #PRT_NPNO#
+              , '1' 
+              , #EPAY_NO#
+              , #CUST_NO#
+              , #GUBUN#
+              , #REG_NM#
+              , #TAX_NOTICE_TITLE#
+              , #PRT_DATE#
+              , #DUE_DT#
+              , #DL_TAX_DT#
+              , #NOT_DEL1#
+              , #SUM_B_AMT#
+              , #SUM_F_AMT#
+              , #FEE_AMT1#
+              , #FEE_AMT2#
+              , #FEE_AMT3#
+              , #FEE_AMT4#
+              , #FEE_AMT1_H#
+              , #FEE_AMT2_H#
+              , #FEE_AMT3_H#
+              , #FEE_AMT4_H#
+              , #DUE_F_DT#
+              , #PRT_GB#
+              , #NOT_STT_DATE#
+              , #NOT_END_DATE#
+              , #ADDRESS#
+              , #USE_STT_DATE#
+              , #USE_END_DATE#
+              , #BANK_CD#
+              , #RCV_DATE#
+              , #RCV_GB#
+              , #OCR_1#
+              , #OCR_2#
+              , #CARD_CODE#
+              , #SPRE_CNT#
+              , #SACT_CNT#
+              , #SADJ_QTY#
+              , #HPRE_CNT#
+              , #HACT_CNT#
+              , #HADJ_QTY#
+              , #USR_NUM#
+              , #SUB_NUM#
+              , #UP_TYPE#
+              , #HUP_TYPE#
+              , #CHK_DATE#
+              , #PRE_QTY#
+              , #PRE_YEAR_QTY#
+              , #STATE_FLAG#
+              , #SR_FLAG#
+              , '0' 
+              , #SACT_QTY#
+              , #HACT_QTY#
+              , #PRT_NO#
+              , #ESYGA_NO#
+              , #VIR_ACC_NO#
+    )
+    </select>
+
+
+    <select id="sudo_delete_data" parameterClass="mapForm" >
+    DELETE FROM TX3111_TB
+     WHERE TAX_YY   = #TAX_YY#
+       AND TAX_MM   = #TAX_MM#
+       AND PRT_NPNO = #PRT_NPNO#
+       AND GUBUN    = #GUBUN#
+       AND SNTG     = '0'
+    </select>
+    
+    <select id="new_sudo_delete_data" parameterClass="mapForm" >
+    UPDATE TX3111_TB
+       SET DEL_YN   = 'Y'
+          ,LAST_DTM = SYSDATE
+     WHERE TAX_YY   = #TAX_YY#
+       AND TAX_MM   = #TAX_MM#
+       AND PRT_NPNO = #PRT_NPNO#
+       AND GUBUN    = #GUBUN#
+       AND SNTG     = '0'
+    </select>
+
+
+</sqlMap>
+	

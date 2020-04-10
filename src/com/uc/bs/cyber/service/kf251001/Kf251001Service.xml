@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="KF251001" >
+   
+   
+ 	<!-- 전자수납분에 대해 수납순번을 구한다. -->
+	<!-- 중복수납이 존재하므로... -->
+	<select id="TX3211_TB_MaxPayCnt" parameterClass="mapForm" resultClass="int">
+	<![CDATA[
+	    
+	    SELECT NVL(MAX(A.PAY_CNT), -1) + 1 AS MAX_PAY_CNT FROM TX3211_TB A
+	    WHERE A.TAX_YY    = #TAX_YY#
+          AND A.TAX_MM    = #TAX_MM#
+          AND A.PRT_NPNO  = #PRT_NPNO#
+          
+	]]>
+	</select>  
+   
+	<!--상하수도 전자수납테이블 INSERT -->
+    <insert id="INSERT_TX3211_TB_EPAY"  parameterClass="mapForm">
+    <![CDATA[
+	
+        INSERT INTO TX3211_TB( 
+              TAX_YY               /*부과년도          */        
+             ,TAX_MM               /*부과월            */
+             ,PRT_NPNO             /*상하수도 관리번호 */
+             ,PAY_CNT              /*수납순번          */
+             ,SUM_RCP              /*수납금액          */
+             ,PAY_DT               /*납부일자          */
+             ,SNSU                 /*수납수단          */
+             ,BANK_CD              /*납부기관*/
+             ,BRC_NO               /*수납기관코드      */
+             ,SNTG                 /*수납상태          */
+             ,TMSG_NO)             /*출금은행_전문관리번호 */   
+        VALUES(
+              #TAX_YY#
+             ,#TAX_MM#
+             ,#PRT_NPNO#
+             ,#PAY_CNT#
+             ,TRUNC(#SUM_RCP#,-1)
+             ,#PAY_DT#
+             ,#SNSU#
+             ,#BANK_CD#
+             ,#BRC_NO#
+             ,#SNTG#
+             ,#TMSG_NO#
+        )        
+	
+    ]]>
+    </insert>
+    
+    <!-- 상하수도 부과내역조회. -->
+	<select id="SELECT_SHSD_LEVY_LIST" resultClass="mapForm">
+	<![CDATA[   
+	
+        SELECT                     
+          TAX_YY                  /*부과년                  */
+         ,TAX_MM                  /*부과월                  */
+         ,PRT_NPNO                /*상하수도 관리번호       */
+         ,TAX_CD                  /*부과구분                */
+         ,EPAY_NO                 /*전자납부번호            */
+         ,CUST_NO                 /*수용가번호              */
+         ,GUBUN                   /*구분 (당월)             */
+         ,REG_NM                  /*성명                    */
+         ,TAX_NOTICE_TITLE        /*고지서제목              */
+         ,PRT_DATE                /*부과일                  */
+         ,F_GET_GYMD(DUE_DT) DUE_DT   /*납기일자            */
+         ,DL_TAX_DT               /*체납부과일자            */
+         ,NOT_DEL1                /*체납납부마감일          */
+         ,SUM_B_AMT               /*납기내총액              */
+         ,SUM_F_AMT               /*납기후총액              */
+         ,FEE_AMT1                /*상수도납기내금액        */
+         ,FEE_AMT2                /*하수도납기내금액        */
+         ,FEE_AMT3                /*물이용부담금납기내금액  */
+         ,FEE_AMT4                /*지하수납기내금액        */
+         ,FEE_AMT1_H              /*상수도납기후금액        */
+         ,FEE_AMT2_H              /*하수도납기후금액        */
+         ,FEE_AMT3_H              /*물이용부담금납기후금액  */
+         ,FEE_AMT4_H              /*지하수납기후금액        */
+         ,F_GET_GYMD(DUE_F_DT) DUE_F_DT  /*납기후납기일     */
+         ,PRT_GB                  /*고지구분                */
+         ,DECODE(TRIM(NOT_STT_DATE),'','00000000',NOT_STT_DATE) NOT_STT_DATE /*체납시작일              */
+         ,DECODE(TRIM(NOT_END_DATE),'','00000000',NOT_END_DATE) NOT_END_DATE /*체납종료일              */
+         ,ADDRESS                 /*주 소                   */
+         ,DECODE(TRIM(USE_STT_DATE),'','00000000',USE_STT_DATE) USE_STT_DATE /*사용시작일              */
+         ,DECODE(TRIM(USE_END_DATE),'','00000000',USE_END_DATE) USE_END_DATE /*사용종료일              */
+         ,NVL(BANK_CD, '0000000') /*수납은행코드            */
+         ,RCV_DATE                /*납부일시                */
+         ,RCV_GB                  /*납기 내후 구분          */
+         ,OCR_1                   /*OCR BAND 1              */
+         ,OCR_2                   /*OCR BAND 2              */
+         ,CARD_CODE               /*카드_납부코드           */
+         ,SPRE_CNT                /*전월지침(상)            */
+         ,SACT_CNT                /*당월지침(상)            */
+         ,SADJ_QTY                /*조정량(상)              */
+         ,HPRE_CNT                /*전월지침(하)            */
+         ,HACT_CNT                /*당월지침(하)            */
+         ,HADJ_QTY                /*조정량(하)              */
+         ,USR_NUM                 /*가구수                  */
+         ,SUB_NUM                 /*감면가구수              */
+         ,UP_TYPE                 /*상수도업종              */
+         ,HUP_TYPE                /*하수도업종              */
+         ,CHK_DATE                /*검침일                  */
+         ,PRE_QTY                 /*전월사용량              */
+         ,PRE_YEAR_QTY            /*전년동월사용량          */
+         ,STATE_FLAG              /*상태 FLAG               */
+         ,SR_FLAG                 /*송수신 FLAG             */
+         ,SNTG                    /*납부상태                */
+         ,SACT_QTY                /*상수도 사용량           */
+         ,HACT_QTY	              /*하수도사용량            */
+         
+        FROM TX3111_TB
+	]]>        
+        WHERE SNTG     IN ('0', '9')  /*납부상태 미수납 및 취소*/
+          AND EPAY_NO  IS NOT NULL    /*전자납부번호*/
+          <isNotEmpty prepend = "AND" property="TAX_YY">
+            TAX_YY = #TAX_YY#
+          </isNotEmpty>
+          <isNotEmpty prepend = "AND" property="TAX_MM">
+            TAX_MM = #TAX_MM#
+          </isNotEmpty>
+          <isNotEmpty prepend = "AND" property="CUST_NO">
+            CUST_NO = #CUST_NO#
+          </isNotEmpty>
+          <isNotEmpty prepend = "AND" property="EPAY_NO">
+            EPAY_NO = #EPAY_NO#
+          </isNotEmpty>
+	
+    </select>
+    
+    <!-- 상하수도 납부내역을 가져온다. -->
+    <select id="SELECT_SHSD_PAY_LIST" resultClass="mapForm">
+    
+        SELECT                     
+          A.TAX_YY                  /*부과년                  */
+         ,A.TAX_MM                  /*부과월                  */
+         ,A.PRT_NPNO                /*상하수도 관리번호       */
+         ,A.TAX_CD                  /*부과구분                */
+         ,A.EPAY_NO                 /*전자납부번호            */
+         ,A.CUST_NO                 /*수용가번호              */
+         ,A.GUBUN                   /*구분                    */
+         ,A.REG_NM                  /*성명                    */
+         ,A.TAX_NOTICE_TITLE        /*고지서제목              */
+         ,A.PRT_DATE                /*부과일                  */
+         ,A.DUE_DT                  /*납기일자                */
+         ,A.DL_TAX_DT               /*체납부과일자            */
+         ,A.NOT_DEL1                /*체납납부마감일          */
+         ,A.SUM_B_AMT               /*납기내총액              */
+         ,A.SUM_F_AMT               /*납기후총액              */
+         ,A.FEE_AMT1                /*상수도납기내금액        */
+         ,A.FEE_AMT2                /*하수도납기내금액        */
+         ,A.FEE_AMT3                /*물이용부담금납기내금액  */
+         ,A.FEE_AMT4                /*지하수납기내금액        */
+         ,A.FEE_AMT1_H              /*상수도납기후금액        */
+         ,A.FEE_AMT2_H              /*하수도납기후금액        */
+         ,A.FEE_AMT3_H              /*물이용부담금납기후금액  */
+         ,A.FEE_AMT4_H              /*지하수납기후금액        */
+         ,A.DUE_F_DT                /*납기후납기일            */
+         ,A.PRT_GB                  /*고지구분                */
+         ,DECODE(TRIM(A.NOT_STT_DATE),'','00000000',A.NOT_STT_DATE) NOT_STT_DATE            /*체납시작일              */
+         ,DECODE(TRIM(A.NOT_END_DATE),'','00000000',A.NOT_END_DATE) NOT_END_DATE            /*체납종료일              */
+         ,A.ADDRESS                 /*주 소                   */
+         ,DECODE(TRIM(A.USE_STT_DATE),'','00000000',A.USE_STT_DATE) USE_STT_DATE            /*사용시작일              */
+         ,DECODE(TRIM(A.USE_END_DATE),'','00000000',A.USE_END_DATE) USE_END_DATE            /*사용종료일              */
+         ,A.BANK_CD                 /*수납은행코드            */
+         ,A.RCV_DATE                /*납부일시                */
+         ,A.RCV_GB                  /*납기 내후 구분          */
+         ,A.OCR_1                   /*OCR BAND 1              */
+         ,A.OCR_2                   /*OCR BAND 2              */
+         ,A.CARD_CODE               /*카드_납부코드           */
+         ,A.SPRE_CNT                /*전월지침(상)            */
+         ,A.SACT_CNT                /*당월지침(상)            */
+         ,A.SADJ_QTY                /*조정량(상)              */
+         ,A.HPRE_CNT                /*전월지침(하)            */
+         ,A.HACT_CNT                /*당월지침(하)            */
+         ,A.HADJ_QTY                /*조정량(하)              */
+         ,A.USR_NUM                 /*가구수                  */
+         ,A.SUB_NUM                 /*감면가구수              */
+         ,A.UP_TYPE                 /*상수도업종              */
+         ,A.HUP_TYPE                /*하수도업종              */
+         ,A.CHK_DATE                /*검침일                  */
+         ,A.PRE_QTY                 /*전월사용량              */
+         ,A.PRE_YEAR_QTY            /*전년동월사용량          */
+         ,A.STATE_FLAG              /*상태 FLAG               */
+         ,A.SR_FLAG                 /*송수신 FLAG             */
+         ,A.SNTG                    /*납부상태                */
+         ,A.SACT_QTY                /*상수도 사용량           */
+         ,A.HACT_QTY	            /*하수도사용량            */
+        FROM TX3111_TB A, TX3211_TB B
+        WHERE A.TAX_YY   = B.TAX_YY
+          AND A.TAX_MM   = B.TAX_MM
+          AND A.PRT_NPNO = B.PRT_NPNO
+          AND A.EPAY_NO  IS NOT NULL         /*전자납부번호*/
+          AND A.SNTG     IN ('1', '2', '9')  /*납부 1:가수납 2: 수납 9:취소*/
+          <isNotEmpty prepend = "AND" property="TAX_YY">
+            A.TAX_YY  = #TAX_YY#
+          </isNotEmpty>
+          <isNotEmpty prepend = "AND" property="TAX_MM">
+            A.TAX_MM  = #TAX_MM#
+          </isNotEmpty>
+          <isNotEmpty prepend = "AND" property="CUST_NO">
+            A.CUST_NO = #CUST_NO#
+          </isNotEmpty>
+          <isNotEmpty prepend = "AND" property="EPAY_NO">
+            A.EPAY_NO = #EPAY_NO#
+          </isNotEmpty>
+    
+    </select>
+    
+
+    <!-- 상하수도 부과테이블에 수납처리한다. (수납FLAG) -->
+    <update id="UPDATE_TX3111_TB_NAPBU_INFO" parameterClass="mapForm">
+    <![CDATA[
+    
+        UPDATE TX3111_TB
+         SET SNTG = '1'
+  	    WHERE TAX_YY    = #TAX_YY#
+          AND TAX_MM    = #TAX_MM#
+          AND PRT_NPNO  = #PRT_NPNO#
+
+    ]]>
+    </update>    
+    
+</sqlMap>

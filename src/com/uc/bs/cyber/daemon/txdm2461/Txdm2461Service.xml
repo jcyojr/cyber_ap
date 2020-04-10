@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXDM2461" >
+
+    <!-- 사이버 -->
+    <!-- WORKTIME 테이블에 업데이트할 시간구하기 -->  
+    <!-- YYYYMMDDHH24MISS / YYYY-MM-DD HH24:MI:SS -->
+    <select id="GET_UPDATE_DATE" resultClass="mapForm">
+    <![CDATA[
+        SELECT TO_CHAR(SYSDATE ,#DATEFORM#) AS V_DATE FROM DUAL
+    ]]>        
+    </select>
+    
+    
+    <select id="SELECT_VIR_COUNT" parameterClass="mapForm" resultClass="int">
+    SELECT COUNT(*) PAGE
+      FROM TX2131_TB A     
+         , TX2132_TB B     
+     WHERE A.SGG_COD    = B.SGG_COD
+       AND A.ACCT_COD   = B.ACCT_COD
+       AND A.TAX_ITEM   = B.TAX_ITEM
+       AND A.TAX_YY     = B.TAX_YY
+       AND A.TAX_MM     = B.TAX_MM
+       AND A.TAX_DIV    = B.TAX_DIV
+       AND A.HACD       = B.HACD
+       AND A.TAX_SNO    = B.TAX_SNO             
+       AND A.SGG_COD    = #SGG_COD#        
+       AND B.PROC_CLS   = '3'							
+       AND B.VIR_ACC_NO IS NOT NULL		
+       AND B.SGG_TR_TG  IN ('0', '7')	
+	</select>
+    
+    
+	<!-- 환경개선부담금 가상계좌 채번내역 가져온다. -->
+	<!-- 사이버 -->
+	<select id="SELECT_VIRTUAL_ACCT_ENVLEVY_LIST" parameterClass="mapForm" resultClass="mapForm">
+    <![CDATA[
+
+		SELECT														
+		   SF_TEAM_CODE									
+		 , DEAL_GBN_CODE								
+		 , TAX_CODE										
+		 , LVY_YMD											
+		 , LVY_GIBN										
+		 , LVY_ADDR_CODE								
+		 , LVY_SNO											
+		 , ANC_CHASU										
+		 , CNAPG												
+		 , CRE_YMD											
+		 , ACC_NO											
+	     , ACCT_COD
+	     , TAX_ITEM
+	     , TAX_YY
+	     , TAX_MM
+	     , TAX_DIV
+	     , HACD
+	     , TAX_SNO
+	     , TAX_CNT
+		FROM(			
+            SELECT
+                	CASE
+                    	WHEN A.SGG_COD='110' THEN '325'
+                    	WHEN A.SGG_COD='140' THEN '326'
+                    	WHEN A.SGG_COD='170' THEN '327'
+                    	WHEN A.SGG_COD='200' THEN '328'
+                    	WHEN A.SGG_COD='230' THEN '329'
+                    	WHEN A.SGG_COD='260' THEN '330'
+                    	WHEN A.SGG_COD='290' THEN '331'
+                    	WHEN A.SGG_COD='320' THEN '332'
+                    	WHEN A.SGG_COD='350' THEN '333'
+                    	WHEN A.SGG_COD='380' THEN '334'
+                    	WHEN A.SGG_COD='410' THEN '335'
+                    	WHEN A.SGG_COD='440' THEN '336'
+                    	WHEN A.SGG_COD='470' THEN '337'
+                    	WHEN A.SGG_COD='500' THEN '338'
+                    	WHEN A.SGG_COD='530' THEN '339'
+                    	WHEN A.SGG_COD='710' THEN '340'
+                	END
+				      ||'0000'                    				SF_TEAM_CODE	 /*구청코드*/
+				     , NVL(B.CUD_OPT, '1')                      DEAL_GBN_CODE    /*처리구분*/
+				     , A.TAX_ITEM                               TAX_CODE		 /*과세목코드*/							
+				     , A.TAX_YY                                 LVY_YMD			 /*부과년도*/
+				     , CASE WHEN A.TAX_DIV='3' THEN '0'
+					   ELSE A.TAX_DIV
+					   END										LVY_GIBN		 /*기분*/
+				     , SUBSTR(B.EPAY_NO,1,2)||A.SGG_COD||A.HACD LVY_ADDR_CODE	 /*전자납부번호 || 구청코드 || 행정동 */
+				     , LPAD(A.TAX_SNO, 6, '0')                  LVY_SNO			 /*과세번호*/
+				     , NVL(B.TAX_CNT,  0)                       ANC_CHASU        /*부과순번*/				
+				     , NVL(B.DLQ_DIV, '0')                      CNAPG			 /*체납구분*/
+				     , TO_CHAR(SYSDATE, 'YYYYMMDD')             CRE_YMD
+				     , VIR_ACC_NO                               ACC_NO		     /*가상계좌번호(30)*/
+				     , B.ACCT_COD								ACCT_COD
+				     , B.TAX_ITEM								TAX_ITEM
+				     , B.TAX_YY									TAX_YY
+				     , B.TAX_MM									TAX_MM
+				     , B.TAX_DIV								TAX_DIV
+				     , B.HACD									HACD
+				     , B.TAX_SNO								TAX_SNO
+				     , B.TAX_CNT								TAX_CNT
+            FROM TX2131_TB A,     /*환경개선부담금 부과 TBL*/
+                 TX2132_TB B      /*환경개선부담금 부과상세 TBL*/
+            WHERE A.SGG_COD  = B.SGG_COD
+              AND A.ACCT_COD = B.ACCT_COD
+              AND A.TAX_ITEM = B.TAX_ITEM
+              AND A.TAX_YY   = B.TAX_YY
+              AND A.TAX_MM   = B.TAX_MM
+              AND A.TAX_DIV  = B.TAX_DIV
+              AND A.HACD     = B.HACD
+              AND A.TAX_SNO  = B.TAX_SNO 
+              /*pk*/
+    ]]>              
+              <isNotEmpty prepend = "AND" property="SGG_COD">    
+                 A.SGG_COD    = #SGG_COD#
+              </isNotEmpty>
+    <![CDATA[          
+
+			  AND B.PROC_CLS   ='3'							
+			  AND B.VIR_ACC_NO IS NOT NULL		
+              AND B.SGG_TR_TG  IN ('0', '7')			
+         )
+         WHERE ROWNUM <= 2000
+    ]]>  
+
+	</select>
+
+	<!-- 구청별가상계좌 건수 -->
+	<!-- 사이버 -->
+	<select id="SELECT_VIRTUAL_ENV_STATE" parameterClass="mapForm" resultClass="string">
+    <![CDATA[
+    
+        SELECT
+             A.SGG_COD     SGG_COD
+            ,COUNT(*)      CNT
+        FROM TX2131_TB A,     /*환경개선부담금 부과 TBL*/
+             TX2132_TB B      /*환경개선부담금 부과상세 TBL*/
+        WHERE A.SGG_COD  = B.SGG_COD
+          AND A.ACCT_COD = B.ACCT_COD
+          AND A.TAX_ITEM = B.TAX_ITEM
+          AND A.TAX_YY   = B.TAX_YY
+          AND A.TAX_MM   = B.TAX_MM
+          AND A.TAX_DIV  = B.TAX_DIV
+          AND A.HACD     = B.HACD
+          AND A.TAX_SNO  = B.TAX_SNO
+          /*pk*/
+          AND A.SGG_COD  = #SGG_COD#
+          AND B.PROC_CLS  = '3'
+          AND B.VIR_ACC_NO IS NOT NULL
+          AND B.SGG_TR_TG IN ('0', '7')			
+        GROUP BY A.SGG_COD
+
+    ]]>
+	</select>
+	
+	<!-- 구청전송여부를 업데이트 한다.  -->
+	<!-- CYBER -->
+	<update id="UPDATE_TRANS_ENV_DETAIL" parameterClass="mapForm">
+    <![CDATA[
+    
+        UPDATE TX2132_TB
+        SET 
+             SGG_TR_TG    = #SGG_TR_TG#  /*구청전송처리여부*/
+            ,LAST_DTM     = SYSDATE      /*최종수정일시*/
+        WHERE VIR_ACC_NO  = #ACC_NO#     /*가상계좌번호 (19) pk*/ 
+          AND SGG_COD     = #SGG_COD#    /*구청코드*/
+          AND ACCT_COD    = #ACCT_COD#
+          AND TAX_ITEM    = #TAX_ITEM#
+          AND TAX_YY      = #TAX_YY#
+          AND TAX_MM      = #TAX_MM#
+          AND TAX_DIV     = #TAX_DIV#
+          AND HACD     	  = #HACD#
+          AND TAX_SNO     = #TAX_SNO#
+          AND TAX_CNT     = #TAX_CNT#
+
+    ]]>
+	</update>	
+
+</sqlMap>

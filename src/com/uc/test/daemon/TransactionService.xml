@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="Transaction" >
+
+    <!-- 테스트 99.1.1.97 : 주민세종합소득세 테이블을 검색한다  -->
+    <select id="etax_Yearlist" parameterClass="mapForm" resultClass="mapForm">
+      	<![CDATA[
+        SELECT                 
+          	 RCT_BYYY            
+        FROM RESCOMPINTAX_TAB  
+        GROUP BY RCT_BYYY
+        ]]>
+    </select>
+    
+    <!-- 테스트 99.1.1.97 : 주민세종합소득세 테이블을 검색한다  -->
+    <select id="etaxlist" parameterClass="mapForm" resultClass="mapForm">
+      	<![CDATA[
+        SELECT                 
+          	 RCT_BYYY          
+          	,RCT_BUMT          
+          	,RCT_SGCD          
+          	,RCT_HACD          
+          	,RCT_NPNO          
+          	,RCT_JMO1          
+          	,RCT_JMO2          
+          	,RCT_NAME          
+          	,RCT_TELE          
+          	,RCT_BUCD          
+          	,RCT_DFLAG         
+          	,RCT_POST          
+          	,RCT_ADDR1         
+          	,RCT_ADDR2         
+          	,RCT_KJSA          
+          	,RCT_JMSA          
+          	,RCT_GAST          
+          	,RCT_HWAN          
+          	,RCT_BYMD          
+          	,RCT_GYMD          
+          	,RCT_YMDS          
+          	,RCT_GSYY          
+          	,RCT_GGYM          
+          	,RCT_SNMH          
+          	,RCT_SGNM          
+          	,RCT_NJHK          
+          	,RCT_STAT          
+          	,RCT_SEMAIL        
+          	,RCT_STEL          
+          	,RCT_GRNO          
+          	,RCT_RATE          
+          	,RCT_TAMT          
+          	,RCT_TRTG          
+          	,RCT_ILNO          
+          	,RCT_SANO          
+          	,RCT_SAHO          
+          	,RCT_SGGB          
+          	,RCT_DANG          
+          	,RCT_DLAY          
+          	,RCT_DUDT          
+          	,RCT_SINGO_DIV     
+          	,RCT_B_TAX_NO      
+          	,RCT_B_EPAY_NO     
+          	,RCT_CHG_MEMO      
+          	,RCT_REASON_DT     
+          	,RCT_ETC_MEMO      
+          	,RCT_SUNAP_DT      
+          	,RCT_CHG_REASON    
+        FROM RESCOMPINTAX_TAB  
+
+        WHERE RCT_BYYY = #RCT_BYYY#
+        ORDER BY  1, 2, 3, 4
+        ]]>
+    </select>
+    
+    <!-- 테스트 128.0.0.35 : 주민세종합소득세 테이블에 INSERT 한다  -->
+	<insert id="etaxinsert" parameterClass="mapForm">
+        INSERT INTO RESCOMPINTAX_TAB
+           (
+          	 RCT_BYYY        
+          	,RCT_BUMT        
+          	,RCT_SGCD        
+          	,RCT_HACD        
+          	,RCT_NPNO        
+          	,RCT_JMO1        
+          	,RCT_JMO2        
+          	,RCT_NAME        
+          	,RCT_TELE        
+          	,RCT_BUCD        
+          	,RCT_DFLAG       
+          	,RCT_POST        
+          	,RCT_ADDR1       
+          	,RCT_ADDR2       
+          	,RCT_KJSA        
+          	,RCT_JMSA        
+          	,RCT_GAST        
+          	,RCT_HWAN        
+          	,RCT_BYMD        
+          	,RCT_GYMD        
+          	,RCT_YMDS        
+          	,RCT_GSYY        
+          	,RCT_GGYM        
+          	,RCT_SNMH        
+          	,RCT_SGNM        
+          	,RCT_NJHK        
+          	,RCT_STAT        
+          	,RCT_SEMAIL      
+          	,RCT_STEL        
+          	,RCT_GRNO        
+          	,RCT_RATE        
+          	,RCT_TAMT        
+          	,RCT_TRTG        
+          	,RCT_ILNO        
+          	,RCT_SANO        
+          	,RCT_SAHO        
+          	,RCT_SGGB        
+          	,RCT_DANG        
+          	,RCT_DLAY        
+          	,RCT_DUDT        
+          	,RCT_SINGO_DIV   
+          	,RCT_B_TAX_NO    
+          	,RCT_B_EPAY_NO   
+          	,RCT_CHG_MEMO    
+          	,RCT_REASON_DT   
+          	,RCT_ETC_MEMO    
+          	,RCT_SUNAP_DT    
+          	,RCT_CHG_REASON  
+          )
+        VALUES(
+          	 #RCT_BYYY#        
+          	,#RCT_BUMT#        
+          	,#RCT_SGCD#        
+          	,#RCT_HACD#        
+          	,#RCT_NPNO#        
+          	,#RCT_JMO1#        
+          	,#RCT_JMO2#        
+          	,#RCT_NAME#        
+          	,#RCT_TELE#        
+          	,#RCT_BUCD#        
+          	,#RCT_DFLAG#       
+          	,#RCT_POST#        
+          	,#RCT_ADDR1#       
+          	,#RCT_ADDR2#       
+          	,#RCT_KJSA#        
+          	,#RCT_JMSA#        
+          	,#RCT_GAST#        
+          	,#RCT_HWAN#        
+          	,#RCT_BYMD#        
+          	,#RCT_GYMD#        
+          	,#RCT_YMDS#        
+          	,#RCT_GSYY#        
+          	,#RCT_GGYM#        
+          	,#RCT_SNMH#        
+          	,#RCT_SGNM#        
+          	,#RCT_NJHK#        
+          	,#RCT_STAT#        
+          	,#RCT_SEMAIL#      
+          	,#RCT_STEL#        
+          	,#RCT_GRNO#        
+          	,#RCT_RATE#        
+          	,#RCT_TAMT#        
+          	,#RCT_TRTG#        
+          	,#RCT_ILNO#        
+          	,#RCT_SANO#        
+          	,#RCT_SAHO#        
+          	,#RCT_SGGB#        
+          	,#RCT_DANG#        
+          	,#RCT_DLAY#        
+          	,#RCT_DUDT#        
+          	,#RCT_SINGO_DIV#   
+          	,#RCT_B_TAX_NO#    
+          	,#RCT_B_EPAY_NO#   
+          	,#RCT_CHG_MEMO#    
+          	,#RCT_REASON_DT#   
+          	,#RCT_ETC_MEMO#    
+          	,#RCT_SUNAP_DT#    
+          	,#RCT_CHG_REASON#
+         )
+	</insert>    
+    
+    <!-- 테스트 128.0.0.35 : 주민세종합소득세 테이블에 Update 한다  -->
+	<update id="etaxupdate" parameterClass="mapForm">
+        UPDATE RESCOMPINTAX_TAB
+         SET RCT_STAT = #RCT_STAT#         
+        WHERE RCT_BYYY = #RCT_BYYY#          
+          AND RCT_BUMT = #RCT_BUMT#        
+          AND RCT_SGCD = #RCT_SGCD#         
+          AND RCT_HACD = #RCT_HACD#         
+          AND RCT_NPNO = #RCT_NPNO#         
+          AND RCT_JMO1 = #RCT_JMO1#         
+          AND RCT_JMO2 = #RCT_JMO2#  
+ 
+	</update> 
+	
+    <!--   -->
+    <update id="govCmdAcctUpdate" parameterClass="mapForm">
+    UPDATE      TEF_EFAM0261
+        SET     DEAL_RSLT_YN        = #DEAL_RSLT_YN#         <!-- 결과처리여부      -->
+              , DEAL_RSLT           = #DEAL_RSLT#            <!-- 결과코드          -->
+              , DEAL_DESC_RSLT      = #DEAL_DESC_RSLT#       <!-- 결과설명          -->
+              , DEAL_DESC_NM        = #DEAL_DESC_NM#         <!-- 결과처리자명      -->
+              , DEAL_RSLT_RECV_DATE = #DEAL_RSLT_RECV_DATE#  <!-- 결과처리일시      -->
+        WHERE   REQ_ID           = #REQ_ID#
+          AND   REQ_INST_FG      = #REQ_INST_FG#
+          AND   LOC_GOV_CD       = #LOC_GOV_CD#
+          AND   REQ_INST_CD      = #REQ_INST_CD#
+          AND   GCC_DEPT_CD      = #GCC_DEPT_CD#
+          AND   FIS_YEAR         = #FIS_YEAR#
+          AND   FIS_FG_CD        = #FIS_FG_CD#
+          AND   DATA_FG          = #DATA_FG#
+          AND   PAY_CMD_REGI_NO  = #PAY_CMD_REGI_NO#
+          AND   RE_ALLO_YN       = #RE_ALLO_YN#
+	</update>
+	
+    <!--   -->
+	<update id="etaxCmdAcctBackUpdate" parameterClass="mapForm">
+		UPDATE   ETTEPYBK
+		   SET   SND_RCV_STS_CD      = #SND_RCV_STS_CD#
+		       , REG_DT              = TO_CHAR(SYSDATE,'YYYYMMDD')
+		       , REG_TM              = TO_CHAR(SYSDATE,'hh24miss')
+		 WHERE   REQ_ID              =  #REQ_ID#
+             AND REQ_INST_FG         =  #REQ_INST_FG#
+             AND LOC_GOV_CD          =  #LOC_GOV_CD#
+             AND REQ_INST_CD         =  #REQ_INST_CD#
+             AND GCC_DEPT_CD         =  #GCC_DEPT_CD#
+             AND FIS_YEAR            =  #FIS_YEAR#
+             AND FIS_FG_CD           =  #FIS_FG_CD#
+             AND DATA_FG             =  #DATA_FG#
+             AND PAY_CMD_REGI_NO     =  #PAY_CMD_REGI_NO#
+             AND RE_ALLO_YN          =  #RE_ALLO_YN#
+             AND IN_SERIAL_NO        =  #IN_SERIAL_NO#
+	</update>
+	
+	<update id="govCmdAcctBackUpdate" parameterClass="mapForm">
+		UPDATE   TEF_EFAM0261
+		   SET   DEAL_RSLT_YN        = #DEAL_RSLT_YN#
+		       , DEAL_RSLT           = #DEAL_RSLT#
+		       , DEAL_DESC_RSLT      = #DEAL_DESC_RSLT#
+		       , DEAL_DESC_NM        = #DEAL_DESC_NM#
+		       , DEAL_RSLT_RECV_DATE = #DEAL_RSLT_RECV_DATE#
+		 WHERE   REQ_ID              =  #REQ_ID#
+             AND REQ_INST_FG         =  #REQ_INST_FG#
+             AND LOC_GOV_CD          =  #LOC_GOV_CD#
+             AND REQ_INST_CD         =  #REQ_INST_CD#
+             AND GCC_DEPT_CD         =  #GCC_DEPT_CD#
+             AND FIS_YEAR            =  #FIS_YEAR#
+             AND FIS_FG_CD           =  #FIS_FG_CD#
+             AND DATA_FG             =  #DATA_FG#
+             AND PAY_CMD_REGI_NO     =  #PAY_CMD_REGI_NO#
+             AND RE_ALLO_YN          =  #RE_ALLO_YN#
+             AND IN_SERIAL_NO        =  #IN_SERIAL_NO#
+	</update>
+    
+	<!--   -->
+	<update id="govCmpPayUpdate" parameterClass="mapForm">
+	UPDATE      TEF_EFAM026
+		   SET   DEAL_RSLT_YN        = #DEAL_RSLT_YN#
+		       , DEAL_RSLT           = #DEAL_RSLT#
+		       , DEAL_DESC_RSLT      = #DEAL_DESC_RSLT#
+		       , DEAL_DESC_NM        = #DEAL_DESC_NM#
+		       , DEAL_RSLT_RECV_DATE = #DEAL_RSLT_RECV_DATE#
+		 WHERE   REQ_ID              =  #REQ_ID#
+             AND REQ_INST_FG         =  #REQ_INST_FG#
+             AND LOC_GOV_CD          =  #LOC_GOV_CD#
+             AND REQ_INST_CD         =  #REQ_INST_CD#
+             AND GCC_DEPT_CD         =  #GCC_DEPT_CD#
+             AND FIS_YEAR            =  #FIS_YEAR#
+             AND FIS_FG_CD           =  #FIS_FG_CD#
+             AND DATA_FG             =  #DATA_FG#
+             AND PAY_CMD_REGI_NO     =  #PAY_CMD_REGI_NO#
+             AND RE_ALLO_YN          =  #RE_ALLO_YN#
+	</update>
+    
+	<!--   -->
+	<update id="etaxCmpPayBackUpdate" parameterClass="mapForm">
+		UPDATE   ETMEPYBK
+		   SET   SND_RCV_STS_CD      = #SND_RCV_STS_CD#
+		       , REG_DT              = TO_CHAR(SYSDATE,'YYYYMMDD')
+		       , REG_TM              = TO_CHAR(SYSDATE,'hh24miss')
+		 WHERE   REQ_ID              =  #REQ_ID#
+             AND REQ_INST_FG         =  #REQ_INST_FG#
+             AND LOC_GOV_CD          =  #LOC_GOV_CD#
+             AND REQ_INST_CD         =  #REQ_INST_CD#
+             AND GCC_DEPT_CD         =  #GCC_DEPT_CD#
+             AND FIS_YEAR            =  #FIS_YEAR#
+             AND FIS_FG_CD           =  #FIS_FG_CD#
+             AND DATA_FG             =  #DATA_FG#
+             AND PAY_CMD_REGI_NO     =  #PAY_CMD_REGI_NO#
+             AND RE_ALLO_YN          =  #RE_ALLO_YN#
+	</update>
+
+</sqlMap>

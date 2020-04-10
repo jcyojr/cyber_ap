@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="KF203001" >
+   
+    <!-- 환경개선부담금 전자납부내역조회. -->
+	<!-- 결제원 내역조회 시 주민번호, 조회시작일자 ~ 조회 끝날짜 -->
+	<select id="SELECT_ENV_KFPAY_LIST" resultClass="mapForm">
+	<![CDATA[   
+	SELECT 
+            A.SGG_COD            /*구청코드       */
+           ,A.ACCT_COD           /*회계코드       */
+           ,A.TAX_ITEM           /*과세목         */
+           ,A.TAX_YY             /*부과년도       */
+           ,A.TAX_MM             /*부과월         */
+           ,A.TAX_DIV            /*기분           */
+           ,A.HACD               /*행정동코드     */
+           ,A.TAX_SNO            /*과세번호       */
+           ,A.TAX_CNT            /*부과순번       */
+           ,A.MLGN_IF1           /*물건정보1      */
+           ,A.MLGN_IF2           /*물건정보2      */
+           ,A.MLGN_IF3           /*물건정보3      */
+           ,A.MLGN_IF4           /*물건정보4      */
+           ,A.MLGN_IF5           /*물건정보5      */
+           ,FC_DAMO(A.SEC_REG_NO) REG_NO             /*주민법인번호   */
+           ,A.REG_NM             /*납세자이름     */
+           ,A.DEADLINE_DT        /*납부기한       */
+           ,A.EPAY_NO            /*전자납부번호   */
+           ,A.SNTG               /*납부상태       */
+           ,B.SUM_RCP           /*수납금액*/
+           ,B.PAY_DT            /*수납일자*/
+           ,B.SNSU              /*수납매체*/
+           ,B.BRC_NO            /*수납기관코드*/
+
+        FROM (
+        
+            SELECT M.SGG_COD,
+                   M.ACCT_COD,
+                   M.TAX_ITEM,
+                   M.TAX_YY,
+                   M.TAX_MM,
+                   M.TAX_DIV,
+                   M.HACD,
+                   M.TAX_SNO,
+                   M.MLGN_IF1,
+                   M.MLGN_IF2,
+                   M.MLGN_IF3,
+                   M.MLGN_IF4,
+                   M.MLGN_IF5,
+ 				   M.SEC_REG_NO,
+                   M.REG_NM,
+                   M.REG_ZIPCD,
+                   M.ADDRESS,
+                   D.TAX_CNT,
+                   D.DLQ_DIV,
+                   D.BUTT,
+                   D.MI_AMT,
+                   D.ADD_AMT,
+                   D.MIADD_AMT,
+                   D.CNAP_AMT,
+                   D.TAX_DT,
+                   D.DUE_DT,
+                   D.DUE_F_DT,
+                   D.EPAY_NO,
+                   D.SNTG,
+                   D.PROC_CLS,
+                   D.CUD_OPT,
+                   D.DEADLINE_DT,
+                   D.VIR_ACC_NO,
+                   D.SGG_TR_TG,
+                   F_CREATE_ENOCR (D.SGG_COD, D.ACCT_COD, D.TAX_ITEM, D.TAX_YY, D.TAX_MM, D.TAX_DIV, D.HACD, D.TAX_SNO, D.TAX_CNT) OCR_BD
+            FROM   TX2131_TB_DAMO M,
+                   TX2132_TB D
+            WHERE  M.SGG_COD = D.SGG_COD
+            AND    M.ACCT_COD = D.ACCT_COD
+            AND    M.TAX_ITEM = D.TAX_ITEM
+            AND    M.TAX_YY = D.TAX_YY
+            AND    M.TAX_MM = D.TAX_MM
+            AND    M.TAX_DIV = D.TAX_DIV
+            AND    M.HACD = D.HACD
+            AND    M.TAX_SNO = D.TAX_SNO
+            AND    D.DEL_YN = 'N'
+        
+        ) A, TX2231_TB B    /*환경개선 View TBL , 환경개선 전자수납*/                
+        WHERE A.SGG_COD  = B.SGG_COD
+          AND A.ACCT_COD = B.ACCT_COD
+          AND A.TAX_ITEM = B.TAX_ITEM
+          AND A.TAX_YY   = B.TAX_YY
+          AND A.TAX_MM   = B.TAX_MM
+          AND A.TAX_DIV  = B.TAX_DIV
+          AND A.HACD     = B.HACD
+          AND A.TAX_SNO  = B.TAX_SNO
+    ]]>      
+          /*PK*/
+          AND A.EPAY_NO  IS NOT NULL         /*전자납부번호*/
+          AND A.SNTG     IN ('1', '2')       /*납부 1:가수납 2: 수납 9:취소*/
+
+          /*조건 주민번호, 조회시작일, 조회 끝일*/
+          
+          <isNotEmpty prepend = "AND" property="JUMIN_NO">
+              A.SEC_REG_NO   =  FC_DAMO(#JUMINNO#)       /*주민번호  */
+          </isNotEmpty>
+          
+          AND B.PAY_DT BETWEEN #IN_STDATE# AND #IN_ENDATE#
+
+    </select>
+    
+    
+</sqlMap>

@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="CODM0001" >
+
+	<select id="SELECT_V_SCYB543" resultClass="mapForm">
+		SELECT
+		    DIV_SEIP
+		    , C_SLF_ORG
+		    , USER_ID
+		    , CC_SLF_ORG
+		    , GWA_CD
+		    , GYE_CD
+		    , USER_NAME
+		    , HWAN_YN
+		    , CL_YN
+		  FROM V_SCYB543     
+	</select>
+
+	<insert id="INSERT_ETMRUSER" parameterClass="mapForm">
+	INSERT INTO ETMRUSER 
+		(  DIV_SEIP
+			, C_SLF_ORG
+			, USER_ID
+			, CC_SLF_ORG
+			, GWA_CD
+			, GYE_CD
+			, USER_NAME
+			, HWAN_YN
+			, CL_YN
+		)
+		VALUES ( #DIV_SEIP#
+			, #C_SLF_ORG#
+			, #USER_ID#
+			, #CC_SLF_ORG#
+			, #GWA_CD#
+			, #GYE_CD#
+			, SUBSTR(#USER_NAME#, 0, 10)
+			, #HWAN_YN#
+			, #CL_YN#
+		 )
+	</insert>
+	
+	<update id="UPDATE_ETMRUSER">
+	    UPDATE ETMRUSER 
+         SET   GWA_CD     = #GWA_CD#, 
+	           GYE_CD     = #GYE_CD#, 
+	           USER_NAME  = SUBSTR(#USER_NAME#, 0, 10), 
+	           HWAN_YN    = #HWAN_YN#, 
+	           CL_YN      = #CL_YN# 
+		 WHERE DIV_SEIP   = #DIV_SEIP# 
+		     AND  C_SLF_ORG  = #C_SLF_ORG# 
+		     AND  USER_ID    = #USER_ID#
+		     AND  CC_SLF_ORG = #CC_SLF_ORG#  
+	</update>
+	
+	<!-- SCOTT.TR_INCREASE -->
+	<select id="SELECT_TR_INCREASE" resultClass="mapForm">
+		SELECT
+		      SEQ
+		    , COL1
+		    , COL2
+		    , COL3
+		    , CLO4
+		  FROM TR_INCREASE     
+	</select>
+	
+	<!-- SCOTT.TR_INCREASE -->
+	<select id="MAX_VALUE" resultClass="mapForm">
+		SELECT NVL(MAX(SEQ), 0) + 1 AS SEQ FROM TR_INCREASE     
+	</select>
+	
+	
+	<insert id="INSERT_TR_INCREASE" parameterClass="mapForm">
+	    INSERT INTO TR_INCREASE 
+		(     SEQ
+			, COL1
+			, COL2
+			, COL3
+			, CLO4
+		)
+		VALUES ( #SEQ#
+			, #COL1#
+			, #COL2#
+			, #COL3#
+			, #CLO4#
+		)
+	</insert>
+	
+	<update id="UPDATE_TR_INCREASE">
+	    UPDATE TR_INCREASE 
+         SET   COL1    = #COL1#, 
+	           COL2    = #COL2#, 
+	           COL3    = #COL3#,
+	           CLO4    = #CLO4#, 
+		 WHERE SEQ   = #SEQ# 
+
+	</update>
+</sqlMap>

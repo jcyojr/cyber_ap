@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXDM1250">
+
+	<select id="select_fixed_list" parameterClass="mapForm">
+	<![CDATA[
+	   SELECT 
+		 *
+	   FROM (
+			SELECT
+				NVL(sido_cod,' ') sido_cod,				 /* 시도코드(2) */
+				NVL(tax_item,' ') tax_item,				 /* 과목코드(3) */
+				NVL(tax_yy,' ') tax_yy,				     /* 과세년도(4) */
+				NVL(sgg_cod,' ') sgg_cod,				 /* 구청코드(3) */
+				NVL(adong_cod,' ') adong_cod,			 /* 과세동코드(3) */
+				NVL(tax_sno,' ') tax_sno,				 /* 과세번호(6) */
+				NVL(tax_div, ' ') tax_div,				 /* 과세구분(1) */
+				NVL(tax_mm, ' ') tax_mm,				 /* 과세월(2) */
+				NVL(acct_cod, ' ') acct_cod,			 /* 회계코드(2) */
+				NVL(reg_no, ' ') reg_no,				 /* 실명번호(3) */
+				NVL(reg_nm, ' ') reg_nm,				 /* 실명(30) */
+				NVL(tax_gds, ' ') mlgn,				     /* 과세대상(60) */
+				NVL(post, ' ') zip_cd,					 /* 발송지우편번호 */
+				NVL(REPLACE(REPLACE(address,CHR(13),''),CHR(10),''),' ') address,	/* 주소 */
+				NVL(tax_std, 0) tax_std,				 /* 과세표준액 */
+				NVL(DECODE(mntx_adtx,0,mntx,mntx-mntx_adtx),0) mntx,	            /* 본세 */
+				NVL(mntx_adtx,0) mntx_adtx,				 /* 본세가산금 */
+				NVL(DECODE(cptx_adtx,0,cptx,cptx-cptx_adtx),0) cptx,	            /* 도시셰획세 */
+				NVL(cptx_adtx,0) cptx_adtx,				 /* 도시계획세가산금 */
+				CASE WHEN SUBSTR(tax_item,1,3) NOT IN('101','102','111') THEN
+					DECODE(cftx_adtx,0,cftx_astx,cftx_astx-cftx_adtx)
+				ELSE 0 END AS cftx,				         /* 공동시설세 */
+				NVL(cftx_adtx,0) cftx_adtx,				 /* 공동시설세가산금 */
+				NVL(DECODE(letx_adtx,0,letx,letx-letx_adtx),0) letx,	            /* 교육세 */
+				NVL(letx_adtx,0) letx_adtx,				 /* 교육세가산금 */
+				CASE WHEN SUBSTR(tax_item,1,3) IN('101','102','111') THEN
+					DECODE( astx_adtx,0,cftx_astx,cftx_astx-astx_adtx)
+				ELSE 0 END AS astx,				         /* 농특세 */
+				NVL(astx_adtx,0) astx_adtx,				 /* 농특세가산금 */
+				NVL(cre_dt,' ') tax_dt,					 /* 고지발생일 */
+				NVL(due_dt,' ') due_dt,					 /* 납기일 */
+				NVL(SUBSTR(insert_dt,1,8),' ') insert_dt,		/* 입력시간 */
+				NVL(TRIM(tax_std_dis)||'-'||TRIM(tax_std_dis2),'') tax_std_dis,	    /* 과세표준설명 */
+				NVL(sum_b_amt,0) sum_b_amt,				 /* 납기내총금액 */
+				NVL(sum_f_amt,0) sum_f_amt,				 /* 납기후총금액 */
+				NVL(goji_div,' ') goji_div,				 /* 고지구분 */
+				'2' tong_div,						     /* 통합구분(기본값:2) */
+				NVL(cud_opt,' ') cud_opt,			 	 /* 신규/변동구분 */
+				NVL(epay_no,' ') epay_no,				 /* 전자납부번호 */
+				seq,							                                    /* 일련번호 */
+				rcp_cnt,						                                    /* 분납횟수 */
+				NVL(dlq_div,0) dlq_div,					                            /* 체납구분 미납:1,체납2 */
+				NVL(epay_no_old,' ') epay_no_old,			                        /* 구전자납부번호 */
+				NVL(auto_trnf_yn,' ') auto_trnf_yn,			                        /* 자동이체여부 */
+				NVL(girosgg_cod,' ') giro_sgg,				                        /* 발행기관분류코드 */
+				NVL(giro_no,' ') giro_no,				                            /* 지로번호 */
+				NVL(tax_no,' ') tax_no,					                            /* 납세번호 */
+				NVL(due_f_dt,' ') ggym,					                            /* 납기후일자 */
+				NVL(due_df_opt,' ') notice_cls,				                        /* 납기후수납여부 */
+				CASE
+					WHEN cud_opt IN ('3') THEN 'Y'
+				ELSE DECODE(sum_b_amt+sum_f_amt, 0, 'Y', 'N')
+				END AS del_yn,						                                /* 신규/변동/삭제 구분 */
+				sido_cod||sgg_cod||chk1||acct_cod||tax_item||tax_yy||tax_mm||tax_div||adong_cod||TO_CHAR(tax_sno,'FM099999')||chk2||TO_CHAR(sum_b_amt,'FM09999999999')||TO_CHAR(sum_f_amt,'FM09999999999')||chk3
+				||TO_CHAR(mntx,'FM09999999999')||TO_CHAR(cptx,'FM0999999999')||TO_CHAR(cftx_astx,'FM0999999999')||TO_CHAR(letx,'FM09999999999')||due_dt ||chk4||filler||goji_div||chk5 ocr_bd,
+                dlq_chg_div    DLQ_CHG_DIV,                                         /* 체납변경구분코드 */
+                car_no         CAR_NO,                                              /* 자동차번호 */
+                CEIL(ROWNUM / #PAGE_PER_CNT#) AS PAGE                               /* 페이지당  갯수*/
+		    FROM
+				scon602
+		    WHERE
+			     deal_state IN ('E', 'P')	 /* 처리상태 */
+			 AND cud_opt IN ('1', '2', '3')	 /* 신규/변동/삭제 */
+			 AND dlq_div IN ('1', '2')	     /* 미체납/체납 */
+			 AND trn_yn = #trn_yn#			 /* 전송처리코드 */
+		    ORDER BY
+               raise_time ASC,
+			   seq ASC
+	   ) T1
+	   WHERE
+			T1.PAGE = #PAGE#
+	]]>
+	</select>
+	
+	<!-- 지방세 정기분외 부과자료 연계 페이지 건수-->
+	<select id="select_count_page">
+		<![CDATA[
+			SELECT
+				CEIL(COUNT(*) / #PAGE_PER_CNT#) PAGE
+			FROM
+				scon602
+			WHERE
+			     deal_state IN ('E', 'P')	 /* 처리상태 */
+			 AND cud_opt IN ('1', '2', '3')	 /* 신규/변동/삭제 */
+			 AND dlq_div IN ('1', '2')	     /* 미체납/체납 */
+			 AND trn_yn = #trn_yn#			 /* 전송처리코드 */
+			
+		]]>
+	</select>		
+
+	<!-- 가상계좌번호 테이블 삭제 -->
+	<update id="update_scon604_clean" parameterClass="mapForm">
+    <![CDATA[
+        UPDATE
+            scon604
+        SET
+            vir_acc = '',
+            vir_com = ''
+        WHERE
+            c_slf_org = #SGG_COD#
+            AND c_ssemok = #TAX_ITEM#
+            AND yy_gwase = #TAX_YY#
+            AND mm_gwase = #TAX_MM#
+            AND v_gwase = #TAX_DIV#
+            AND c_dong = #ADONG_COD#
+            AND s_gwase = #TAX_SNO#
+    ]]>
+	</update>    
+	
+    <update id="update_tx1102_tb2" parameterClass="mapForm">
+        <![CDATA[
+            UPDATE
+                tx1102_tb
+            SET
+            	del_yn = #del_yn#,                 	/* 삭제여부 */
+                del_dt = CASE WHEN #del_yn# = 'Y'
+                              THEN SYSDATE ELSE NULL 
+                         END,	                    /* 삭제일시 */
+		        last_dtm = SYSDATE
+            WHERE
+            	sgg_cod = #sgg_cod#                 /* 구청코드 */
+                AND acct_cod = #acct_cod#           /* 회계코드 */
+                AND tax_item = #tax_item#           /* 과세목코드 */
+                AND tax_yy = #tax_yy#               /* 부과년도 */
+                AND tax_mm = #tax_mm#               /* 부과월 */
+                AND tax_div = #tax_div#             /* 기분 */
+                AND hacd = #hacd#                   /* 행정동 */
+                AND tax_sno = #tax_sno#             /* 과세번호 */
+                AND rcp_cnt = #rcp_cnt#             /* 분납순번 */
+	    	AND	sntg IN ('0','9')
+        ]]>
+    </update>
+    
+    
+    
+    
+
+</sqlMap>

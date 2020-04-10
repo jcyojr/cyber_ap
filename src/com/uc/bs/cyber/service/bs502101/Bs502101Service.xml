@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="BS502101" >
+
+    <!-- 지방세 납부내역 가져온다. -->
+    <!-- 주정차 포함... -->
+	<select id="SELECT_RECIP_INFO" resultClass="mapForm" parameterClass="mapForm">
+	<![CDATA[    
+	
+        SELECT SUBSTR(TAX_NO, 3, 29) ETAXNO  /*고지번호*/
+             , TAX_ITEM
+             , TAX_YY
+             , TAX_MM
+             , RCP_CNT
+             , SUM_RCP 
+             , PAY_DT
+             , 'J' TAX_GB
+          FROM TX1201_VW_RCP  
+	    WHERE REG_NO  = FC_DAMO(#JUMIN_NO#)
+		  AND EPAY_NO = #EPAY_NO#   
+        
+        UNION ALL
+        
+        SELECT SUBSTR(OCR_BD, 3, 29) ETAXNO /*고지번호*/
+             , TAX_ITEM
+             , TAX_YY
+             , TAX_MM
+             , 0 RCP_CNT
+             , SUM_RCP 
+             , PAY_DT
+             , 'C' TAX_GB
+          FROM TX2221_VW_RCP 
+	    WHERE REG_NO = FC_DAMO(#JUMIN_NO#)
+		  AND EPAY_NO = #EPAY_NO#   
+		
+	]]>		
+		
+	</select>
+	
+	
+	<!-- 주정차, 버스전용, 주거지 전자수납 납부정정 -->
+    <update id="UPDATE_TX2211_TB_EPAY"  parameterClass="mapForm">
+    
+       UPDATE TX2211_TB
+        SET SUM_RCP = #NAPBU_AMT#
+           ,PAY_DT  = #NAPBU_DATE#
+           ,SNSU    = #SNSU#
+           ,BRC_NO  = #OUTBANK_CODE#
+       WHERE TAX_NO = #TAX_NO#
+             
+    </update>	
+	
+	<!-- 지방세 전자수납 납부정정 -->
+    <update id="UPDATE_TX1201_TB_EPAY"  parameterClass="mapForm">
+    
+       UPDATE TX1201_TB
+        SET SUM_RCP = #NAPBU_AMT#
+           ,PAY_DT  = #NAPBU_DATE#
+           ,SNSU    = #SNSU#
+           ,BRC_NO  = #OUTBANK_CODE#
+       WHERE SGG_COD  = #SGG_COD#
+         AND ACCT_COD = #ACCT_COD#
+         AND TAX_ITEM = #TAX_ITEM#
+         AND TAX_YY   = #TAX_YY#
+         AND TAX_MM   = #TAX_MM#
+         AND TAX_DIV  = #TAX_DIV#
+         AND HACD     = #HACD#
+         AND TAX_SNO  = #TAX_SNO#
+         AND RCP_CNT  = #RCP_CNT#
+         AND PAY_CNT  = #PAY_CNT#
+         
+    </update>		
+    
+</sqlMap>

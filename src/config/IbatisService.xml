@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!-- ========================================================================= -->
+<!-- * 주시스템명        : 유채널 프레임웍                                     -->
+<!-- * 업  무  명        : Spring ibatis 공통 서비스                           -->
+<!-- * 기  능  명        : Spring ibatis 공통 서비스용 SQL MAP                 -->
+<!-- * 클래스 ID         : IbaticService.xml                                   -->
+<!-- * 변경이력                :                                               -->
+
+<!-- ========================================================================= -->
+<!-- *  작성자        소속           일  자          Tag              내용-->
+<!-- ========================================================================= -->
+<!-- *  김대완      유채널(주)     2009.04.03        %01%          신규작성    -->     
+
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+ 
+<sqlMap namespace="IbatisService">
+
+	<resultMap class="mapForm" id="typeHandler">
+		<result property="rs_info" typeHandler="com.uc.core.ibatis.handler.UcTypeHandlerCallback"/>
+	</resultMap>
+
+    <statement id="queryForList" parameterClass="String" remapResults="true" resultClass="mapForm" >
+		$queryStr$
+    </statement>
+
+    <statement id="queryForMap" parameterClass="String" remapResults="true" resultClass="mapForm" >
+		$queryStr$
+    </statement>
+    
+	<statement id="queryForColInfo" parameterClass="String" remapResults="true" resultMap="typeHandler">
+		$queryStr$
+	</statement>    
+
+    <statement id="queryForInsert" parameterClass="String"  >
+		$queryStr$
+    </statement>
+
+    <statement id="queryForUpdate" parameterClass="String" >
+		$queryStr$
+    </statement>
+
+    <statement id="queryForString" parameterClass="String" resultClass="String" remapResults="true">
+		$queryStr$
+    </statement>
+	
+    <statement id="queryForInt" parameterClass="String" resultClass="int" remapResults="true">
+		$queryStr$
+    </statement>
+</sqlMap>

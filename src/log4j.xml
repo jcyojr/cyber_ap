@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+
+<log4j:configuration xmlns:log4j='http://jakarta.apache.org/log4j/'>
+
+	<!-- 
+		stdoutAppender Configuration
+	-->
+	<appender name="stdoutAppender" class="org.apache.log4j.ConsoleAppender">
+		<param name="Threshold" value="DEBUG"/>
+		<layout class="org.apache.log4j.PatternLayout">
+			<!-- stdoutAppender uses Pattern to output the caller's file name and line number.
+				%m - 로그 메세지
+				%p - 로깅 레벨
+				%r - 실행 경과시간 (millisecond)
+				%c - 로거 이름
+				%t - 스레드 명
+				%x - NDC
+				%n - 개행 문자
+				%d - 날짜
+				%l - %C.%M(%F:%L)와 동일
+				%C - 완전한 클래스명
+				%M - 메소드명
+				%F - 파일명
+				%L - 라인 번호
+				%% - %
+			-->
+			<!-- 기본 Conversion Pattern 
+			<param name="ConversionPattern" value="%5p [%t] (%c) (%F:%L) - %m%n"/>
+			-->
+		   <!--
+			<param name="ConversionPattern" value="%5p (%F:%L) - %m%n"/>
+			<param name="ConversionPattern" value="%5p %d (%c[%L]) - %m%n"/>
+			-->
+			<param name="ConversionPattern" value="%5p %d{yy-MM-dd HH:mm:ss} %t-(%c[%L])-%m%n"/>
+		</layout>
+	</appender>
+
+	<!-- 
+		e-bank 기록 실패시 대체 Log
+		fallbackDailyRollingFileAppender Configuration
+	-->
+	<appender name="fallbackDailyRollingFileAppender" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="Threshold" value="DEBUG"/>
+		<param name="File" value="/log/e-bankweb_fallback.log"/>
+		<param name="Append" value="true"/>
+		<param name="DatePattern" value=".yyyy-MM-dd"/>
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%5p %d{yy-MM-dd HH:mm:ss} %t-(%c[%L])-%m%n"/>
+		</layout>
+	</appender>
+
+	<!-- 
+		e-bank Log
+		dailyRollingFileAppender Configuration
+	-->
+	<appender name="dailyRollingFileAppender" class="org.apache.log4j.DailyRollingFileAppender">
+		<!-- Error Handler -->
+		<errorHandler class="org.apache.log4j.varia.FallbackErrorHandler">
+			<root-ref/>
+			<appender-ref ref="fallbackDailyRollingFileAppender" />
+		</errorHandler>
+		<param name="Threshold" value="DEBUG"/>
+		<param name="File" value="/log/e-bankweb.log"/>
+		<param name="Append" value="true"/>
+		<param name="DatePattern" value=".yyyy-MM-dd"/>
+		<layout class="org.apache.log4j.PatternLayout">
+
+		<!--
+			<param name="ConversionPattern" value="%5p %d [%t] (%c{1}) - %m%n"/>
+	    -->
+			<param name="ConversionPattern" value="%5p %d{yy-MM-dd HH:mm:ss} %t-(%c[%L])-%m%n"/>
+		</layout>
+	</appender>
+
+	<!-- Logging Level -->
+	<!-- Level: FATAL, ERROR, INFO, WARNING, DEBUG  -->
+	<logger name="org">
+		<level value="INFO"/>
+	</logger>
+	<logger name="com.opensymphony">
+		<level value="INFO"/>
+	</logger>
+		
+	<logger name="TldConfig">
+		<level value="INFO"/>
+	</logger>	
+	
+	<logger name="freemarker">
+		<level value="INFO"/>
+	</logger>	
+
+	<!--
+		메인 Logger 기본 설정 
+	-->
+	<root>
+		<level value ="DEBUG"/>
+		<appender-ref ref="stdoutAppender"/>
+		<appender-ref ref="dailyRollingFileAppender"/>
+	</root>
+
+</log4j:configuration>

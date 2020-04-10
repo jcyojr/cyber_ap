@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="RMAN" >
+
+	<!-- 보고서 관리 조회 -->
+    <statement id="ReportList" resultClass="mapForm">
+    	<![CDATA[
+			SELECT  REP_ID
+			        , REP_NM
+			        , REP_MRD_NM
+			        , REP_SP_NM
+			        , USE_YN
+			        , REP_END_DT
+			        , REG_ID
+			        , SUBSTR(REG_DTM, 1, 8) REG_DTM
+			    FROM ETMCRPLS
+			]]>	
+    </statement>
+    
+    <!-- 보고서관리 건수조회 -->
+  	<select id="ReportCount" resultClass="int">
+  		SELECT COUNT(*) AS TCNT FROM ETMCRPLS
+  	</select>  	
+  	
+  	<!-- 보고서관리 상세조회 -->
+  	<select id="ReportDetail" parameterClass="string" resultClass="mapForm">  	
+    	<![CDATA[
+			SELECT  REP_ID
+			        , REP_NM
+			        , REP_MRD_NM
+			        , REP_SP_NM
+			        , REP_SVL_NM
+			        , PARAM
+			        , RD_PARAM
+			        , REP_CND
+			        , REP_ESUM
+			        , USE_YN
+			        , REP_END_DT
+			        , REG_ID
+			        , REG_DTM
+			    FROM ETMCRPLS
+			    WHERE REP_ID = #rep_id#
+			]]>	
+    </select>
+	<resultMap class="mapForm" id="paramRes">
+		<result property="param_id"     		column="PARA_ID"     javaType="String"/>
+		<result property="param_pid"     		column="PARA_PID"    javaType="String"/>
+		<result property="param_name"     		column="PARA_NM"     javaType="String"/>
+		<result property="param_title"     		column="PARA_TITLE"  javaType="String"/>
+		<result property="param_type"     		column="PRM_KIND_CD" javaType="String"/>
+		<result property="param_type_nm"  		column="PRM_KIND_NM" javaType="String"/>
+		<result property="param_attr"     		column="PRM_ATR_CD"  javaType="String"/>
+		<result property="param_value"     		column="PARA_VAL"    javaType="String"/>
+		<result property="use_yn"     		 	column="USE_YN"    	 javaType="String"/>
+		<result property="user_id"     		 	column="REG_ID"    	 javaType="String"/>
+		<result property="reg_dtm"     		 	column="REG_DTM"     javaType="String"/>
+	</resultMap>		    
+    
+    <!-- 파라메터 상세보기 -->
+	<select id="ParamView" parameterClass="string" resultMap="paramRes">
+		SELECT   PARA_ID
+		        , PARA_PID
+		        , PARA_NM
+		        , PARA_TITLE
+		        , PRM_KIND_CD
+				, (SELECT CODE_NM FROM ETPCCMCD WHERE DIV_CD='PRM_KIND_CD' AND COM_CD=A.PRM_KIND_CD) PRM_KIND_NM		        
+		        , PRM_ATR_CD
+		        , PARA_VAL
+		        , USE_YN
+		        , REG_ID
+		        , SUBSTR(REG_DTM, 1, 8) REG_DTM
+		    FROM ETMCRPPR A
+		    WHERE PARA_ID = #para_id#
+		    ORDER BY PARA_ID
+	</select>
+	
+	<!-- 파라메터관리 목록조회 -->
+	<statement id="ParamList" parameterClass="mapForm" resultMap="paramRes">
+		SELECT   PARA_ID
+		        , PARA_PID
+		        , PARA_NM
+		        , PARA_TITLE
+		        , PRM_KIND_CD
+		        , (SELECT CODE_NM FROM ETPCCMCD WHERE DIV_CD='PRM_KIND_CD' AND COM_CD=A.PRM_KIND_CD) PRM_KIND_NM
+		        , PRM_ATR_CD
+		        , PARA_VAL
+		        , USE_YN
+		        , REG_ID
+		        , SUBSTR(REG_DTM, 1, 8) REG_DTM
+		    FROM ETMCRPPR A
+		    WHERE USE_YN  = 'Y'
+		    ORDER BY PARA_ID
+	</statement>
+	
+	<!-- 파라메터관리 건수조회 -->
+  	<select id="ParamCount" resultClass="int">
+  		SELECT COUNT(*) AS TCNT FROM ETMCRPPR
+  	</select>
+	
+	<!-- 보고서관리 등록 -->
+	<insert id="ReportInsert" parameterClass="mapForm">
+	   INSERT INTO ETMCRPLS (
+	           REP_ID, REP_NM, REP_MRD_NM, 
+	           REP_SP_NM, REP_SVL_NM, PARAM, 
+	           RD_PARAM, REP_CND, REP_ESUM, 
+	           USE_YN, REG_ID) 
+	        VALUES (
+	           #REP_ID#, #REP_NM#, #REP_MRD_NM#, 
+	           #REP_SP_NM#, #REP_SVL_NM#, #PARAM#, 
+	           #RD_PARAM#, #REP_CND#, #REP_ESUM#, 
+	           #USE_YN#, #REG_ID# )	
+	</insert>
+	
+	<update id="ReportUpdate" parameterClass="mapForm">
+        UPDATE ETMCRPLS
+            SET    REP_NM     = #REP_NM#,
+                   REP_MRD_NM = #REP_MRD_NM#,
+                   REP_SP_NM  = #REP_SP_NM#,
+                   REP_SVL_NM = #REP_SVL_NM#,
+                   PARAM      = #PARAM#,
+                   RD_PARAM   = #RD_PARAM#,
+                   REP_CND    = #REP_CND#,
+                   REP_ESUM   = #REP_ESUM#,
+                   USE_YN     = #USE_YN#,
+                   REP_END_DT = #REP_END_DT#,
+                   REG_ID     = #REG_ID#,
+                   REG_DTM    = SYSDATE
+            WHERE  REP_ID     = #REP_ID#    
+	</update>
+	
+	<delete id="ReportDelete" parameterClass="mapForm">
+		UPDATE ETMCRPLS
+			SET    USE_YN     = 'N'
+				 , REP_END_DT = TO_CHAR(SYSDATE, 'YYYYMMDD')
+				 , REG_ID     = #REG_ID#
+			WHERE REP_ID      = #REP_ID#
+	</delete>
+	
+	<!-- 파라메터관리 등록 -->
+	<insert id="ParamInsert" parameterClass="mapForm">
+		INSERT INTO ETMCRPPR (
+				PARA_ID
+				, PARA_PID
+				, PARA_NM
+				, PARA_TITLE
+				, PRM_KIND_CD
+				, PRM_ATR_CD
+				, PARA_VAL
+				, USE_YN
+				, REG_ID
+				, REG_DTM
+			) 
+			VALUES (
+				#param_id#
+				,#param_pid#
+				,#param_name#
+				,#param_title#
+				,#param_type#
+				,#param_attr#
+				,#param_value#
+				,'Y'
+				,#user_id#
+				, TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+			)		
+	</insert>
+	
+	<update id="ParamUpdate" parameterClass="mapForm">
+		UPDATE ETMCRPPR 
+		        SET  PARA_PID      =  #param_pid#    
+		           , PARA_NM       =  #param_name#  
+		           , PARA_TITLE    =  #param_title# 
+		           , PRM_KIND_CD   =  #param_type#  
+		           , PRM_ATR_CD    =  #param_attr#  
+		           , PARA_VAL      =  #param_value# 
+		           , REG_ID        =  #user_id#     
+		           , REG_DTM       =  TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+		        WHERE PARA_ID = #param_id#	
+	</update>
+	
+	<delete id="ParamDelete" parameterClass="String">
+		DELETE FROM ETMCRPPR WHERE PARA_ID = #param_id#
+	</delete>	
+		
+	<delete id="RPTWRKDelete" parameterClass="String">
+		DELETE FROM ETMCRPWK WHERE REP_SESS = #REP_SESS#
+	</delete>
+	
+	<select id="RPTWRKSelect" parameterClass="String" resultClass="mapForm">
+		SELECT  REP_TYPE, STR_CN , NUM_CN, FLOAT_CN, 
+				C1, C2, C3, 
+				C4, C5, C6, 
+				C7, C8, C9, 
+				C10, C11, C12, 
+				C13, C14, C15, 
+				C16, C17, C18, 
+				C19, C20, C21, 
+				C22, C23, C24, 
+				C25, C26, C27, 
+				C28, C29, C30, 
+				C31, C32, C33, 
+				C34, C35, C36, 
+				C37, C38, C39, 
+				C40, N1, N2, 
+				N3, N4, N5, 
+				N6, N7, N8, 
+				N9, N10, N11, 
+				N12, N13, N14, 
+				N15, N16, N17, 
+				N18, N19, N20, 
+				N21, N22, N23, 
+				N24, N25, N26, 
+				N27, N28, N29, 
+				N30, N31, N32, 
+				N33, N34, N35, 
+				N36, N37, N38, 
+				N39, N40, F1, 
+				F2, F3, F4, 
+				F5, F6, F7, 
+				F8, F9, F10
+			FROM ETMCRPWK 
+		    WHERE REP_SESS = #REP_SESS#
+		    ORDER BY REP_TYPE, REP_SQNO
+	</select>
+		
+	<procedure id="ReportProces" parameterClass="string">
+        {CALL $sp_str$ }
+	</procedure>
+	
+	<procedure id="ReportTrace" parameterClass="mapForm">
+		{CALL SP_RP_TRACE(#sess#, #mdl#, #trc#) } 
+	</procedure>
+	
+</sqlMap>

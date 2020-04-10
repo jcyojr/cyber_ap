@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXDM2431" >
+
+
+    <!-- JOB/프로시저 실행로그에 정보를 기록한다. -->
+    <insert id="INSERT_LOG_JOBSTATE" parameterClass="mapForm">
+	<![CDATA[
+          INSERT INTO CO5102_TB(SEQ, JOB_ID, PARM_NM, LOG_DESC, WORK_S_DT, RESULT_CD)
+          VALUES(#SEQ#, #JOB_ID#, #PARM_NM#, #LOG_DESC#, TO_DATE(#WORK_S_DT#, 'YYYY-MM-DD HH24:MI:SS'), #RESULT_CD#)
+	]]>  
+    </insert>
+
+
+    <!-- 사이버 -->
+    <!-- 버스전용차로위반과태료 가상계좌분 취합 -->
+	<select id="SELECT_VIRUAL_BUS_FINE_LIST" resultClass="mapForm">
+	<![CDATA[    
+
+        SELECT 
+             A.SGG_COD       /*구청코드*/
+            ,A.ACCT_COD      /*회계코드*/
+            ,A.TAX_ITEM      /*과세목*/
+            ,A.TAX_YY        /*부과년도*/
+            ,A.TAX_MM        /*분기(부과월)*/
+            ,A.TAX_DIV       /*기분*/
+            ,A.HACD          /*행정동*/
+            ,A.TAX_SNO       /*과세번호*/
+            ,B.VIR_ACC_NO    /*가상계좌번호*/
+            ,FC_DAMO(A.SEC_REG_NO) REG_NO        /*주민법인번호*/
+            ,SUBSTR(A.SEC_REG_NO, 1, 6) AS NON_JMO1 /*주민1*/
+            ,SUBSTR(FC_DAMO(A.SEC_REG_NO), 7)    AS NON_JMO2 /*주민2*/
+        FROM TX2121_TB_DAMO A, TX2122_TB B
+        WHERE A.SGG_COD    =  B.SGG_COD
+          AND A.ACCT_COD   =  B.ACCT_COD
+          AND A.TAX_ITEM   =  B.TAX_ITEM
+          AND A.TAX_YY     =  B.TAX_YY
+          AND A.TAX_MM     =  B.TAX_MM
+          AND A.TAX_DIV    =  B.TAX_DIV
+          AND A.HACD       =  B.HACD
+          AND A.TAX_SNO    =  B.TAX_SNO
+          AND A.TAX_ITEM   =  '288025'   /*과목:288 세목:025 과세목*/
+          AND B.SNTG       =  '0'    /*납부상태*/
+          AND B.SGG_TR_TG  =  '0'    /*구청전송처리구분코드 : 자료전송(0:미전송,1:전송완료)*/
+          AND B.PROC_CLS   =  '3'    /*가상계좌체번구분*/
+          AND B.VIR_ACC_NO IS NOT NULL
+          AND ROWNUM       <= 5000
+
+    ]]>  
+	</select>
+	
+	<!-- 구청 TABLE에 업데이트 한다.  -->
+	<!-- 구청 -->
+	<update id="UPDATE_NONTAX_TAB" parameterClass="mapForm">
+
+            UPDATE NONTAX_TAB       /*세외수입(주정차, 버스전용, 주거지)*/                   
+               SET 
+                   PROC_CLS   = '3'
+                 , VIR_TRTG   = '0'               
+                 , VIR_ACC_NO = #VIR_ACC_NO#
+                 , VIR_DTM    = SYSDATE
+             WHERE NON_SGCD = #SGG_COD#
+               AND NON_ACKU = #ACCT_COD#
+               AND NON_SMCD = #TAX_ITEM#
+               AND NON_BYYY = #TAX_YY#
+               AND NON_BNGI = #TAX_MM#
+               AND NON_GIBN = #TAX_DIV#
+               AND NON_HACD = #HACD#
+               AND NON_NPNO = #TAX_SNO#
+               AND NON_JMO1 = #NON_JMO1#
+               AND TRIM(NON_JMO2) = #NON_JMO2#
+               AND PROC_CLS = '1'
+
+	</update>		
+
+	<!-- 부과상세테이블에 업데이트 한다.  -->
+	<!-- 사이버 -->
+	<update id="UPDATE_TX2122_TB" parameterClass="mapForm">
+    <![CDATA[
+
+            UPDATE TX2122_TB                          
+               SET 
+				  SGG_TR_TG  =  #SGG_TR_TG#
+				 ,LAST_DTM   =  SYSDATE 
+            WHERE SGG_COD    =  #SGG_COD#
+              AND ACCT_COD   =  #ACCT_COD#
+              AND TAX_ITEM   =  #TAX_ITEM#
+              AND TAX_YY     =  #TAX_YY#
+              AND TAX_MM     =  #TAX_MM#
+              AND TAX_DIV    =  #TAX_DIV#
+              AND HACD       =  #HACD#
+              AND TAX_SNO    =  #TAX_SNO#
+              AND TAX_CNT    =  0
+              AND EXISTS(
+                          SELECT 'Y'
+                          FROM TX2121_TB_DAMO
+                          WHERE SGG_COD    =  #SGG_COD#
+                            AND ACCT_COD   =  #ACCT_COD#
+                            AND TAX_ITEM   =  #TAX_ITEM#
+                            AND TAX_YY     =  #TAX_YY#
+                            AND TAX_MM     =  #TAX_MM#
+                            AND TAX_DIV    =  #TAX_DIV#
+                            AND HACD       =  #HACD#
+                            AND TAX_SNO    =  #TAX_SNO#
+                            AND SEC_REG_NO     =  FC_DAMO(#REG_NO#)
+                        )
+
+    ]]>
+	</update>	
+
+</sqlMap>

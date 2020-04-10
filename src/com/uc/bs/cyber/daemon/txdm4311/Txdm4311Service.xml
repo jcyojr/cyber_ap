@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXDM4311" >
+	
+	
+	<select id="sudo_select_fixed_list" parameterClass="mapForm">
+		 <![CDATA[
+		 SELECT * FROM(
+			SELECT
+				NVL(prt_yy,' ') prt_yy,			/* 부과년도  */
+				NVL(prt_mm,' ') prt_mm,			/* 부과월 */
+				NVL(prt_npno,0) prt_npno,		/* 관리번호 */
+				'1' tax_cd,				        /* 부과구분 1:정기/2:수시 */
+				NVL(iche_no,' ') iche_no,		/* 전자납부번호 */
+				NVL(cust_no,' ') cust_no,		/* 수용가번호 */
+				NVL(gubun,' ') gubun,			/* 당월구분 */
+				NVL(name,' ') name,			    /* 성명 */
+				NVL(prt_title,' ') prt_title,	/* 고지서제목 */
+				NVL(prt_date,' ') prt_date,		/* 부과일 */
+				NVL(prt_del1,' ') prt_del1,		/* 납기내납기일 */
+				NVL(not_date,' ') not_date,		/* 체납부과일 */
+				NVL(not_del1,' ') not_del1,		/* 체납납부마감일 */
+				NVL(prt_amt,0) prt_amt,			/* 납기내금액 */
+				NVL(prt_amt2,0) prt_amt2,		/* 납기후금액 */
+				NVL(fee_amt1,0) fee_amt1,		/* 상수도납기내금액 */
+				NVL(fee_amt2,0) fee_amt2,		/* 하수도납기내금액 */
+				NVL(fee_amt3,0) fee_amt3,		/* 물이용부담금납기내금액 */
+				NVL(fee_amt4,0) fee_amt4,		/* 지하수납기내금액 */
+				NVL(fee_amt1_h,0) fee_amt1_h,	/* 상수도납기후금액 */
+				NVL(fee_amt2_h,0) fee_amt2_h,	/* 하수도납기후금액 */
+				NVL(fee_amt3_h,0) fee_amt3_h,	/* 물이용부담금납기후금액 */
+				NVL(fee_amt4_h,0) fee_amt4_h,	/* 지하수납기후금액 */
+				NVL(prt_del2,' ') prt_del2,		/* 납기후납기일 */
+				NVL(prt_gb,' ') prt_gb,			/* 고지구분 */
+				NVL(not_stt_date,' ') not_stt_date,	/* 체납시작일 */
+				NVL(not_end_date,' ') not_end_date,	/* 체납종료일 */
+				NVL(addr,' ') addr,			        /* 주소 */
+				NVL(use_stt_date,' ') use_stt_date,	/* 사용시작일 */
+				NVL(use_end_date,' ') use_end_date,	/* 사용종료일 */
+				NVL(bank_cd,' ') back_cd,		/* 수납은행코드 */
+				NVL(rcv_date,' ') rcv_date,		/* 납부일시 */
+				NVL(rcv_gb,' ') rcv_gb,			/* 납기내후구분 */
+				NVL(ocr_1,' ') ocr_1,			/* OCR밴드1 */
+				NVL(ocr_2,' ') ocr_2,			/* OCR밴드2 */
+				NVL(card_code,' ') card_code,	/* 카드납부코드 */
+				NVL(spre_cnt,0) spre_cnt,		/* 전월지침(상) */
+				NVL(sact_cnt,0) sact_no,		/* 당월지침(상) */
+				NVL(sadj_qty,0) sadj_qty,		/* 조정량(상) */
+				NVL(hpre_cnt,0) hpre_cnt,		/* 전월지침(하) */
+				NVL(hact_cnt,0) hact_cnt,		/* 당월지침(하) */
+				NVL(hadj_qty,0) hadj_qty,		/* 조정량(하) */
+				NVL(usr_num,0) usr_num,			/* 가구수 */
+				NVL(sub_num,0) sub_num,			/* 감면가구수 */
+				NVL(up_type,' ') up_type,		/* 상수도업종 */
+				NVL(hup_type,' ') hup_type,		/* 하수도업종 */
+				NVL(chk_date,' ') chk_date,		/* 검침일 */
+				NVL(pre_qty,0) pre_qty,			/* 전월사용량 */
+				NVL(pre_year_qty,0) pre_year_qty,	/* 전월동월사용량 */
+				NVL(state_flag,' ') state_flag,		/* 상태플래그 */
+				NVL(sr_flag,' ') sr_flag,		/* 송수신플래그 */
+				NVL(sact_qty,0) sact_qty,		/* 상수도사용량 */
+				NVL(hact_qty,0) hact_qty,		/* 상수도사용량 */
+				CEIL(ROWNUM / #PAGE_PER_CNT#) AS PAGE   /*페이지당  갯수*/
+			FROM
+				cyber_prtfee				    /* 상하수도 부과 테이블 */
+			WHERE
+				sr_flag = #sr_flag#				/* 송수신플래그 */
+				AND LENGTH(TRIM(ocr_1)) = 54 
+				AND LENGTH(TRIM(ocr_2)) = 54
+				AND rownum <= 10000             /*최대 10000건씩 처리하게 한다.*/
+		) T1
+		WHERE T1.PAGE = #PAGE#
+		
+		]]>
+	</select>	
+	
+	
+	<!-- 지방세 정기분외 부과자료 연계 페이지 건수-->
+	<select id="select_count_page"  parameterClass="mapForm" resultClass="int">
+		<![CDATA[
+			SELECT
+				CEIL(COUNT(*) / #PAGE_PER_CNT#) PAGE
+			FROM
+				cyber_prtfee
+			WHERE
+				sr_flag = #sr_flag#				/* 송수신플래그 */
+				AND LENGTH(TRIM(ocr_1)) = 54 
+				AND LENGTH(TRIM(ocr_2)) = 54
+				AND rownum <= 10000             /*최대 10000건씩 처리하게 한다.*/
+			
+		]]>
+	</select>		
+	
+	
+	<!-- 상하수도 부과 -->
+	<insert id="sudo_insert_levy" parameterClass="mapForm">
+    <![CDATA[
+        INSERT INTO
+        tx3111_tb        /* 상하수도 부과 */
+        (
+          tax_yy,            /* 부과년 */
+          tax_mm,            /* 부과월 */
+          prt_npno,          /* 상하수도 관리번호 */
+          tax_cd,            /* 부과구분 */
+          epay_no,           /* 전자납부번호 */
+          cust_no,           /* 수용가번호 */
+          gubun,             /* 구분 */
+          reg_nm,            /* 성명 */
+          tax_notice_title,  /* 고지서제목 */
+          prt_date,          /* 부과일 */
+          due_dt,            /* 납기일자 */
+          dl_tax_dt,         /* 체납부과일자 */
+          not_del1,          /* 체납납부마감일 */
+          sum_b_amt,         /* 납기내총액 */
+          sum_f_amt,         /* 납기후총액 */
+          fee_amt1,          /* 상수도납기내금액 */
+          fee_amt2,          /* 하수도납기내금액 */
+          fee_amt3,          /* 물이용부담금납기내금액 */
+          fee_amt4,          /* 지하수납기내금액 */
+          fee_amt1_h,        /* 상수도납기후금액 */
+          fee_amt2_h,        /* 하수도납기후금액 */
+          fee_amt3_h,        /* 물이용부담금납기후금액 */
+          fee_amt4_h,        /* 지하수납기후금액 */
+          due_f_dt,          /* 납기후납기일 */
+          prt_gb,            /* 고지구분 */
+          not_stt_date,      /* 체납시작일 */
+          not_end_date,      /* 체납종료일 */
+          address,           /* 주 소 */
+          use_stt_date,      /* 사용시작일 */
+          use_end_date,      /* 사용종료일 */
+          bank_cd,           /* 수납은행코드 */
+          rcv_date,          /* 납부일시 */
+          rcv_gb,            /* 납기 내후 구분 */
+          ocr_1,             /* OCR BAND 1 */
+          ocr_2,             /* OCR BAND 2 */
+          card_code,         /* 카드_납부코드 */
+          spre_cnt,          /* 전월지침(상) */
+          sact_cnt,          /* 당월지침(상) */
+          sadj_qty,          /* 조정량(상) */
+          hpre_cnt,          /* 전월지침(하) */
+          hact_cnt,          /* 당월지침(하) */
+          hadj_qty,          /* 조정량(하) */
+          usr_num,           /* 가구수 */
+          sub_num,           /* 감면가구수 */
+          up_type,           /* 상수도업종 */
+          hup_type,          /* 하수도업종 */
+          chk_date,          /* 검침일 */
+          pre_qty,           /* 전월사용량 */
+          pre_year_qty,      /* 전년동월사용량 */
+          state_flag,        /* 상태 FLAG */
+          sr_flag,           /* 송수신 FLAG */
+          sntg,              /* 납부상태 */
+          sact_qty,          /* 상수도 사용량 */
+          hact_qty,          /* 하수도사용량 */
+          reg_dtm,           /* 등록일시 */
+          last_dtm           /* 최종수정일시 */
+        ) VALUES (
+          #tax_yy#,            /* 부과년 */
+          #tax_mm#,            /* 부과월 */
+          #prt_npno#,          /* 상하수도 관리번호 */
+          #tax_cd#,            /* 부과구분 */
+          #epay_no#,           /* 전자납부번호 */
+          #cust_no#,           /* 수용가번호 */
+          #gubun#,             /* 구분 */
+          #reg_nm#,            /* 성명 */
+          #tax_notice_title#,  /* 고지서제목 */
+          #prt_date#,          /* 부과일 */
+          #due_dt#,            /* 납기일자 */
+          #dl_tax_dt#,         /* 체납부과일자 */
+          #not_del1#,          /* 체납납부마감일 */
+          #sum_b_amt#,         /* 납기내총액 */
+          #sum_f_amt#,         /* 납기후총액 */
+          #fee_amt1#,          /* 상수도납기내금액 */
+          #fee_amt2#,          /* 하수도납기내금액 */
+          #fee_amt3#,          /* 물이용부담금납기내금액 */
+          #fee_amt4#,          /* 지하수납기내금액 */
+          #fee_amt1_h#,        /* 상수도납기후금액 */
+          #fee_amt2_h#,        /* 하수도납기후금액 */
+          #fee_amt3_h#,        /* 물이용부담금납기후금액 */
+          #fee_amt4_h#,        /* 지하수납기후금액 */
+          #due_f_dt#,          /* 납기후납기일 */
+          #prt_gb#,            /* 고지구분 */
+          #not_stt_date#,      /* 체납시작일 */
+          #not_end_date#,      /* 체납종료일 */
+          #address#,           /* 주 소 */
+          #use_stt_date#,      /* 사용시작일 */
+          #use_end_date#,      /* 사용종료일 */
+          #bank_cd#,           /* 수납은행코드 */
+          #rcv_date#,          /* 납부일시 */
+          #rcv_gb#,            /* 납기 내후 구분 */
+          #ocr_1#,             /* OCR BAND 1 */
+          #ocr_2#,             /* OCR BAND 2 */
+          #card_code#,         /* 카드_납부코드 */
+          #spre_cnt#,          /* 전월지침(상) */
+          #sact_cnt#,          /* 당월지침(상) */
+          #sadj_qty#,          /* 조정량(상) */
+          #hpre_cnt#,          /* 전월지침(하) */
+          #hact_cnt#,          /* 당월지침(하) */
+          #hadj_qty#,          /* 조정량(하) */
+          #usr_num#,           /* 가구수 */
+          #sub_num#,           /* 감면가구수 */
+          #up_type#,           /* 상수도업종 */
+          #hup_type#,          /* 하수도업종 */
+          #chk_date#,          /* 검침일 */
+          #pre_qty#,           /* 전월사용량 */
+          #pre_year_qty#,      /* 전년동월사용량 */
+          #state_flag#,        /* 상태 FLAG */
+          #sr_flag#,           /* 송수신 FLAG */
+          #sntg#,              /* 납부상태 */
+          #sact_qty#,          /* 상수도 사용량 */
+          #hact_qty#,          /* 하수도사용량 */
+          SYSDATE,             /* 등록일시 */
+          SYSDATE              /* 최종수정일시 */        
+        )
+    ]]>
+	</insert>	
+	
+	<update id="sudo_update_levy" parameterClass="mapForm">
+    <![CDATA[
+        UPDATE
+            tx3111_tb
+        SET
+		    tax_cd  = #tax_cd#,                           /* 부과구분 */
+		    epay_no = #epay_no#,                          /* 전자납부번호 */
+		    cust_no = #cust_no#,                          /* 수용가번호 */
+		    gubun = #gubun#,                              /* 구분 */
+		    reg_nm = #reg_nm#,                            /* 성명 */
+		    tax_notice_title = #tax_notice_title#,        /* 고지서제목 */
+		    prt_date = #prt_date#,                        /* 부과일 */
+		    due_dt = #due_dt#,                            /* 납기일자 */
+		    dl_tax_dt = #dl_tax_dt#,                      /* 체납부과일자 */
+		    not_del1 = #not_del1#,                        /* 체납납부마감일 */
+		    sum_b_amt = #sum_b_amt#,                      /* 납기내총액 */
+		    sum_f_amt = #sum_f_amt#,                      /* 납기후총액 */
+		    fee_amt1 = #fee_amt1#,                        /* 상수도납기내금액 */
+		    fee_amt2 = #fee_amt2#,                        /* 하수도납기내금액 */
+		    fee_amt3 = #fee_amt3#,                        /* 물이용부담금납기내금액 */
+		    fee_amt4 = #fee_amt4#,                        /* 지하수납기내금액 */
+		    fee_amt1_h = #fee_amt1_h#,                    /* 상수도납기후금액 */
+		    fee_amt2_h = #fee_amt2_h#,                    /* 하수도납기후금액 */
+		    fee_amt3_h = #fee_amt3_h#,                    /* 물이용부담금납기후금액 */
+		    fee_amt4_h = #fee_amt4_h#,                    /* 지하수납기후금액 */
+		    due_f_dt = #due_f_dt#,                        /* 납기후납기일 */
+		    prt_gb = #prt_gb#,                            /* 고지구분 */
+		    not_stt_date = #not_stt_date#,                /* 체납시작일 */
+		    not_end_date = #not_end_date#,                /* 체납종료일 */
+		    address = #address#,                          /* 주 소 */
+		    use_stt_date = #use_stt_date#,                /* 사용시작일 */
+		    use_end_date = #use_end_date#,                /* 사용종료일 */
+		    bank_cd = #bank_cd#,                          /* 수납은행코드 */
+		    rcv_date = #rcv_date#,                        /* 납부일시 */
+		    rcv_gb = #rcv_gb#,                            /* 납기 내후 구분 */
+		    ocr_1 = #ocr_1#,                              /* OCR BAND 1 */
+		    ocr_2 = #ocr_2#,                              /* OCR BAND 2 */
+		    card_code = #card_code#,                      /* 카드_납부코드 */
+		    spre_cnt = #spre_cnt#,                        /* 전월지침(상) */
+		    sact_cnt = #sact_cnt#,                        /* 당월지침(상) */
+		    sadj_qty = #sadj_qty#,                        /* 조정량(상) */
+		    hpre_cnt = #hpre_cnt#,                        /* 전월지침(하) */
+		    hact_cnt = #hact_cnt#,                        /* 당월지침(하) */
+		    hadj_qty = #hadj_qty#,                        /* 조정량(하) */
+		    usr_num = #usr_num#,                          /* 가구수 */
+		    sub_num = #sub_num#,                          /* 감면가구수 */
+		    up_type = #up_type#,                          /* 상수도업종 */
+		    hup_type = #hup_type#,                        /* 하수도업종 */
+		    chk_date = #chk_date#,                        /* 검침일 */
+		    pre_qty = #chk_date#,                         /* 전월사용량 */
+		    pre_year_qty = #pre_year_qty#,                /* 전년동월사용량 */
+		    state_flag = #state_flag#,                    /* 상태 FLAG */
+		    sr_flag = #sr_flag#,                          /* 송수신 FLAG */
+		    sntg = #sntg#,                                /* 납부상태 */
+		    sact_qty = #sact_qty#,                        /* 상수도 사용량 */
+		    hact_qty = #hact_qty#,                        /* 하수도사용량 */
+            last_dtm = SYSDATE
+        WHERE
+            tax_yy = #tax_yy#            /* 부과년 */
+        AND tax_mm = #tax_mm#            /* 부과월 */
+        AND prt_npno = #prt_npno#        /* 상하수도 관리번호 */
+        AND sntg IN ('0','9')            /* 상하수도 관리번호 */
+    ]]>
+	</update>	
+	
+	
+	<update id="sudo_delete_levy" parameterClass="mapForm">
+    <![CDATA[
+        DELETE
+            tx3111_tb
+        WHERE
+            tax_yy = #tax_yy#              /* 부과년 */
+            AND tax_mm = #tax_mm#          /* 부과월 */
+            AND prt_npno = #prt_npno#      /* 상하수도 관리번호 */
+            AND sntg IN ('0','9')          /* 상하수도 관리번호 */
+    ]]>
+	</update>
+
+
+</sqlMap>

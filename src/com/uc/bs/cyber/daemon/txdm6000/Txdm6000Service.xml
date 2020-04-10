@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXDM6000" >
+
+	
+	<!-- 자동차 저당권 설정/말소 대기건수 확인 -->
+	<select id="getTblSingoDataCount" parameterClass="mapForm" resultClass="int">
+	SELECT COUNT(*) 
+	  FROM TBL_ONLINE_TAB 
+	 WHERE 1 = 1
+	   AND TRTG = #TRTG#
+	   AND TPR_NM IS NOT NULL
+       AND TPR_NO IS NOT NULL
+	</select>
+
+    
+    <select id="getTblSingoSeq" parameterClass="mapForm" resultClass="mapForm">
+    SELECT '26'||D_SLF_REP||LPAD(TBL_WEBSINGO_SEQ.NEXTVAL, 10, 0)  AS SNO  
+      FROM TBL_ONLINE_TAB
+     WHERE 1 = 1
+       AND SNO = #WSSNO#
+    </select>
+    
+    <select id="getCarSingoList" parameterClass="mapForm" resultClass="mapForm">
+    SELECT A.SNO                                AS WSSNO
+         , A.IDX                                AS IDX
+         , A.SINGO_GBN                          AS SINGO_GBN
+         , FC_DAMO(A.TPR_NO)                    AS TPR_NO
+         , A.TPR_NM                             AS TPR_NM
+         , NVL(A.C_CO_KND,'01')                 AS C_CO_KND
+         , A.C_ZIP                              AS C_ZIP
+         , A.ADDR_CUR                           AS ADDR_CUR
+         , A.C_HDONG_OBJ                        AS C_HDONG_OBJ
+         , A.C_SLF_ORG_OBJ                      AS C_SLF_ORG_OBJ
+         , A.C_GET_REG                          AS C_GET_REG
+         , A.D_SLF_REP                          AS D_SLF_REP
+         , A.N_CAR                              AS N_CAR
+         , A.C_GWASE_RATE_REG                   AS C_GWASE_RATE_REG
+         , '1.000'                            AS R_RMN
+         , A.A_REP_GPYO                         AS A_REP_GPYO
+         , NVL(A.SS_CNT,'1')                    AS SS_CNT   
+         , NVL(A.Q_CNT,'1')                     AS Q_CNT
+         , ''                                 AS NAPSEJA_TEL
+         , A.CN_AGENT                         AS CN_AGENT
+         , ''                                 AS TEL_AGENT
+         , ''                                 AS C_BDONG_OBJ
+         , ''                                 AS C_RAW_LEE_OBJ
+         , ''                                 AS C_SPE_JI_OBJ
+         , ''                                 AS ADDR_BON_OBJ
+         , ''                                 AS ADDR_BU_OBJ
+         , ''                                 AS RD_MGT_SN
+         , ''                                 AS BD_JIHA
+         , ''                                 AS BD_MA_SN
+         , ''                                 AS BD_SB_SN
+         , ''                                 AS ADDR_EXT
+         , ''                                 AS ADDR_OBJ
+         , ''                                 AS D_GET
+         , ''                                 AS N_CHADAE
+         , ''                                 AS C_CAR_KND
+         , ''                                 AS C_CAR
+         , ''                                 AS CN_CAR_USER_REG
+         , ''                                 AS X_USE_BF
+         , ''                                 AS TYP_YY
+         , ''                                 AS Q_GET_CC
+         , ''                                 AS Q_LOADAGE
+         , ''                                 AS Q_RIDER
+         , ''                                 AS R_GET_COSM
+         , ''                                 AS CAR_ZIPGB
+         , ''                                 AS X_APLY_RMN
+         , ''                                 AS V_APLY_GPYO
+         , ''                                 AS HMMD_SE_CODE
+         , D.PCORPID                          AS PCORPID
+      FROM TBL_ONLINE_TAB A, TBL_MEMBERS_TAB D
+     WHERE 1 = 1
+       AND A.USERID = D.USERID
+       AND TRTG = #TRTG#
+       AND TPR_NM IS NOT NULL
+       AND TPR_NO IS NOT NULL
+     ORDER BY PCORPID, A.IDX DESC
+    </select>
+
+    
+    <select id="getSendDataSubList" parameterClass="mapForm" resultClass="mapForm">
+    SELECT SS_NO
+         , SS_TPR_NO
+         , TPR_NM
+         , Q_TOT
+         , Q_DIV
+      FROM TBL_ONLINE_DES_TAB
+     WHERE 1 = 1
+       AND IDX = #IDX#
+       AND SINGO_GBN = #SINGO_GBN#   
+    </select>
+    
+    
+    <update id="updateOnlineTapSingoTrtg" parameterClass="mapForm">
+    UPDATE TBL_ONLINE_TAB
+       SET TRTG     = #TRTG#
+         , WS_MSG   = #WS_MSG#
+         , LAST_DTM = SYSDATE
+         , WS_SNO   = #SNO#
+     WHERE 1 = 1
+       AND SNO = #WSSNO#
+    </update>
+    
+    
+    <update id="updateAutoInsertCarstate" parameterClass="mapForm">
+    UPDATE TBL_MORTGAGEINSERT_TAB
+       SET CARSTATE = #CARSTATE#
+     WHERE IDX = #IDX#
+    </update>
+    
+    
+    <update id="updateAutoErasureCarstate" parameterClass="mapForm">
+    UPDATE TBL_MORTGAGEERASURE_TAB
+       SET CARSTATE = #CARSTATE#
+     WHERE IDX = #IDX#
+    </update>
+
+	
+</sqlMap>

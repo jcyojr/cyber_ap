@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXDM1132" >
+
+    <!-- 실시간 수납/취소 건수 구하기  -->
+	<select id="SELECT_COUNT"  resultClass="int"  parameterClass="mapForm">
+	<![CDATA[   
+	 
+		SELECT COUNT(*) CNT
+		  FROM TX1101_TB_DAMO M,    /* 지방세부과 */
+		            TX1102_TB D,    /* 지방세부과상세 */
+		            TX1201_TB R    /* 지방세전자수납 */
+		 WHERE M.SGG_COD = D.SGG_COD        /* 시군구코드 */
+		   AND M.ACCT_COD = D.ACCT_COD        /* 회계코드 */
+		   AND M.TAX_ITEM = D.TAX_ITEM        /* 과세목코드 */
+		   AND M.TAX_YY = D.TAX_YY        /* 부과년도 */
+		   AND M.TAX_MM = D.TAX_MM        /* 부과월 */
+		   AND M.TAX_DIV = D.TAX_DIV        /* 기분 */
+		   AND M.HACD = D.HACD            /* 행정동 */
+		   AND M.TAX_SNO = D.TAX_SNO        /* 과세번호 */
+		   AND D.SGG_COD = R.SGG_COD        /* 시군구코드 */
+		   AND D.ACCT_COD = R.ACCT_COD        /* 회계코드 */
+		   AND D.TAX_ITEM = R.TAX_ITEM        /* 과세목코드 */
+		   AND D.TAX_YY = R.TAX_YY        /* 부과년도 */
+		   AND D.TAX_MM = R.TAX_MM        /* 부과월 */
+		   AND D.TAX_DIV = R.TAX_DIV        /* 기분 */
+		   AND D.HACD = R.HACD            /* 행정동 */
+		   AND D.TAX_SNO = R.TAX_SNO        /* 과세번호 */
+		   AND D.RCP_CNT = R.RCP_CNT        /* 부과순번 */
+		   AND M.ACCT_COD = '39'                /*  '39'(고액체납)->시도서버로... */
+		   AND R.TRTG IN ('0','8')             /* 전송여부 */  
+		   AND R.SNSU <> '1'
+           AND D.TONG_DIV IN ('2', '3') 
+           AND R.SNTG IN ('1', '2', '9')		
+		   AND D.EPAY_NO IS NOT NULL             /* 전자납부번호 */
+		   AND D.TAX_DT IS NOT NULL            /* 부과일자 */
+		   AND R.OCR_BD IS NOT NULL            /* 부과일자 */ 
+		   AND NOT (R.HACD='888' AND R.SGG_COD='000')    /* 행정동/시군구코드 */
+		   AND R.PAY_DT >= '20140421'            /* 수납일자 */
+
+	]]>	   
+	</select>
+
+
+	
+	<!-- 실시간 수납 전송 대상 건수 -->
+	<select id="SELECT_TX1201_CNT" parameterClass="mapForm" resultClass="int">
+	<![CDATA[
+
+    	SELECT COUNT(*) CNT
+    	FROM TX1201_TB
+		WHERE 1=1
+			AND SGG_COD = #SGG_COD#
+		    AND ACCT_COD = #ACCT_COD#
+		    AND TAX_ITEM = #TAX_ITEM#             
+		    AND TAX_YY = #TAX_YY#
+		    AND TAX_MM =#TAX_MM#            
+		    AND TAX_DIV = #TAX_DIV# 
+		    AND HACD = #ADONG_COD#
+		    AND TAX_SNO = #TAX_SNO# 
+		    AND RCP_CNT = #RCP_CNT#
+		    AND SNSU = #SNSU#
+		    AND SNTG = #SNTG#
+		    AND NVL(FC_TRANS_BANKCODE(NVL(TRIM(BANK_CD),'')), BRC_NO)=#BANK_COD#
+		    AND SUM_RCP=#SUM_RCP#
+
+	]]>
+	</select>
+
+
+	
+	<!-- 실시간 수납 기존 전송 건수 -->
+	<select id="SELECT_SCYB600_CNT" parameterClass="mapForm" resultClass="int">
+	<![CDATA[
+
+    	SELECT SUM(CNT) CNT
+    	FROM (
+	    	SELECT COUNT(*) CNT
+    		FROM LTIS.SCYB600
+    		WHERE EPAY_NO=#EPAY_NO#
+        		AND PAY_DT=#PAY_DT#
+	        	AND BANK_COD=#BANK_COD#
+    	    	AND DEAL_STATE IN ('N','P')
+			UNION ALL
+	    	SELECT -(COUNT(*)) CNT
+    		FROM LTIS.SCYB601
+    		WHERE EPAY_NO=#EPAY_NO#
+        		AND PAY_DT=#PAY_DT#
+	        	AND BANK_COD=#BANK_COD#
+    	    	AND DEAL_STATE IN ('N','P')
+		)
+
+	]]>
+	</select>
+
+
+	
+	<!-- 실시간 수납/취소 리스트 -->
+	<select id="SELECT_LIST" parameterClass="mapForm" resultClass="mapForm">
+	<![CDATA[
+	
+		SELECT
+		    SNAP_SEQ.NEXTVAL    SEQ,
+		    '26' SIDO_COD,
+		    NVL(M.SGG_COD,' ') SGG_COD,
+		    NVL(M.ACCT_COD,' ') ACCT_COD,
+		    NVL(M.TAX_ITEM,' ') TAX_ITEM,
+		    NVL(M.TAX_YY,' ') TAX_YY,
+		    NVL(M.TAX_MM,' ') TAX_MM,
+		    NVL(M.TAX_DIV,' ') TAX_DIV,
+		    NVL(M.HACD,' ') ADONG_COD,
+		    NVL(M.TAX_SNO,' ') TAX_SNO,
+		    NVL(D.RCP_CNT,0) RCP_CNT,
+		    NVL(R.PAY_CNT,0) PAY_CNT,
+		    NVL(M.NPJA,' ') NPJA,
+		    NVL(FC_DAMO(M.SEC_REG_NO),' ')  PAY_REG_NO,
+		    NVL(SUBSTRB(M.REG_NM, 1, 30), ' ') REG_NM,
+		    NVL(SUBSTRB(M.MLGN, 1, 60),' ') TAX_GDS,
+		    NVL(M.TAX_STD,0) TAX_STD,
+		    NVL(D.MNTX,0) MNTX,
+		    NVL(D.MNTX_ADTX,0) MNTX_ADTX,
+		    NVL(D.CPTX,0) CPTX,
+		    NVL(D.CPTX_ADTX,0) CPTX_ADTX, 
+		    NVL(D.CFTX,0) CFTX,           
+		    NVL(D.CFTX_ADTX,0) CFTX_ADTX, 
+		    NVL(D.LETX,0) LETX,          
+		    NVL(D.LETX_ADTX,0) LETX_ADTX,
+		    NVL(D.ASTX,0) ASTX,          
+		    NVL(D.ASTX_ADTX,0) ASTX_ADTX,
+		    NVL(D.TAX_DT,' ') TAX_DT,   
+		    NVL(D.DUE_DT,' ') DUE_DT,  
+		    NVL(R.PAY_DT,' ') PAY_DT,
+		    NVL(R.SNSU,' ') SNSU,    
+		    NVL(D.SAYU_CD,' ') SAYU_CD, 
+		    NVL(FC_TRANS_BANKCODE(NVL(TRIM(R.BANK_CD),'')), R.BRC_NO) BANK_COD, 
+		    NVL(R.SNTG,' ') SNTG,           
+		    NVL(D.EPAY_NO,' ') EPAY_NO,     
+		    NVL(D.EPAY_NO_OLD,' ') EPAY_NO_OLD,
+		    NVL(D.TONG_DIV,' ') TONG_DIV,     
+		    NVL(M.ADD_CNT,0) ADD_CNT,                 
+		    F_GET_GYMD(R.PAY_DT) ACC_DT,    
+		    NVL(R.OCR_BD,' ') OCR_BD,      
+		    NVL(D.CFTX+D.ASTX,0) CFTX,    
+		    NVL(D.SUM_B_AMT,0) SUM_B_AMT, 
+		    NVL(D.SUM_F_AMT,0) SUM_F_AMT, 
+		    D.TAX_NO TAX_NO,
+		    D.GOJI_DIV GOJI_DIV,
+		    D.DLQ_DIV DLQ_DIV,
+		    NVL(SUBSTRB(M.TAX_STD_DIS, 1, 20) , ' ') TAX_STD_DIS,   
+		    R.TRTG TRTG,                
+		    R.SUM_RCP SUM_RCP,         
+		    D.GGYM DUE_F_DT,
+		    NVL(F_GET_ICHEYMD(R.PAY_DT,R.BANK_CD), ' ') TRS_DT
+		FROM
+		    TX1101_TB_DAMO M, 
+		    TX1102_TB D, 
+		    TX1201_TB R 
+		WHERE M.SGG_COD = D.SGG_COD  
+		    AND  M.ACCT_COD = D.ACCT_COD   
+		    AND  M.TAX_ITEM = D.TAX_ITEM  
+		    AND  M.TAX_YY = D.TAX_YY     
+		    AND  M.TAX_MM = D.TAX_MM    
+		    AND  M.TAX_DIV = D.TAX_DIV 
+		    AND  M.HACD = D.HACD      
+		    AND  M.TAX_SNO = D.TAX_SNO       
+		    AND  D.SGG_COD = R.SGG_COD        
+		    AND  D.ACCT_COD = R.ACCT_COD   
+		    AND  D.TAX_ITEM = R.TAX_ITEM  
+		    AND  D.TAX_YY = R.TAX_YY     
+		    AND  D.TAX_MM = R.TAX_MM    
+		    AND  D.TAX_DIV = R.TAX_DIV 
+		    AND  D.HACD = R.HACD      
+		    AND  D.TAX_SNO = R.TAX_SNO
+		    AND  D.RCP_CNT = R.RCP_CNT  
+		    AND  M.ACCT_COD = '39'    
+		    AND R.TRTG IN ('0','8')  
+			AND R.SNSU <> '1'
+            AND D.TONG_DIV IN ('2', '3') 
+            AND R.SNTG IN ('1', '2', '9')		   
+		    AND D.EPAY_NO IS NOT NULL 
+		    AND D.TAX_DT IS NOT NULL 
+		    AND R.OCR_BD IS NOT NULL
+		    AND NOT (R.HACD='888' AND R.SGG_COD='000') 
+		    AND R.PAY_DT >= '20110816'                                                                                                                                                                                   
+		      
+	]]>
+	</select>
+	
+	<!-- 실시간 수납처리 -->
+	<insert id="TXSV1132_INSERT_RECEIPT" parameterClass="mapForm">
+	<![CDATA[
+	
+		INSERT INTO LTIS.SCYB600
+		(
+		    SEQ,         /* 일련번호 */
+		    RAISE_TIME, /* 발생일자 */
+		    DEAL_STATE, /* 처리상태 */
+		    IH_REGNO,   /* 입력자 주민번호 */
+		    EPAY_NO,    /* 전자납부번호 */
+		    SUM_RCP,    /* 수납금액 */
+		    PAY_DT,     /* 수납일자 */
+		    BANK_COD,   /* 납부기관코드 */
+		    PAY_REG_NO, /* 납부자 주민번호 */
+		    PAY_SYSTEM, /* 납부자 시스템 */
+		    TRS_DT,     /* 이체일자 */
+		    ACC_DT,     /* 회계일자 */
+		    DLQ_DIV,    /* 체납구분 */
+		    TAX_GDS,    /* 물건 */
+		    TAX_NO,     /* */
+		    REG_NO,     /* 실명번호 */
+		    REG_NM,     /* 실명 */
+		    SIDO_COD,   /* 시도코드 */
+		    SGG_COD,    /* 시군구코드 */
+		    CHK1,       /* 검1 */
+		    ACCT_COD,   /* 회계코드 */
+		    TAX_ITEM,   /* 과세목코드 */                                                            
+		    TAX_YY,     /* 과세년도 */                                                              
+		    TAX_MM,     /* 과세월 */                                                                
+		    TAX_DIV,    /* 기분 */                                                                  
+		    ADONG_COD,  /* 행정동 */                                                                
+		    TAX_SNO,    /* 과세번호 */                                                              
+		    CHK2,       /* 검2 */                                                                   
+		    SUM_B_AMT,  /* 납기내금액 */                                                            
+		    SUM_F_AMT,  /* 납기후금액 */                                                            
+		    CHK3,       /* 검3 */                                                                   
+		    MNTX,       /* 본세 */                                                                  
+		    CPTX,       /* 도시시설세 */                                                            
+		    CFTX_ASTX,  /* 공동시설세농특세 */                                                      
+		    LETX,       /* 교육세 */                                                                
+		    DUE_DT,     /* 납기내일자 */                                                            
+		    CHK4,       /* 검4 */                                                                   
+		    FILLER,     /* 채움 */                                                                  
+		    GOJI_DIV,   /* 고지구분 */                                                              
+		    CHK5,       /* 검5 */                                                                   
+		    TAX_STD,    /* 과세표준액4 */
+		    MNTX_ADTX,  /* 본세가산금액 */                                                          
+		    CPTX_ADTX,  /* 도시계획세 가산금액 */                                                   
+		    CFTX_ADTX,  /* 공동시설농특세 가산금액 */                                               
+		    LETX_ADTX,  /* 본세가산금액 */                                                          
+		    ASTX_ADTX,  /* 본세가산금액 */                                                          
+		    CRE_DT,     /* 본세가산금액 */                      
+		    DUE_F_DT,   /* 납기후일자 */                                                            
+		    EPAY_NO_OLD,    /* 구전자납부번호 */                                                    
+		    TAX_STD_DIS /* 구전자납부번호 */                                                        
+		) VALUES (                                                                              
+		    #SEQ#,         /* 일련번호 */
+		    TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS'), /* 발생일자 */
+		    #DEAL_STATE#, /* 처리상태 */
+		    #IH_REGNO#,   /* 입력자 주민번호 */
+		    #EPAY_NO#,    /* 전자납부번호 */
+		    #SUM_RCP#,    /* 수납금액 */
+		    #PAY_DT#,     /* 수납일자 */
+		    #BANK_COD#,   /* 납부기관코드 */
+		    #PAY_REG_NO#, /* 납부자 주민번호 */
+		    #PAY_SYSTEM#, /* 납부자 시스템 */
+		    #TRS_DT#,     /* 이체일자 */
+		    #ACC_DT#,     /* 회계일자 */
+		    #DLQ_DIV#,    /* 체납구분 */
+		    #TAX_GDS#,    /* 물건 */
+		    #TAX_NO#,     /* */
+		    #PAY_REG_NO#,     /* 실명번호 */
+		    #REG_NM#,     /* 실명 */
+		    #SIDO_COD#,   /* 시도코드 */
+		    #SGG_COD#,    /* 시군구코드 */
+		    #CHK1#,       /* 검1 */
+		    #ACCT_COD#,   /* 회계코드 */
+		    #TAX_ITEM#,   /* 과세목코드 */                                                            
+		    #TAX_YY#,     /* 과세년도 */                                                              
+		    #TAX_MM#,     /* 과세월 */                                                                
+		    #TAX_DIV#,    /* 기분 */                                                                  
+		    #ADONG_COD#,  /* 행정동 */                                                                
+		    #TAX_SNO#,    /* 과세번호 */                                                              
+		    #CHK2#,       /* 검2 */                                                                   
+		    #SUM_B_AMT#,  /* 납기내금액 */                                                            
+		    #SUM_F_AMT#,  /* 납기후금액 */                                                            
+		    #CHK3#,       /* 검3 */                                                                   
+		    #MNTX#,       /* 본세 */                                                                  
+		    #CPTX#,       /* 도시시설세 */                                                            
+		    #CFTX#,  /* 공동시설세농특세 */                                                      
+		    #LETX#,       /* 교육세 */                                                                
+		    #DUE_DT#,     /* 납기내일자 */                                                            
+		    #CHK4#,       /* 검4 */                                                                   
+		    #FILLER#,     /* 채움 */                                                                  
+		    #GOJI_DIV#,   /* 고지구분 */                                                              
+		    #CHK5#,       /* 검5 */                                                                   
+		    #TAX_STD#,    /* 과세표준액4 */
+		    #MNTX_ADTX#,  /* 본세가산금액 */                                                          
+		    #CPTX_ADTX#,  /* 도시계획세 가산금액 */                                                   
+		    #CFTX_ADTX#,  /* 공동시설농특세 가산금액 */                                               
+		    #LETX_ADTX#,  /* 본세가산금액 */                                                          
+		    #ASTX_ADTX#,  /* 본세가산금액 */                                                          
+		    #CRE_DT#,     /* 본세가산금액 */                      
+		    #DUE_F_DT#,   /* 납기후일자 */                                                            
+		    #EPAY_NO_OLD#,    /* 구전자납부번호 */                                                    
+		    #TAX_STD_DIS# /* 구전자납부번호 */                                        
+		)
+
+    ]]>       
+    </insert>    
+	
+	<!-- 실시간 수납/취소 완료  -->
+	<update id="TXSV1132_UPDATE_STATE" parameterClass="mapForm">
+    <![CDATA[
+    
+		UPDATE TX1201_TB            /* 지방세전자수납 */
+		      SET TRTG = #TRTG#            /* 전송준비 상테(1) */
+		 WHERE SGG_COD = #SGG_COD#           /* 시군구코드 */
+		      AND ACCT_COD = #ACCT_COD#           /* 회계코드 */
+		      AND TAX_ITEM = #TAX_ITEM#            /* 과세목 */             
+		      AND TAX_YY = #TAX_YY#          /* 부과년도 */
+		      AND TAX_MM =#TAX_MM#           /* 부과월 */            
+		      AND TAX_DIV = #TAX_DIV#            /* 기분 */ 
+		      AND HACD = #ADONG_COD#            /* 행정동 */
+		      AND TAX_SNO = #TAX_SNO#           /* 과세번호 */ 
+		      AND RCP_CNT = #RCP_CNT#           /* 분납순번 */
+		      AND PAY_CNT = #PAY_CNT#            /* 수납순번 */ 
+        
+    ]]>
+	</update>   	
+	
+	<!-- 실시간 취소처리 -->
+	<insert id="TXSV1132_INSERT_RECEIPT_CANCEL" parameterClass="mapForm">
+	<![CDATA[
+	
+		INSERT INTO LTIS.SCYB601
+		(
+		    SEQ,         /* 일련번호 */
+		    RAISE_TIME, /* 발생일자 */
+		    DEAL_STATE, /* 처리상태 */
+		    BANK_COD,   /* 납부기관코드 */
+		    REGNO,      /* 실명번호 */ 
+		    SUM_RCP,    /* 수납금액 */
+		    EPAY_NO,    /* 전자납부번호 */
+		    PAY_DT,     /* 수납일자 */ 
+		    TRS_DT,     /* 이체일자 */
+		    ACC_DT,     /* 회계일자 */
+		    EPAY_NO_OLD    /* 구전자납부번호 */
+		) VALUES (
+		    #SEQ#,
+		    TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS'),
+		    #DEAL_STATE#, 
+		    #BANK_COD#,   
+		    #REGNO#,      
+		    #SUM_RCP#,    
+		    #EPAY_NO#,    
+		    #PAY_DT#,     
+		    #TRS_DT#,     
+		    #ACC_DT#,     
+		    #EPAY_NO_OLD# 
+		) 
+   
+    ]]>       
+    </insert>  	
+	
+</sqlMap>

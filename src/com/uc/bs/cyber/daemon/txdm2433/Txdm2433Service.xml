@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXDM2433" >
+
+    <!-- 사이버 -->
+    <!-- 버스전용차로위반과태료 수납분 취합 -->
+	<select id="SELECT_TX2221_LIST" resultClass="mapForm">
+	<![CDATA[    
+
+	SELECT
+	     C.SGG_COD
+	    ,C.ACCT_COD
+	    ,C.TAX_ITEM
+	    ,C.TAX_YY
+	    ,C.TAX_MM
+	    ,C.TAX_DIV
+	    ,C.HACD
+	    ,C.TAX_SNO
+	    ,C.TAX_CNT
+	    ,C.PAY_CNT
+	    ,C.PAY_DT
+	    ,CASE WHEN C.SNTG='1' THEN '2'
+	     ELSE C.SNTG
+	     END SNTG
+	    ,C.SNSU
+	    ,C.SUM_RCP
+	FROM TX2121_TB_DAMO A, TX2122_TB B, TX2221_TB C
+	WHERE 1=1
+		AND A.SGG_COD=B.SGG_COD
+		AND A.ACCT_COD=B.ACCT_COD
+		AND A.TAX_ITEM=B.TAX_ITEM
+		AND A.TAX_YY=B.TAX_YY
+		AND A.TAX_MM=B.TAX_MM
+		AND A.TAX_DIV=B.TAX_DIV
+		AND A.HACD=B.HACD
+		AND A.TAX_SNO=B.TAX_SNO
+		AND B.SGG_COD=C.SGG_COD
+		AND B.ACCT_COD=C.ACCT_COD
+		AND B.TAX_ITEM=C.TAX_ITEM
+		AND B.TAX_YY=C.TAX_YY
+		AND B.TAX_MM=C.TAX_MM
+		AND B.TAX_DIV=C.TAX_DIV
+		AND B.HACD=C.HACD
+		AND B.TAX_SNO=C.TAX_SNO
+		AND B.TAX_CNT=C.TAX_CNT
+		AND C.TAX_ITEM='288025'
+		AND C.SNTG IN ('1','2','9')
+		AND C.TRTG='0'
+		AND ROWNUM <= 1000
+
+    ]]>  
+	</select>
+
+
+
+	<update id="UPDATE_TX2221_TRTG" parameterClass="mapForm">
+    <![CDATA[
+
+	UPDATE TX2221_TB
+	SET  LAST_DTM=SYSDATE
+		,TRTG=#TRTG#
+	WHERE PAY_DT=#PAY_DT#
+		AND SGG_COD=#SGG_COD#
+		AND ACCT_COD=#ACCT_COD#
+		AND TAX_ITEM=#TAX_ITEM#
+		AND TAX_YY=#TAX_YY#
+		AND TAX_MM=#TAX_MM#
+		AND TAX_DIV=#TAX_DIV#
+		AND HACD=#HACD#
+		AND TAX_SNO=#TAX_SNO#
+		AND TAX_CNT=#TAX_CNT#
+		AND PAY_CNT=#PAY_CNT#
+		AND TRTG='0'
+
+    ]]> 
+	</update>		
+
+	
+
+	<!-- 구청원장테이블에 가수납여부를 업데이트한다.  -->
+	<!-- 구청 -->
+	<update id="UPDATE_NONTAX_SNTG" parameterClass="mapForm">
+    <![CDATA[
+
+	UPDATE NONTAX_TAB
+    SET  VIR_DTM=SYSDATE
+    	,VIR_SNTG=#SNTG#
+    	,VIR_SYMD=#PAY_DT#
+    	,CYB_SNSU=#SNSU#
+    	,CYB_SUM_RCP=#SUM_RCP#
+	WHERE 1=1
+		AND NON_SGCD=#SGG_COD#
+		AND NON_ACKU=#ACCT_COD#
+		AND NON_SMCD=#TAX_ITEM#
+		AND NON_BYYY=#TAX_YY#
+		AND NON_BNGI=#TAX_MM#
+		AND NON_GIBN=#TAX_DIV#
+		AND NON_HACD=#HACD#
+		AND NON_NPNO=TO_NUMBER(#TAX_SNO#)
+		AND NVL(VIR_SNTG,'0') NOT IN ('2')
+
+    ]]>             
+	</update>		
+
+</sqlMap>

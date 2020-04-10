@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXDM2418">
+
+	<select id="getTx2112VirAccNoUpdateCount" resultClass="Integer">
+	SELECT COUNT(*) CNT
+	  FROM TX2114_TB_DAMO
+     WHERE 1 = 1
+       AND PROC_CLS    = '3'
+       AND SGG_TR_TG   = '1'
+       AND VIR_ACC_NO  IS NOT NULL
+       AND CYBER_TR_TG = '0'
+       AND ROWNUM = '1'
+	</select>
+	
+	
+	<select id="getTx2112VirAccNoUpdateList" parameterClass="mapForm" resultClass="mapForm">
+	SELECT TAX_NO
+	     , TAX_CNT
+	     , VIR_ACC_NO
+	     , BON_JAN
+	     , FST_NAP_YMD
+	  FROM TX2114_TB_DAMO
+	 WHERE 1 = 1
+	   AND PROC_CLS    = '3'
+       AND SGG_TR_TG   = '1'
+       AND VIR_ACC_NO  IS NOT NULL 
+       AND CYBER_TR_TG = '0'
+       AND ROWNUM <![CDATA[ <= ]]> 30000
+	</select>
+	
+	<!-- 가상계좌뷰의 납부금액과 부과자료의 납부금액 비교 -->
+	<select id="selectTx2112BugwaDataBonjanBigo" parameterClass="mapForm" resultClass="String">
+	SELECT CASE WHEN  PAYMENT_DATE1 <![CDATA[ <> ]]> #BON_JAN#  OR DUE_DT <![CDATA[ <> ]]> #FST_NAP_YMD# THEN '1'
+           ELSE '3' END AS PROC_CLS
+	  FROM TX2112_TB
+	 WHERE 1 = 1
+	   AND TAX_NO     = #TAX_NO#
+       AND TAX_CNT    = #TAX_CNT#
+	</select>
+	
+		
+	<update id="updateTx2112VirAccNo" parameterClass="mapForm">
+    UPDATE TX2112_TB 
+       SET VIR_ACC_NO = #VIR_ACC_NO#
+         , PROC_CLS   = CASE WHEN DEL_YN='N' AND SNTG='0' THEN '1' ELSE PROC_CLS END
+         , SGG_TR_TG  = '1'
+         , VIR_DTM    = SYSDATE
+         , LAST_DTM   = SYSDATE
+     WHERE 1 = 1
+       AND TAX_NO     = #TAX_NO#
+       AND TAX_CNT    = #TAX_CNT#
+    </update> 
+    
+    
+    <update id="updateTx2114End" parameterClass="mapForm">
+    UPDATE TX2114_TB_DAMO 
+       SET CYBER_TR_TG = '1'
+         , LAST_DTM    = SYSDATE
+     WHERE 1 = 1
+       AND TAX_NO      = #TAX_NO#
+       AND TAX_CNT     = #TAX_CNT#
+       AND CYBER_TR_TG = '0'
+    </update> 
+    
+
+</sqlMap>

@@ -1,0 +1,810 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXBT2550" >
+
+	<!-- 지방세 납부내역 건수를 가져온다. -->
+	<!-- 위택스로 위관되어 사용안함... -->
+	<select id="SELECT_J_RECIP_LIST" resultClass="int" parameterClass="mapForm">
+	<![CDATA[    
+		SELECT COUNT(*) CNT
+		  FROM TX1201_VW_RCP
+		 WHERE EPAY_NO = #EPAY_NO#
+		   AND REG_NO  = FC_DAMO(#REG_NO#)   
+		
+	]]>		
+		
+	</select>	
+	
+    <!-- 지방세고지내역 가져온다. -->
+    <!-- 위택스 위관되어 사용안함. -->
+	<select id="SELECT_J_SEARCH_LIST" resultClass="mapForm" parameterClass="mapForm">
+	<![CDATA[    
+	
+           SELECT
+               B.EPAY_NO  
+              ,FC_DAMO(A.SEC_REG_NO) AS REG_NO 
+              ,B.SGG_COD
+              ,B.ACCT_COD
+              ,B.TAX_ITEM
+              ,B.TAX_YY || B.TAX_MM TAX_YM
+              ,B.TAX_DIV
+              ,B.HACD
+              ,B.TAX_SNO
+              ,A.REG_NM
+              ,B.SUM_B_AMT
+              ,B.SUM_F_AMT
+              ,A.TAX_STD
+              ,B.MNTX
+              ,B.MNTX_ADTX
+              ,B.CPTX
+              ,B.CPTX_ADTX
+              ,B.CFTX
+              ,B.CFTX_ADTX
+              ,B.LETX
+              ,B.LETX_ADTX
+              ,B.DUE_DT
+              ,B.GGYM
+              ,A.MLGN
+              ,A.TAX_STD_DIS
+              ,B.TAX_DT
+              ,B.AUTO_TRNF_YN
+           FROM TX1101_TB_DAMO A, TX1102_TB B
+           WHERE A.SGG_COD = B.SGG_COD
+           AND A.ACCT_COD = B.ACCT_COD
+           AND A.TAX_ITEM = B.TAX_ITEM
+           AND A.TAX_YY  = B.TAX_YY
+           AND A.TAX_MM  = B.TAX_MM
+           AND A.TAX_DIV = B.TAX_DIV
+           AND A.HACD    = B.HACD
+           AND A.TAX_SNO = B.TAX_SNO
+           AND B.RCP_CNT = 0
+           <!-- pk 조건 -->
+           AND B.EPAY_NO = #EPAY_NO#
+           AND A.SEC_REG_NO  = FC_DAMO(#REG_NO#)
+	
+	]]>
+		  
+	</select>
+
+
+	<!-- 세외수입 납부내역을 가져온다. -->
+	<select id="SELECT_O_RECIP_LIST" resultClass="mapForm" parameterClass="mapForm">
+	<![CDATA[    
+
+         SELECT 
+             TAX_NO,
+             SGG_COD,
+             EPAY_NO,
+             ACCT_COD,
+             DECODE(ACCT_COD, '16', '1', '31', '2', '41', '3', '3') AS GBN,
+             TAX_ITEM,
+             TAX_NOTICE_TITLE TAX_NM,
+             TAX_SNO,
+             TAX_DIV,
+             FC_DAMO(REG_NO) AS REG_NO,
+             TAX_GDS,
+             LEVY_DETAIL1 ||' '|| LEVY_DETAIL2 ||' '|| LEVY_DETAIL3 AS TAX_DESC,
+             LEVY_DETAIL6                                           AS BUGWA_DT,
+             REG_NM,
+             PAYMENT_DATE1 AMT,
+             PAYMENT_DATE1 + AFTPAYMENT_DATE1 AFT_AMT,
+             TAX_GB,
+             NATN_TAX,
+             NATN_RATE,
+             SIDO_TAX,
+             SIDO_RATE,
+             SIGUNGU_TAX,
+             SIGUNGU_RATE,
+             DUE_DT,
+             DUE_F_DT,
+             OCR_BD,
+             PROC_CLS,
+             SGG_TR_TG,
+             BANK_CD,
+             SNSU,
+             SUM_RCP,
+             PAY_DT,
+             LPAD(BRC_NO, 7, '0') BRC_NO,
+             DECODE(SNSU, '1', 'K', '2', 'C', '3', 'B') NAPBU_SYS   /*납부이용 시스템*/
+
+        FROM TX2211_VW_RCP
+        WHERE TAX_NO  = #TAX_NO#
+          AND REG_NO  = FC_DAMO(#REG_NO#) 
+
+	]]>		
+	</select>
+	
+	<!-- 전자납부번호 반드시 받는다. -->
+	<select id="SELECT_O_RECIP_CNT" parameterClass="mapForm" resultClass="int">
+	<![CDATA[    
+		SELECT COUNT(*) CNT
+		  FROM TX2211_VW_RCP
+		 WHERE EPAY_NO  = #EPAY_NO#
+		   AND REG_NO   = FC_DAMO(#REG_NO#)   
+		   AND RSN_YN   = 'N'    /*예약납부가 아니고...*/
+	]]>		
+	</select>
+	
+    <!-- 세외수입고지내역 가져온다. -->
+	<select id="SELECT_O_SEARCH_LIST" resultClass="mapForm" parameterClass="mapForm">
+	<![CDATA[    
+	
+        SELECT     
+                   TAX_NO
+                 , FC_DAMO(REG_NO) AS REG_NO  
+                 , TAX_ITEM      
+				 , TAX_NM  
+             	 , DECODE(ACCT_COD, '16', '1', '31', '2', '41', '3', '3')  GBN  
+             	 , REG_NM    
+             	 , PAYMENT_DATE1 AMT
+                 , PAYMENT_DATE1 + AFTPAYMENT_DATE1 AFT_AMT
+             	 , DUE_DT                 /* 납기일자 */
+                 , DUE_F_DT               /* 납기후일자 */
+                 , TAX_GDS
+                 , SGG_COD
+                 , EPAY_NO
+                 , PART_CODE              /* 부서코드*/
+                 , ACCOUNT_YEAR           /* 회계년도*
+                 , ACCT_COD               /* 회계코드*/
+                 , ACCOUNT_NAME           /* 회계명*/
+                 , TAX_SNO                /* 과세번호1*/
+                 , DIVIDED_PAYMENT_SEQNUM /* 과세번호2*/
+                 , TAX_YM                 /* 부과년월*/
+                 , TAX_DIV                /* 기분*/
+                 , TAX_GDS                /* 과세대상*/
+                 , LEVY_DETAIL1 ||' '|| LEVY_DETAIL2 ||' '|| LEVY_DETAIL3 AS TAX_DESC /*물건설명*/
+                 , LEVY_DETAIL6 AS BUGWA_DT /*발생일자*/
+                 , TAX_GB                   /*세금구분*/
+                 , BUGWA_STAT               /*부과상태*/
+                 , NATN_TAX 
+                 , NATN_RATE
+                 , SIDO_TAX
+                 , SIDO_RATE
+                 , SIGUNGU_TAX
+                 , SIGUNGU_RATE
+                 , OCR_BD
+                                    
+        FROM TX2111_VW_OCR 
+        WHERE F_GET_GYMD(DUE_F_DT) >= TO_CHAR(SYSDATE, 'YYYYMMDD')   /*납부가능한 것만...*/
+          AND EPAY_NO  = #EPAY_NO#
+     ]]>   
+		  <isNotEmpty prepend = "AND" property="REG_NO">
+		     REG_NO    = FC_DAMO(#REG_NO#)
+		  </isNotEmpty>		
+		  
+		UNION ALL  
+		  
+     <![CDATA[
+     
+        SELECT   SUBSTR(OCR_BD, 3, 29) TAX_NO
+                ,FC_DAMO(REG_NO) AS REG_NO
+                ,TAX_ITEM
+                ,' ' TAX_NM 
+                ,'4' GBN   /*구세외 : 특별회계 이므로 시세도세국세로 구분안함...*/  
+                ,REG_NM
+                ,BUTT            AMT
+                ,BUTT + GAMONEY  AFT_AMT
+                ,DUE_DT
+                ,DUE_F_DT
+                ,TAX_GDS
+                ,SGG_COD
+                ,EPAY_NO
+                ,' ' PART_CODE
+                ,' ' ACCOUNT_YEAR
+                ,ACCT_COD
+                ,TAX_SNO
+                ,' ' DIVIDED_PAYMENT_SEQNUM
+                ,TAX_YY || TAX_MM TAX_YM
+                ,TAX_DIV
+                ,TAX_GDS
+                ,ZW_AREA TAX_DESC
+                ,ZW_AREA BUGWA_DT
+                ,'3' TAX_GB
+                ,BUGWA_STAT
+                ,0 NATN_TAX
+                ,0 NATN_RATE
+                ,0 SIDO_TAX
+                ,0 SIDO_RATE
+                ,0 SIGUNGU_TAX
+                ,0 SIGUNGU_RATE
+                ,OCR_BD
+                
+        FROM TX2121_VW_OCR              /*구세외수입 TBL */
+        WHERE EPAY_NO  IS NOT NULL      /*전자납부번호는 무조건 있어야된다.	*/
+		  AND F_GET_GYMD(DUE_F_DT) >= TO_CHAR(SYSDATE, 'YYYYMMDD')   /*납부가능한 것만...*/
+	 ]]>      
+		  AND EPAY_NO  = #EPAY_NO#
+		  <isNotEmpty prepend = "AND" property="REG_NO">
+		     REG_NO    = FC_DAMO(#REG_NO#)
+		  </isNotEmpty>			
+		  
+	</select>
+
+    <!-- 상하수도 납부내역 건수를 가져온다. -->
+    <select id="SELECT_SHSD_KFPAY_CNT" resultClass="int" parameterClass="mapForm">
+    
+        SELECT COUNT(*) CNT
+                                     
+        FROM TX3111_TB A, TX3211_TB B
+        WHERE A.TAX_YY   = B.TAX_YY
+          AND A.TAX_MM   = B.TAX_MM
+          AND A.PRT_NPNO = B.PRT_NPNO
+          AND A.GUBUN    = B.GUBUN
+          AND A.EPAY_NO  IS NOT NULL         /*전자납부번호*/
+          AND A.SNTG     IN ('1', '2')       /*납부 1:가수납 2:수납 9:취소*/
+          AND B.RSN_YN   = 'N'               /*예약납부파일이 아닌것중...*/
+          <isNotEmpty prepend = "AND" property="EPAY_NO">
+            A.EPAY_NO  = #EPAY_NO#
+          </isNotEmpty>
+		  <isNotEmpty prepend = "AND" property="CUST_NO">
+            A.CUST_NO  = TO_CHAR(#CUST_NO#, 'FM0999999999') 
+          </isNotEmpty>
+          
+    </select>	
+
+    <!-- 상하수도 납부내역을 가져온다. -->
+    <select id="SELECT_SHSD_KFPAY_LIST"  parameterClass="mapForm">
+    
+        SELECT                     
+          A.TAX_YY || A.TAX_MM TAX_YM /*부과년월*/
+         ,A.TAX_YY                  /*부과년                  */
+         ,A.TAX_MM                  /*부과월                  */
+         ,A.PRT_NPNO                /*상하수도 관리번호       */
+         ,A.TAX_CD                  /*부과구분                */
+         ,A.EPAY_NO                 /*전자납부번호            */
+         ,A.CUST_NO                 /*수용가번호              */
+         ,A.GUBUN                   /*구분(당월)              */
+         ,A.REG_NM                  /*성명                    */
+         ,A.TAX_NOTICE_TITLE        /*고지서제목              */
+         ,A.PRT_DATE                /*부과일                  */
+         ,A.DUE_DT                  /*납기일자                */
+         ,A.DL_TAX_DT               /*체납부과일자            */
+         ,A.NOT_DEL1                /*체납납부마감일          */
+         ,A.SUM_B_AMT               /*납기내총액              */
+         ,A.SUM_F_AMT               /*납기후총액              */
+         ,A.FEE_AMT1                /*상수도납기내금액        */
+         ,A.FEE_AMT2                /*하수도납기내금액        */
+         ,A.FEE_AMT3                /*물이용부담금납기내금액  */
+         ,A.FEE_AMT4                /*지하수납기내금액        */
+         ,A.FEE_AMT1_H              /*상수도납기후금액        */
+         ,A.FEE_AMT2_H              /*하수도납기후금액        */
+         ,A.FEE_AMT3_H              /*물이용부담금납기후금액  */
+         ,A.FEE_AMT4_H              /*지하수납기후금액        */
+         ,A.DUE_F_DT                /*납기후납기일            */
+         ,A.PRT_GB                  /*고지구분                */
+         ,A.NOT_STT_DATE            /*체납시작일              */
+         ,A.NOT_END_DATE            /*체납종료일              */
+         ,A.ADDRESS                 /*주 소                   */
+         ,A.USE_STT_DATE            /*사용시작일              */
+         ,A.USE_END_DATE            /*사용종료일              */
+         ,A.BANK_CD                 /*수납은행코드            */
+         ,A.RCV_DATE                /*납부일시                */
+         ,A.RCV_GB                  /*납기 내후 구분          */
+         ,A.OCR_1                   /*OCR BAND 1              */
+         ,A.OCR_2                   /*OCR BAND 2              */
+         ,TRIM(A.OCR_1) || TRIM(A.OCR_2) OCR_BD
+         ,A.CARD_CODE               /*카드_납부코드           */
+         ,A.SPRE_CNT                /*전월지침(상)            */
+         ,A.SACT_CNT                /*당월지침(상)            */
+         ,A.SADJ_QTY                /*조정량(상)              */
+         ,A.HPRE_CNT                /*전월지침(하)            */
+         ,A.HACT_CNT                /*당월지침(하)            */
+         ,A.HADJ_QTY                /*조정량(하)              */
+         ,A.USR_NUM                 /*가구수                  */
+         ,A.SUB_NUM                 /*감면가구수              */
+         ,A.UP_TYPE                 /*상수도업종              */
+         ,A.HUP_TYPE                /*하수도업종              */
+         ,A.CHK_DATE                /*검침일                  */
+         ,A.PRE_QTY                 /*전월사용량              */
+         ,A.PRE_YEAR_QTY            /*전년동월사용량          */
+         ,A.STATE_FLAG              /*상태 FLAG               */
+         ,A.SR_FLAG                 /*송수신 FLAG             */
+         ,A.SNTG                    /*납부상태                */
+         ,A.SACT_QTY                /*상수도 사용량           */
+         ,A.HACT_QTY	            /*하수도사용량            */
+         ,B.SUM_RCP                 /*수납금액*/
+         ,B.PAY_DT                  /*수납일자*/
+         ,B.SNSU                    /*납부매체*/
+         ,B.BRC_NO                  /*수납점지로코드*/
+         ,B.PAY_DT || TO_CHAR(B.LAST_DTM, 'HH24MISS') SUNAPDT  /*수납시간*/
+         
+        FROM TX3111_TB A, TX3211_TB B
+        WHERE A.TAX_YY   = B.TAX_YY
+          AND A.TAX_MM   = B.TAX_MM
+          AND A.PRT_NPNO = B.PRT_NPNO
+          AND A.GUBUN    = B.GUBUN
+          AND A.EPAY_NO  IS NOT NULL         /*전자납부번호*/
+          AND A.SNTG     IN ('1', '2')       /*납부 1:가수납 2: 수납 9:취소*/
+          <isNotEmpty prepend = "AND" property="EPAY_NO">
+            A.EPAY_NO  = #EPAY_NO#
+          </isNotEmpty>
+		  <isNotEmpty prepend = "AND" property="CUST_NO">
+            A.CUST_NO  = TO_CHAR(#CUST_NO#, 'FM0999999999') 
+          </isNotEmpty>
+          
+    </select>
+
+    <!-- 상하수도 부과내역조회. -->
+	<select id="SELECT_SHSD_LEVY_LIST" parameterClass="mapForm">
+	<![CDATA[   
+	
+        SELECT                  
+          TAX_YY || TAX_MM TAX_YM /*부과년월*/   
+         ,TAX_YY                  /*부과년                  */
+         ,TAX_MM                  /*부과월                  */
+         ,PRT_NPNO                /*상하수도 관리번호       */
+         ,TAX_CD                  /*부과구분                */
+         ,EPAY_NO                 /*전자납부번호            */
+         ,CUST_NO                 /*수용가번호              */
+         ,GUBUN                   /*구분 (당월)             */
+         ,REG_NM                  /*성명                    */
+         ,TAX_NOTICE_TITLE        /*고지서제목              */
+         ,PRT_DATE                /*부과일                  */
+         ,F_GET_GYMD(DUE_DT) DUE_DT   /*납기일자            */
+         ,DL_TAX_DT               /*체납부과일자            */
+         ,NOT_DEL1                /*체납납부마감일          */
+         ,SUM_B_AMT               /*납기내총액              */
+         ,SUM_F_AMT               /*납기후총액              */
+         ,FEE_AMT1                /*상수도납기내금액        */
+         ,FEE_AMT2                /*하수도납기내금액        */
+         ,FEE_AMT3                /*물이용부담금납기내금액  */
+         ,FEE_AMT4                /*지하수납기내금액        */
+         ,FEE_AMT1_H              /*상수도납기후금액        */
+         ,FEE_AMT2_H              /*하수도납기후금액        */
+         ,FEE_AMT3_H              /*물이용부담금납기후금액  */
+         ,FEE_AMT4_H              /*지하수납기후금액        */
+         ,F_GET_GYMD(DUE_F_DT) DUE_F_DT  /*납기후납기일     */
+         ,PRT_GB                  /*고지구분                */
+         ,NOT_STT_DATE            /*체납시작일              */
+         ,NOT_END_DATE            /*체납종료일              */
+         ,ADDRESS                 /*주 소                   */
+         ,USE_STT_DATE            /*사용시작일              */
+         ,USE_END_DATE            /*사용종료일              */
+         ,NVL(BANK_CD, '0000000') /*수납은행코드            */
+         ,RCV_DATE                /*납부일시                */
+         ,RCV_GB                  /*납기 내후 구분          */
+         ,TRIM(OCR_1) OCR_1       /*OCR BAND 1              */
+         ,TRIM(OCR_2) OCR_2       /*OCR BAND 2              */
+         ,TRIM(OCR_1) || TRIM(OCR_2) OCR_BD
+         ,CARD_CODE               /*카드_납부코드           */
+         ,SPRE_CNT                /*전월지침(상)            */
+         ,SACT_CNT                /*당월지침(상)            */
+         ,SADJ_QTY                /*조정량(상)              */
+         ,HPRE_CNT                /*전월지침(하)            */
+         ,HACT_CNT                /*당월지침(하)            */
+         ,HADJ_QTY                /*조정량(하)              */
+         ,USR_NUM                 /*가구수                  */
+         ,SUB_NUM                 /*감면가구수              */
+         ,UP_TYPE                 /*상수도업종              */
+         ,HUP_TYPE                /*하수도업종              */
+         ,CHK_DATE                /*검침일                  */
+         ,PRE_QTY                 /*전월사용량              */
+         ,PRE_YEAR_QTY            /*전년동월사용량          */
+         ,STATE_FLAG              /*상태 FLAG               */
+         ,SR_FLAG                 /*송수신 FLAG             */
+         ,SNTG                    /*납부상태                */
+         ,SACT_QTY                /*상수도 사용량           */
+         ,HACT_QTY	              /*하수도사용량            */
+         
+        FROM TX3111_TB
+	]]>        
+        WHERE EPAY_NO  IS NOT NULL    /*전자납부번호*/
+          <isNotEmpty prepend = "AND" property="CUST_NO">
+            CUST_NO = TO_CHAR(#CUST_NO#, 'FM0999999999') 
+          </isNotEmpty>
+          <isNotEmpty prepend = "AND" property="EPAY_NO">
+            EPAY_NO = #EPAY_NO#
+          </isNotEmpty>
+	
+    </select>
+    
+    <!-- 환경개선부담금 납부내역 건수 -->
+	<select id="SELECT_ENV_KFPAY_CNT" resultClass="mapForm" parameterClass="mapForm">
+	<![CDATA[   
+	
+        SELECT 
+             COUNT(*) CNT
+        FROM TX2131_VW_OCR A, TX2231_TB B    /*환경개선 View TBL , 환경개선 전자수납*/                
+        WHERE A.SGG_COD  = B.SGG_COD
+          AND A.ACCT_COD = B.ACCT_COD
+          AND A.TAX_ITEM = B.TAX_ITEM
+          AND A.TAX_YY   = B.TAX_YY
+          AND A.TAX_MM   = B.TAX_MM
+          AND A.TAX_DIV  = B.TAX_DIV
+          AND A.HACD     = B.HACD
+          AND A.TAX_SNO  = B.TAX_SNO
+    ]]>      
+          /*PK*/
+          AND A.EPAY_NO  IS NOT NULL         /*전자납부번호*/
+          AND A.SNTG     IN ('1', '2')       /*납부 1:가수납 2: 수납 9:취소*/
+          /*조건 납부번호, 주민번호 맵핑*/
+          <isNotEmpty prepend = "AND" property="ETAX_NO">
+              A.EPAY_NO  = #ETAX_NO#              /*납부번호  */
+          </isNotEmpty>
+          <isNotEmpty prepend = "AND" property="REG_NO">
+              A.REG_NO   = FC_DAMO(#REG_NO#)       /*주민번호  */
+          </isNotEmpty>
+          
+    </select>    
+    
+    
+    <!-- 환경개선부담금 납부내역 -->
+	<!-- 결제원 내역조회 시 주민번호, 조회시작일자 ~ 조회 끝날짜 -->
+	<select id="SELECT_ENV_KFPAY_LIST"  parameterClass="mapForm">
+	<![CDATA[   
+	
+        SELECT 
+            A.SGG_COD            /*구청코드       */
+           ,A.ACCT_COD           /*회계코드       */
+           ,A.TAX_ITEM           /*과세목         */
+           ,A.TAX_YY             /*부과년도       */
+           ,A.TAX_MM             /*부과월         */
+           ,A.TAX_YY || A.TAX_MM TAX_YM
+           ,A.TAX_DIV            /*기분           */
+           ,A.HACD               /*행정동코드     */
+           ,A.TAX_SNO            /*과세번호       */
+           ,A.TAX_CNT            /*부과순번       */
+           ,A.MLGN_IF1           /*물건정보1      */
+           ,A.MLGN_IF2           /*물건정보2      */
+           ,A.MLGN_IF3           /*물건정보3      */
+           ,A.MLGN_IF4           /*물건정보4      */
+           ,A.MLGN_IF5           /*물건정보5      */
+           ,A.REG_ZIPCD          /*납세자우편번호 */
+           ,A.ADDRESS            /*주소           */
+           ,DECODE(A.DLQ_DIV, '1', A.BUTT + A.ADD_AMT, A.BUTT) ENV_AMT   /*부담금*/
+           ,A.MI_AMT
+           ,DECODE(A.DLQ_DIV, '1', 0, A.ADD_AMT) ADD_AMT  /*가산금        */
+           ,A.MIADD_AMT                                   /*ENV_MIADD_AMT */
+           ,A.CNAP_AMT                                    /*ENV_CNAP_AMT  */
+           ,A.TAX_DT                                      /*부과일자      */
+           ,F_GET_GYMD(A.DUE_DT) DUE_DT                   /*납기일자      */
+           ,F_GET_GYMD(A.DUE_F_DT) DUE_F_DT               /*납기후일자    */ 
+           ,A.DEADLINE_DT                                 /*납부기한      */
+           ,A.OCR_BD 
+           ,FC_DAMO(A.REG_NO) AS REG_NO             /*주민법인번호   */
+           ,A.REG_NM             /*납세자이름     */
+           ,A.DEADLINE_DT        /*납부기한       */
+           ,A.EPAY_NO            /*전자납부번호   */
+           ,A.SNTG               /*납부상태       */
+           ,B.SUM_RCP            /*수납금액       */
+           ,B.PAY_DT             /*수납일자       */
+           ,B.SNSU               /*수납매체       */
+           ,B.BRC_NO             /*수납기관코드   */
+           ,B.PAY_DT || TO_CHAR(B.LAST_DTM, 'HH24MISS') REG_DT
+
+        FROM TX2131_VW_OCR A, TX2231_TB B    /*환경개선 View TBL, 환경개선 전자수납*/                
+        WHERE A.SGG_COD  = B.SGG_COD
+          AND A.ACCT_COD = B.ACCT_COD
+          AND A.TAX_ITEM = B.TAX_ITEM
+          AND A.TAX_YY   = B.TAX_YY
+          AND A.TAX_MM   = B.TAX_MM
+          AND A.TAX_DIV  = B.TAX_DIV
+          AND A.HACD     = B.HACD
+          AND A.TAX_SNO  = B.TAX_SNO
+    ]]>      
+          /*PK*/
+          AND A.EPAY_NO  IS NOT NULL         /*전자납부번호*/
+          AND A.SNTG     IN ('1', '2')       /*납부 1:가수납 2: 수납 9:취소*/
+          /*조건 납부번호, 주민번호 맵핑*/
+          <isNotEmpty prepend = "AND" property="ETAX_NO">
+              A.EPAY_NO  = #ETAX_NO#         /*납부번호  */
+          </isNotEmpty>
+          <isNotEmpty prepend = "AND" property="REG_NO">
+              A.REG_NO   = FC_DAMO(#REG_NO#)          /*주민번호  */
+          </isNotEmpty>
+          
+    </select>
+    
+    <!-- 환경개선부담금 조회내역 가져온다. -->
+	<select id="SELECT_ENV_LEVY_LIST"  parameterClass="mapForm">
+	<![CDATA[    
+	
+        SELECT 
+           'ENVTAX' AS TAX_GB  /*세금구분       */
+           ,SGG_COD            /*구청코드       */
+           ,ACCT_COD           /*회계코드       */
+           ,TAX_ITEM           /*과세목         */
+           ,TAX_YY             /*부과년도       */
+           ,TAX_MM             /*부과월         */
+           ,TAX_YY || TAX_MM TAX_YM
+           ,TAX_DIV            /*기분           */
+           ,HACD               /*행정동코드     */
+           ,TAX_SNO            /*과세번호       */
+           ,TAX_CNT            /*부과순번       */
+           ,MLGN_IF1           /*물건정보1      */
+           ,MLGN_IF2           /*물건정보2      */
+           ,MLGN_IF3           /*물건정보3      */
+           ,MLGN_IF4           /*물건정보4      */
+           ,MLGN_IF5           /*물건정보5      */
+           ,FC_DAMO(REG_NO) AS REG_NO             /*주민법인번호   */
+           ,REG_NM             /*납세자이름     */
+           ,REG_ZIPCD          /*납세자우편번호 */
+           ,ADDRESS            /*주소           */
+           ,DECODE(DLQ_DIV, '1', BUTT + ADD_AMT, BUTT) ENV_AMT /*부담금*/
+           ,MI_AMT
+           ,DECODE(DLQ_DIV, '1', 0, ADD_AMT) ADD_AMT  /*가산금        */
+           ,MIADD_AMT                                 /*ENV_MIADD_AMT */
+           ,CNAP_AMT                                  /*ENV_CNAP_AMT  */
+           ,' ' AS SUNAP_DT                           /*수납일자      */
+           ,TAX_DT                                    /*부과일자      */
+           ,F_GET_GYMD(DUE_DT) DUE_DT                 /*납기일자      */
+           ,F_GET_GYMD(DUE_F_DT) DUE_F_DT             /*납기후일자    */ 
+           ,DEADLINE_DT                               /*납부기한      */
+           ,OCR_BD 
+           ,EPAY_NO                                   /*전자납부번호  */
+           ,SNTG                                      /*납부상태      */
+        FROM TX2131_VW_OCR            /*환경개선 View TBL*/                
+        WHERE EPAY_NO  IS NOT NULL    /*전자납부번호     */
+    ]]>      
+          AND SNTG     IN ('0', '9')  /*납부상태 미수납 및 취소*/
+          AND F_GET_GYMD(DEADLINE_DT) >= TO_CHAR(SYSDATE, 'YYYYMMDD')   /*납부가능한 것만...*/
+          /*조건 주민번호*/
+          <isNotEmpty prepend = "AND" property="REG_NO">
+             REG_NO   = FC_DAMO(#REG_NO#)       /*주민번호 */
+          </isNotEmpty>
+          <isNotEmpty prepend = "AND" property="ETAX_NO">
+             EPAY_NO  = #ETAX_NO#      /*전자납부번호 */
+          </isNotEmpty>
+
+	</select>    
+	
+	
+	<!-- 현날짜 부터 과거 -50 일까지 영업일을 계산하여 출력 -->
+	<select id="GET_GYMD_B" resultClass="String" parameterClass="mapForm">
+	<![CDATA[ 
+	
+         SELECT CUR_DT
+         FROM(
+            SELECT 
+               (ROWNUM -1) SEQ, DM.CUR_DT
+            FROM(
+               SELECT A.CUR_DT
+               FROM
+                  (SELECT TO_CHAR(TO_DATE(TO_CHAR(SYSDATE, 'YYYYMMDD'), 'YYYYMMDD') + (X.DAY), 'YYYYMMDD') CUR_DT
+                         ,TO_CHAR(SYSDATE + (X.DAY), 'DAY') CUR_DM
+                   FROM( SELECT ROWNUM -50 DAY FROM dict WHERE ROWNUM <= 50) X 
+                  ) A 
+               WHERE A.CUR_DT NOT IN(SELECT SCHDL_DATE FROM CO1101_TB)
+                 AND A.CUR_DM NOT IN('토요일', '일요일')
+                 AND A.CUR_DT <= TO_CHAR(SYSDATE, 'YYYYMMDD')
+               ORDER BY A.CUR_DT DESC
+               ) DM
+             )
+         WHERE SEQ = #d_cnt#
+         	
+    ]]>      
+	</select>
+
+	<!-- 현 영업일 부터 미래 50 일까지 영업일을 계산하여 출력 -->
+	<select id="GET_GYMD_A" resultClass="String" parameterClass="mapForm">
+	<![CDATA[ 
+	
+         SELECT CUR_DT
+         FROM(
+            SELECT 
+               (ROWNUM -1) SEQ, DM.CUR_DT
+            FROM(
+               SELECT A.CUR_DT
+               FROM
+                  (SELECT TO_CHAR(TO_DATE(TO_CHAR(SYSDATE, 'YYYYMMDD'), 'YYYYMMDD') + (X.DAY), 'YYYYMMDD') CUR_DT
+                         ,TO_CHAR(SYSDATE + (X.DAY), 'DAY') CUR_DM
+                   FROM( SELECT ROWNUM -1 DAY FROM dict WHERE ROWNUM <= 50) X 
+                  ) A 
+               WHERE A.CUR_DT NOT IN(SELECT SCHDL_DATE FROM CO1101_TB)
+                 AND A.CUR_DM NOT IN('토요일', '일요일')
+                 AND A.CUR_DT >= TO_CHAR(SYSDATE, 'YYYYMMDD')
+               ORDER BY A.CUR_DT 
+               ) DM
+             )
+         WHERE SEQ = #d_cnt#
+         	
+    ]]>      
+	</select>	
+	
+	<!-- 영업일인지 알기 위한 쿼리... 0 : 영업일 아님. 1: 영업일 -->
+	<select id="GET_GYMD_YN" resultClass="int" parameterClass="mapForm">
+	<![CDATA[ 
+         SELECT COUNT(*) CNT
+         FROM(
+            SELECT 
+               (ROWNUM -1) SEQ, DM.CUR_DT
+            FROM(
+               SELECT A.CUR_DT
+               FROM
+                  (SELECT TO_CHAR(TO_DATE(TO_CHAR(SYSDATE, 'YYYYMMDD'), 'YYYYMMDD') + (X.DAY), 'YYYYMMDD') CUR_DT
+                         ,TO_CHAR(SYSDATE + (X.DAY), 'DAY') CUR_DM
+                   FROM( SELECT ROWNUM -365 DAY FROM dict WHERE ROWNUM <= 730) X 
+                  ) A 
+               WHERE A.CUR_DT NOT IN(SELECT SCHDL_DATE FROM CO1101_TB)
+                 AND A.CUR_DM NOT IN('토요일', '일요일')
+               ORDER BY A.CUR_DT 
+               ) DM
+             )
+         WHERE CUR_DT = #CUR_DT#
+    ]]>      
+	</select>	
+	
+	<!-- 예약납부 파일 저장 -->
+	<insert id="INSERT_RES_RS1101_TB" parameterClass="mapForm">
+	<![CDATA[
+	
+         INSERT INTO RS1101_TB_DAMO( 
+                  PROC_YMD
+                 ,TAX_GB
+                 ,BIZ_GB
+                 ,DAT_GB
+                 ,SEQNO
+                 ,PUBGCODE
+                 ,GIRONO
+                 ,TOTALCNT
+                 ,TOTALAMT
+                 ,BANKCODE
+                 ,SEC_REG_NO
+                 ,TAX_NO
+                 ,KMGO_CD
+                 ,SU_BRC
+                 ,NAPDT
+                 ,ACCTDT
+                 ,NAPGB
+                 ,NAPBU_AMT
+                 ,OCR_BD
+                 ,PROC_GB
+                 ,FEE_AMT
+                 ,CUST_NO
+                 ,EPAY_NO
+                 ,DANG_MON
+                 ,TAX_YM
+                 ,LAST_DTM)
+         VALUES(
+                  #PROC_YMD#  
+                 ,#TAX_GB#   
+                 ,#BIZ_GB#   
+                 ,#DAT_GB#   
+                 ,#SEQNO#    
+                 ,#PUBGCODE# 
+                 ,#GIRONO#  
+                 ,#TOTALCOUNT#
+                 ,#TOTALPAYMONEY#
+                 ,#BANKCODE# 
+                 ,FC_DAMO(#REG_NO#)   
+                 ,#TAX_NO#   
+                 ,#KMGO_CD#  
+                 ,#SU_BRC#   
+                 ,#NAPDT#    
+                 ,#ACCTDT#   
+                 ,#NAPGB#    
+                 ,#NAPBU_AMT#
+                 ,#OCR_BD#   
+                 ,#PROC_GB#  
+                 ,#FEE_AMT#  
+                 ,#CUST_NO#  
+                 ,#EPAY_NO#  
+                 ,#DANG_MON# 
+                 ,#TAX_YM#   
+                 ,SYSDATE)
+    ]]>      
+	</insert>
+	
+	<!-- 예약납부 파일 저장 -->
+	<update id="UPDATE_RES_RS1101_TB" parameterClass="mapForm">
+	<![CDATA[	
+	
+	      UPDATE RS1101_TB_DAMO
+	        SET 
+	          
+                PROC_YMD =  #PROC_YMD#  
+               ,TAX_GB   =  #TAX_GB#   
+               ,BIZ_GB   =  #BIZ_GB#   
+               ,DAT_GB   =  #DAT_GB#   
+               ,SEQNO    =  #SEQNO#    
+               ,PUBGCODE =  #PUBGCODE# 
+               ,GIRONO   =  #GIRONO#   
+               ,TOTALCNT =  #TOTALCOUNT#
+               ,TOTALAMT =  #TOTALPAYMONEY#
+               ,BANKCODE =  #BANKCODE# 
+               ,SEC_REG_NO   =  FC_DAMO(#REG_NO#)   
+               ,TAX_NO   =  #TAX_NO#   
+               ,KMGO_CD  =  #KMGO_CD#  
+               ,SU_BRC   =  #SU_BRC#   
+               ,NAPDT    =  #NAPDT#    
+               ,ACCTDT   =  #ACCTDT#   
+               ,NAPGB    =  #NAPGB#    
+               ,NAPBU_AMT=  #NAPBU_AMT#
+               ,OCR_BD   =  #OCR_BD#   
+               ,PROC_GB  =  #PROC_GB#  
+               ,FEE_AMT  =  #FEE_AMT#  
+               ,CUST_NO  =  #CUST_NO#  
+               ,EPAY_NO  =  #EPAY_NO#  
+               ,DANG_MON =  #DANG_MON# 
+               ,TAX_YM   =  #TAX_YM#   
+               ,LAST_DTM =  SYSDATE
+               
+          WHERE PROC_YMD =  #PROC_YMD#  
+            AND TAX_GB   =  #TAX_GB#   
+            AND BIZ_GB   =  #BIZ_GB#   
+            AND DAT_GB   =  #DAT_GB#   
+            AND SEQNO    =  #SEQNO#    
+	
+    ]]>      
+	</update>	
+	
+	<!-- 전문수신내역을 가져온다. -->
+	<select id="SELECT_JUNMUN_LIST" parameterClass="mapForm">
+	<![CDATA[    
+
+        SELECT 
+             PROC_YMD
+            ,TAX_GB
+            ,BIZ_GB
+            ,DAT_GB
+            ,SEQNO
+            ,PUBGCODE
+            ,GIRONO
+            ,TOTALCNT
+            ,TOTALAMT
+            ,BANKCODE
+            ,FC_DAMO(SEC_REG_NO) REG_NO
+            ,TAX_NO
+            ,KMGO_CD
+            ,SU_BRC
+            ,NAPDT
+            ,ACCTDT
+            ,NAPGB
+            ,NAPBU_AMT
+            ,OCR_BD
+            ,PROC_GB
+            ,FEE_AMT
+            ,CUST_NO
+            ,EPAY_NO
+            ,DANG_MON
+            ,TAX_YM
+        FROM RS1101_TB_DAMO                   
+        WHERE ACCTDT = #ACCTDT#
+          AND TAX_GB = #TAX_GB#
+          AND DAT_GB = '22'
+        ORDER BY PROC_YMD, TAX_GB, BIZ_GB, DAT_GB, SEQNO
+        
+	]]> 
+	</select>    
+	
+	<!-- 전문수신내역을 가져온다. -->
+	<select id="SELECT_JUNMUN_BASIC" parameterClass="mapForm">
+	<![CDATA[    
+
+        SELECT 
+             PROC_YMD
+            ,TAX_GB
+            ,BIZ_GB
+            ,DAT_GB
+            ,SEQNO
+            ,PUBGCODE
+            ,GIRONO
+            ,TOTALCNT
+            ,TOTALAMT
+            ,BANKCODE
+            ,FC_DAMO(SEC_REG_NO) REG_NO
+            ,TAX_NO
+            ,KMGO_CD
+            ,SU_BRC
+            ,NAPDT
+            ,ACCTDT
+            ,NAPGB
+            ,NAPBU_AMT
+            ,OCR_BD
+            ,PROC_GB
+            ,FEE_AMT
+            ,CUST_NO
+            ,EPAY_NO
+            ,DANG_MON
+            ,TAX_YM
+        FROM RS1101_TB_DAMO                   
+        WHERE PROC_YMD = #TRANSDATE#
+          AND TAX_GB   = #TAX_GB#
+          AND DAT_GB   <> '22'
+        ORDER BY PROC_YMD, TAX_GB, BIZ_GB, DAT_GB, SEQNO
+        
+	]]> 
+	</select>    
+	
+</sqlMap>

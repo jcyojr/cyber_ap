@@ -1,0 +1,588 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXDM3112" >
+
+
+    <!-- 연대납세자 부과자료 연계 쿼리 -->
+	<select id="select_jointTaxPayment_list" parameterClass="mapForm" resultClass="mapForm">
+	SELECT SUBSTR(TAX_NO, 3, 3) SGG_COD
+	     , SUBSTR(TAX_NO, 7, 2) ACCT_COD
+	     , SUBSTR(TAX_NO, 9, 6) TAX_ITEM
+	     , SUBSTR(TAX_NO, 15, 4) TAX_YY
+	     , SUBSTR(TAX_NO, 19, 2) TAX_MM
+	     , SUBSTR(TAX_NO, 21, 1) TAX_DIV
+	     , SUBSTR(TAX_NO, 22, 3) HACD
+	     , SUBSTR(TAX_NO, 25, 6) TAX_SNO
+	     , CUD_OPT
+	     , TAX_NO
+	     , EPAY_NO
+		 , REG_NO AS SEC_REG_NO
+         , REG_NM
+         , SEQ
+	  FROM SLIN262
+	 WHERE CUD_OPT IN ('1', '2', '3')
+	   AND TRN_YN IN ('0', '8')  
+       AND EPAY_NO IS NOT NULL
+       AND REG_NO IS NOT NULL
+	   AND ROWNUM <![CDATA[ <= ]]> #PAGE_PER_CNT#
+	</select>
+
+
+	<!-- 연대납세자 연계 페이지 건수-->
+	<select id="select_count_page" parameterClass="mapForm" resultClass="int">
+	SELECT COUNT(*) as PAGE
+	  FROM SLIN262
+	 WHERE 1 = 1
+	   AND CUD_OPT IN ('1', '2', '3')
+	   AND TRN_YN IN ('0', '8')
+       AND EPAY_NO IS NOT NULL
+       AND REG_NO IS NOT NULL
+	</select>	
+
+    <!-- 연대납세자 TX1104 INSERT -->
+    <insert id="insert_tx1104_tb" parameterClass="mapForm">
+    INSERT INTO TX1104_TB_DAMO (
+                SGG_COD
+              , ACCT_COD         
+              , TAX_ITEM   
+              , TAX_YY     
+              , TAX_MM   
+              , TAX_DIV    
+              , HACD       
+              , TAX_SNO
+              , TAX_NO
+              , EPAY_NO
+              , SEC_REG_NO
+              , REG_NM
+              , DEL_YN      
+              , REG_DTM
+              , LAST_DTM
+     ) VALUES ( #SGG_COD#            
+              , #ACCT_COD#         
+              , #TAX_ITEM#     
+              , #TAX_YY#     
+              , #TAX_MM#     
+              , #TAX_DIV#     
+              , #HACD#         
+              , #TAX_SNO#
+              , #TAX_NO#
+              , #EPAY_NO#
+              , FC_DAMO(#SEC_REG_NO#)
+              , #REG_NM#
+              , 'N'
+              , SYSDATE
+              , SYSDATE    
+     )
+    </insert>
+    
+    
+    <!-- 연대납세자 TX1104 UPDATE-->
+    <update id="update_tx1104_tb" parameterClass="mapForm">
+    UPDATE TX1104_TB_DAMO
+       SET TAX_NO     =  #TAX_NO#
+         , SGG_COD    =  SUBSTR(#TAX_NO#, 3, 3)
+         , ACCT_COD   =  SUBSTR(#TAX_NO#, 7, 2)    
+         , TAX_ITEM   =  SUBSTR(#TAX_NO#, 9, 6)
+         , TAX_YY     =  SUBSTR(#TAX_NO#, 15, 4)  
+         , TAX_MM     =  SUBSTR(#TAX_NO#, 19, 2)
+         , TAX_DIV    =  SUBSTR(#TAX_NO#, 21, 1) 
+         , HACD       =  SUBSTR(#TAX_NO#, 22, 3)    
+         , TAX_SNO    =  SUBSTR(#TAX_NO#, 25, 6)
+         , REG_NM     =  #REG_NM#
+         , LAST_DTM   =  SYSDATE
+     WHERE 1 = 1
+       AND EPAY_NO    = #EPAY_NO#
+       AND SEC_REG_NO = FC_DAMO(#SEC_REG_NO#)
+    </update>    
+    
+    
+    <!-- 연대납세자 TX1104 삭제 -->
+    <update id="delete_tx1104_tb" parameterClass="mapForm">
+    UPDATE TX1104_TB_DAMO
+       SET DEL_YN   = 'Y'
+         , LAST_DTM = SYSDATE
+     WHERE 1 = 1
+       AND TAX_NO     = #TAX_NO#
+       AND EPAY_NO    = #EPAY_NO#
+       AND SEC_REG_NO = FC_DAMO(#SEC_REG_NO#)
+    </update>
+    
+    
+	<!-- 연계완료 trn_yn 업데이트 -->
+    <update id="update_complete" parameterClass="mapForm">
+    UPDATE SLIN262
+       SET TRN_YN     = #TRN_YN#
+     WHERE TAX_NO     = #TAX_NO#
+       AND EPAY_NO    = #EPAY_NO#
+       AND REG_NO     = #SEC_REG_NO#
+       AND SEQ        = #SEQ#
+    </update>
+
+	<!-- 세무대리인 처리결과 건수-->
+	<select id="select_count_page3" parameterClass="mapForm" resultClass="int">
+	SELECT COUNT(*) as PAGE
+	  FROM V_SCYB037
+	 WHERE 1 = 1
+	   AND REQ_PROC IN ('2','4','5')
+	   AND SGG_COD = #SGG_COD#
+	   AND SUBSTR(S_NO,0,1) = 'C'
+       AND REG_NO IS NOT NULL
+	</select>
+	
+	<!-- 세무대리인 처리결과 업데이트할 내역건수 여부-->
+	<select id="select_count_page4" parameterClass="mapForm" resultClass="int">
+	SELECT COUNT(*) as PAGE
+	  FROM TX5111_TB_DAMO
+	 WHERE 1 = 1
+	   AND REQ_PROC IN ('1','3','6')
+	   AND SGG_COD = #SGG_COD#
+	   AND SUBSTR(S_NO,0,1) = 'C'
+	</select>
+	
+	<!-- 세무대리인 처리결과 업데이트 처리할 건수-->
+	<select id="rltSelect_count" parameterClass="mapForm" resultClass="int">
+	SELECT COUNT(*) as CHKCNT
+	  FROM TX5111_TB_DAMO
+	 WHERE 1 = 1
+	   AND SEC_REG_NO      = (SELECT FC_DAMO(#REG_NO#) FROM DUAL)
+	   AND REQ_PROC IN ('1','3','6')
+	   AND SGG_COD = #SGG_COD#
+	   AND SUBSTR(S_NO,0,1) = 'C'
+	   
+	</select>	
+	
+	<!-- 특별징수 명세서 처리대상 건수 -->
+	<select id="select_count_page5" parameterClass="mapForm" resultClass="int">
+	SELECT COUNT(*) as PAGE  
+	  FROM ES1113_TB_DAMO 
+	 WHERE SGG_COD        = #SGG_COD# 
+	   AND SEND_STATUS = '0'
+	</select>
+
+    <!-- 세무대리인 처리결과 자료  -->
+	<select id="select_jointSemuRlt_list" parameterClass="mapForm" resultClass="mapForm">
+	SELECT  S_NO
+	      , REQ_PROC
+		  , REQ_DT
+		  , OK_DT
+		  , OK_ID
+		  , OK_NM
+		  , OK_TEL
+		  , REG_NO
+		  , SGG_COD
+	  FROM V_SCYB037
+	 WHERE REQ_PROC IN ('2','4','5')
+	   AND SGG_COD = #SGG_COD#
+	   AND SUBSTR(S_NO,0,1) = 'C'
+       AND REG_NO IS NOT NULL
+	</select>
+
+	<!-- 사이버지방세 업데이트 처리대상 여부조회 
+	<select id="tx5111_tb_serch" parameterClass="mapForm" resultClass="String">
+	SELECT REQ_PROC
+	  FROM TX5111_TB_DAMO
+	 WHERE 1 = 1
+	   AND REQ_PROC IN ('1','3','6')
+	   AND SEC_REG_NO = (SELECT FC_DAMO(#REG_NO#) FROM DUAL)
+	   AND SCYB_WT_YN = 'C'
+	</select> -->
+	
+	<!-- 세무대리인 처리결과 업데이트 -->
+    <update id="update_tx5111_tb" parameterClass="mapForm">
+    UPDATE TX5111_TB_DAMO
+       SET    REQ_PROC     = #REQ_PROC#
+            , OK_DT        = #OK_DT#
+            , OK_ID        = #OK_ID#
+            , OK_NM        = #OK_NM#
+            , OK_TEL       = #OK_TEL#
+            , LAST_DT      = SYSDATE
+     WHERE SEC_REG_NO      = (SELECT FC_DAMO(#REG_NO#) FROM DUAL)
+     AND   REQ_PROC   <![CDATA[ <> ]]> #REQ_PROC#
+     AND   SGG_COD         = #SGG_COD#
+     AND   S_NO            = #S_NO#
+     AND   SCYB_WT_YN      = 'C'
+    </update>
+<!-- ################################################################################ -->
+	<!-- 세무대리인 신청자료 건수-->
+	<select id="select_count_page2" parameterClass="mapForm" resultClass="int">
+	SELECT COUNT(*) as PAGE
+	  FROM TX5111_TB_DAMO
+	 WHERE 1 = 1
+	   AND REQ_PROC IN ('1','6','3')
+	   AND SGG_COD = #SGG_COD#
+	   AND RESULK_OK = 'N'
+	   AND SCYB_WT_YN = 'C' 
+	</select>
+
+    <!-- 세무대리인 신청자료 조회 -->
+	<select id="select_jointSemu_list" parameterClass="mapForm" resultClass="mapForm">
+	SELECT  
+			SEQ           ,
+			RAISE_TIME    , 
+			DEAL_STATE    ,
+			S_NO 		  ,
+			(SELECT FC_DAMO(SEC_REG_NO) FROM DUAL) AS REG_NO    ,
+			SIDO_COD	  ,
+			SGG_COD		  ,
+			USR_NM		  ,
+			USR_DIV       ,
+			(SELECT FC_DAMO(CORP_NO) FROM DUAL) AS CORP_NO 		,
+			CORP_NM		  ,
+			BIZ_NO		  ,
+			CMP_NM		  ,
+			ZIP_NO		  ,
+			ZIP_ADDR	  ,
+			OTH_ADDR	  ,
+			TEL			  ,
+			MO_TEL		  ,
+			REQ_PROC	  ,
+			REQ_DT		  ,
+			DEU_DT		  ,
+			RHT_DIV		  ,
+			GROUP_NM	  ,
+			NOTE		  ,
+			BUPIN_YN	  ,
+            EVI_DOC1      ,
+            EVI_DOC_URL1  ,
+			EVI_DOC3	  ,
+			EVI_DOC_URL3  
+	  FROM TX5111_TB_DAMO
+	 WHERE REQ_PROC IN ('1','6','3')
+	   AND RESULK_OK = 'N'
+	   AND SGG_COD = #SGG_COD#
+	   AND SCYB_WT_YN = 'C'
+	</select>
+
+	<!-- 세무대리인 신청정보 연계 테이블 등록전 조회-->
+	<select id="f_search" parameterClass="mapForm" resultClass="int">
+	SELECT COUNT(*) as cnt
+	  FROM SCYB037
+	 WHERE 1 = 1
+	   AND SGG_COD = #SGG_COD#
+	   AND REG_NO  = #REG_NO#
+	   AND SUBSTR(S_NO,0,1) = 'C' 
+	</select>
+
+  	<!-- 세무대리인 신청정보 연계 테이블 등록  -->
+	<insert id="semu_insert"  parameterClass="mapForm">
+	INSERT INTO SCYB037 ( 
+		SEQ           ,
+		RAISE_TIME    , 
+		DEAL_STATE    ,	
+		S_NO 		  ,
+		REG_NO		  ,
+		SIDO_COD	  ,
+		SGG_COD		  ,
+		USR_NM		  ,
+		USR_DIV       ,
+		CORP_NO		  ,
+		CORP_NM		  ,
+		BIZ_NO		  ,
+		CMP_NM		  ,
+		ZIP_NO		  ,
+		ZIP_ADDR	  ,
+		OTH_ADDR	  ,
+		TEL			  ,
+		MO_TEL		  ,
+		REQ_PROC	  ,
+		REQ_DT		  ,
+		DEU_DT		  ,
+		RHT_DIV		  ,
+		GROUP_NM	  ,
+		NOTE		  ,
+		BUPIN_YN	  ,
+        EVI_DOC1      ,
+        EVI_DOC_URL1  ,
+		EVI_DOC3	  ,
+		EVI_DOC_URL3  	
+			) 
+	    VALUES ( 
+	    #SEQ#          ,
+	    #RAISE_TIME#   ,
+	    #DEAL_STATE#   ,
+	    #S_NO# 		   ,
+	    #REG_NO#       ,
+	    #SIDO_COD#     ,
+	    #SGG_COD#      ,
+	    #USR_NM#       ,
+	    #USR_DIV#	   ,
+	    #CORP_NO#      ,
+	    #CORP_NM#      ,
+	    #BIZ_NO#       ,
+	    #CMP_NM#       ,
+	    #ZIP_NO#       ,
+	    #ZIP_ADDR#     ,
+	    #OTH_ADDR#     ,
+	    #TEL#          ,  
+	    #MO_TEL#       ,
+	    #REQ_PROC#     ,
+	    #REQ_DT#       ,
+	    #DEU_DT#       ,
+	    #RHT_DIV#	   ,
+	    NVL(#GROUP_NM#,'') ,
+	    NVL(#NOTE#, '')    ,
+	    #BUPIN_YN#     ,
+	    #EVI_DOC1#     ,
+        #EVI_DOC_URL1# ,
+        #EVI_DOC3#     ,
+	    #EVI_DOC_URL3# 
+	    )
+	</insert>  	
+
+	<!-- 세무대리인 수정,취소정보 연계 테이블 등록 
+    <update id="semu_update" parameterClass="mapForm">
+    UPDATE SCYB037
+       SET   REQ_PROC      = '1'
+           , REQ_DT        = #REQ_DT#
+     WHERE REG_NO          = #REG_NO#
+       AND   SGG_COD       = #SGG_COD#
+       AND   SUBSTR(S_NO,0,1) = 'C'
+    </update>-->
+
+	<!-- 세무대리인 신청결과 업데이트 -->
+    <update id="semu_cyber_update" parameterClass="mapForm">
+    UPDATE TX5111_TB_DAMO
+       SET   RESULK_OK     = 'Y'
+         ,   LAST_DT       = SYSDATE
+     WHERE SEC_REG_NO      = (SELECT FC_DAMO(#REG_NO#) FROM DUAL)
+     AND   SGG_COD         = #SGG_COD#
+     AND   SCYB_WT_YN      = 'C'
+    </update>
+
+    <!-- 특별징수 명세서 처리대상 조회  -->
+	<select id="select_jointTG_list" parameterClass="mapForm" resultClass="mapForm">
+	SELECT REG_YY
+		 , REG_SEQ
+		 , TAX_NO
+		 , EPAY_NO
+		 , TXTP_CD
+		 , D_JING
+		 , REG_NM
+		 , FC_DAMO(SEC_REG_NO) AS REG_NO
+		 , TAX_STD
+		 , CALCUL_TX
+		 , ADJ_TAX
+		 , PAY_TAX
+		 , DTL_NOTE  
+	  FROM ES1113_TB_DAMO 
+	 WHERE SGG_COD        = #SGG_COD# 
+	   AND SEND_STATUS = '0'
+	</select>
+
+  	<!-- 특별징수 명세서 연계 테이블 등록  -->
+	<insert id="tg_insert"  parameterClass="mapForm">
+	INSERT INTO SCYB013 (
+			  REG_YY
+			, REG_SEQ
+			, TAX_NO
+			, EPAY_NO
+			, TXTP_CD
+			, D_JING
+			, REG_NM
+			, REG_NO
+			, TAX_STD
+			, CALCUL_TX
+			, ADJ_TAX
+			, PAY_TAX
+			, DTL_NOTE )
+            VALUES (
+              #REG_YY#
+            , #REG_SEQ#
+            , #TAX_NO#
+            , #EPAY_NO#
+            , #TXTP_CD#
+            , #D_JING#
+            , #REG_NM#
+            , #REG_NO#
+            , #TAX_STD#
+            , #CALCUL_TX#
+            , #ADJ_TAX#
+            , #PAY_TAX#
+            , #DTL_NOTE# )
+	</insert>
+
+	<!-- 특별징수 명세 처리결과 업데이트 -->
+    <update id="tg_update" parameterClass="mapForm">
+	UPDATE ES1113_TB_DAMO
+      SET SEND_STATUS = '1'
+        , SEND_DTM     = SYSDATE
+ 	WHERE SGG_COD      = #SGG_COD# 
+      AND SEND_STATUS  = 0
+      AND REG_YY       = #REG_YY#
+      AND REG_SEQ      = #REG_SEQ#
+    </update>
+
+	<!-- 세무대리인 위텍스 자료 동기화 대상 -->
+	<select id="select_count_page6" parameterClass="mapForm" resultClass="int">
+	SELECT COUNT(*) as PAGE
+	  FROM V_SCYB037
+	 WHERE 1 = 1
+	   AND REQ_PROC = '4'
+	   AND SGG_COD = #SGG_COD#
+	   AND SUBSTR(S_NO,0,1) <![CDATA[ <> ]]> 'C'
+	   AND SIDO_COD = '26'
+	   AND BUPIN_YN = 'Y'
+	   AND RHT_DIV IN ('02','03','04')
+       AND REG_NO IS NOT NULL
+	</select>
+
+    <!-- 세무대리인 위텍스 승인자료  -->
+	<select id="select_jointWtRlt_list" parameterClass="mapForm" resultClass="mapForm">
+	SELECT  S_NO
+	      , REG_NO
+	      , SIDO_COD
+	      , SGG_COD
+	      , USR_NM
+		  , USER_ID
+		  , CORP_NO
+		  , CORP_NM
+		  , BIZ_NO
+		  , CMP_NM
+		  , ZIP_NO
+		  , ZIP_ADDR
+		  , OTH_ADDR
+		  , TEL
+		  , MO_TEL
+		  , REQ_PROC
+		  , REQ_DT
+		  , OK_DT
+		  , DEU_DT
+		  , RHT_DIV
+		  , GROUP_NM
+		  , NOTE
+		  , OK_ID
+		  , OK_NM
+		  , OK_TEL
+		  , BUPIN_YN
+	  FROM V_SCYB037
+	 WHERE REQ_PROC IN ('4','2','5')
+	   AND SGG_COD = #SGG_COD#
+	   AND SUBSTR(S_NO,0,1) <![CDATA[ <> ]]> 'C'
+	   AND SIDO_COD = '26'
+	   AND BUPIN_YN = 'Y'
+	   AND RHT_DIV IN ('02','03','04')
+       AND REG_NO IS NOT NULL
+	   AND S_NO IN (
+	   	 SELECT C.S_NO FROM (
+       		SELECT REG_NO ,MAX(TO_NUMBER(S_NO)) AS S_NO
+             FROM V_SCYB037 
+            WHERE SUBSTR(S_NO,0,1) <![CDATA[ <> ]]> 'C'
+              AND SGG_COD  = #SGG_COD#
+              AND SIDO_COD = '26'
+              AND BUPIN_YN = 'Y'
+              AND RHT_DIV IN ('02','03','04') 
+              AND REQ_PROC IN ('2','4','5')
+              AND REG_NO IS NOT NULL
+            GROUP BY REG_NO
+        ) C
+	   )
+	   ORDER BY S_NO ASC
+	</select>
+
+	<!-- 세무대리인 처리결과 업데이트 처리할 건수-->
+	<select id="wtRltSelect_count" parameterClass="mapForm" resultClass="int">
+	SELECT COUNT(*) as CHKCNT
+	  FROM TX5111_TB_DAMO
+	 WHERE 1 = 1
+	   AND SEC_REG_NO      = (SELECT FC_DAMO(#REG_NO#) FROM DUAL)
+
+	</select>
+
+  	<!-- 세무대리인 신청정보 연계 테이블 등록  -->
+	<insert id="insertWt_tx5111_tb"  parameterClass="mapForm">
+	INSERT INTO TX5111_TB_DAMO ( 
+		    SEQ
+		  , S_NO
+	      , SEC_REG_NO
+	      , SIDO_COD
+	      , SGG_COD
+	      , USR_NM
+		  , USER_ID
+		  , CORP_NO
+		  , CORP_NM
+		  , BIZ_NO
+		  , CMP_NM
+		  , ZIP_NO
+		  , ZIP_ADDR
+		  , OTH_ADDR
+		  , TEL
+		  , MO_TEL
+		  , REQ_PROC
+		  , REQ_DT
+		  , OK_DT
+		  , DEU_DT
+		  , RHT_DIV
+		  , GROUP_NM
+		  , NOTE
+		  , OK_ID
+		  , OK_NM
+		  , OK_TEL
+		  , BUPIN_YN  
+		  , SCYB_WT_YN	
+		  , RESULK_OK
+			) 
+	    VALUES ( 
+	        MEWB8010_SEQNO.NEXTVAL
+	      , #S_NO#
+	      , FC_DAMO(#REG_NO#)
+	      , #SIDO_COD#
+	      , #SGG_COD#
+	      , #USR_NM#
+		  , #USER_ID#
+		  , FC_DAMO(#CORP_NO#)
+		  , #CORP_NM#
+		  , #BIZ_NO#
+		  , #CMP_NM#
+		  , #ZIP_NO#
+		  , #ZIP_ADDR#
+		  , #OTH_ADDR#
+		  , #TEL#
+		  , #MO_TEL#
+		  , #REQ_PROC#
+		  , #REQ_DT#
+		  , #OK_DT#
+		  , #DEU_DT#
+		  , #RHT_DIV#
+		  , #GROUP_NM#
+		  , #NOTE#
+		  , #OK_ID#
+		  , #OK_NM#
+		  , #OK_TEL#
+		  , #BUPIN_YN#
+		  , 'W'
+		  , 'Y'
+	    )
+	</insert>
+
+	<!-- 위텍스 접수건 업데이트 -->
+    <update id="updateWt_tx5111_tb" parameterClass="mapForm">
+    UPDATE TX5111_TB_DAMO
+       SET   REQ_PROC     = #REQ_PROC#
+       ,     LAST_DT         = SYSDATE
+     WHERE SEC_REG_NO      = (SELECT FC_DAMO(#REG_NO#) FROM DUAL)
+     AND   SGG_COD         = #SGG_COD#
+     AND   SCYB_WT_YN      = 'W'
+    </update>
+
+	<!-- 세무대리인 처리결과 업데이트 처리할 건수-->
+	<select id="wtStatSelect_count" parameterClass="mapForm" resultClass="int">
+	SELECT COUNT(*) as CHKCNT
+	  FROM TX5111_TB_DAMO
+	 WHERE 1 = 1
+	   AND SEC_REG_NO      = (SELECT FC_DAMO(#REG_NO#) FROM DUAL)
+	   AND SGG_COD = #SGG_COD#
+	   AND SCYB_WT_YN = 'W'
+	   AND REQ_PROC <![CDATA[ <> ]]> #REQ_PROC#
+	</select>
+	
+	<!-- 사이버지방세 업데이트 처리대상 여부조회 -->
+	<select id="cyber_Proc_Select" parameterClass="mapForm" resultClass="String">
+	SELECT REQ_PROC
+	  FROM TX5111_TB_DAMO
+	 WHERE 1 = 1
+	   AND SEC_REG_NO = (SELECT FC_DAMO(#REG_NO#) FROM DUAL)
+	   AND SCYB_WT_YN = 'C'
+	</select> 	
+
+</sqlMap>

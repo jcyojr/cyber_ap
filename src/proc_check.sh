@@ -1,0 +1,1 @@
+ps -ef|grep CYBER_AP |grep -v grep|grep -v vi|grep -v tail|sort

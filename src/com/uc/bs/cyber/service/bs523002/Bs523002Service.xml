@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="BS523002" >
+
+    <!-- 지방세 납부내역 가져온다. -->
+	<select id="SELECT_RECIP_LIST" resultClass="mapForm" parameterClass="mapForm">
+	<![CDATA[    
+        SELECT '1' TAX_GBN
+                 , TAX_NO 
+	             , RCP_CNT SEQNO
+	             , FC_DAMO(REG_NO) REG_NO	             
+	             , SGG_COD
+	             , ACCT_COD
+	             , TAX_ITEM
+	             , TAX_YY || TAX_MM TAX_YM
+	             , TAX_YY
+	             , TAX_MM
+	             , TAX_DIV
+	             , DLQ_DIV
+	             , HACD
+	             , TAX_SNO
+	             , REG_NM
+	             , SUM_B_AMT AMT
+	             , SUM_F_AMT AFTAMT 
+	             , MNTX       
+	             , MNTX_ADTX  
+	             , CPTX       
+	             , CPTX_ADTX  
+	             , CFTX       
+	             , CFTX_ADTX  
+	             , LETX       
+	             , LETX_ADTX      
+	             , ASTX
+	             , ASTX_ADTX    
+	             , DUE_DT
+	             , F_GET_GYMD(GGYM) AS DUE_F_DT 
+	             , MLGN
+	             , TAX_DT    
+	             , DECODE(SNSU, '1', 'K', '3', 'B', '') NAPBU_SYS
+	             , PAY_DT
+	             , SUM_RCP PAY_AMT
+	             , TAX_STD
+	             , BANK_NM
+	             , BRC_NO
+          FROM TX1201_VW_RCP 
+        WHERE SGG_COD = #SGG_COD#
+             AND ACCT_COD = #ACCT_COD#
+             AND TAX_ITEM = #TAX_ITEM#
+             AND TAX_YY = #TAX_YY#
+             AND TAX_MM = #TAX_MM#
+             AND TAX_DIV = #TAX_DIV#
+             AND HACD = #HACD#
+             AND TAX_SNO = #TAX_SNO#
+        UNION ALL    
+        SELECT '2' TAX_GBN
+                 , SUBSTR(OCR_BD, 3, 29) TAX_NO
+	             , 0 SEQNO
+	             , FC_DAMO(REG_NO) REG_NO	             
+	             , SGG_COD
+	             , ACCT_COD
+	             , TAX_ITEM
+	             , TAX_YY || TAX_MM TAX_YM
+	             , TAX_YY
+	             , TAX_MM
+	             , TAX_DIV
+	             , '' DLQ_DIV
+	             , HACD
+	             , TAX_SNO
+	             , REG_NM
+	             , BUTT AMT
+	             , BUTT AFTAMT 
+	             , 0 MNTX       
+	             , 0 MNTX_ADTX  
+	             , 0 CPTX       
+	             , 0 CPTX_ADTX  
+	             , 0 CFTX       
+	             , 0 CFTX_ADTX  
+	             , 0 LETX       
+	             , 0 LETX_ADTX     
+	             , 0 ASTX
+	             , 0 ASTX_ADTX    
+	             , DUE_DT
+	             , DUE_DT DUE_F_DT
+	             , '' MLGN
+	             , TAX_DT    
+	             , DECODE(SNSU, '1', 'K', '3', 'B', '') NAPBU_SYS
+	             , PAY_DT
+	             , SUM_RCP PAY_AMT
+	             , 0 TAX_STD
+	             , BANK_NM
+	             , BRC_NO
+          FROM TX2221_VW_RCP
+        WHERE SGG_COD = #SGG_COD#
+             AND ACCT_COD = #ACCT_COD#
+             AND TAX_ITEM = #TAX_ITEM#
+             AND TAX_YY = #TAX_YY#
+             AND TAX_MM = #TAX_MM#
+             AND TAX_DIV = #TAX_DIV#
+             AND HACD = #HACD#
+             AND TAX_SNO = #TAX_SNO#
+
+	]]>		
+		
+	</select>
+	
+</sqlMap>

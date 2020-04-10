@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="euc-kr"?>
+
+<project name='cyber-ap' default="compile" basedir=".">
+
+    <description>cyber Application</description>
+
+    <!-- set global properties for this build -->
+    <property name="distdir" location="/app/cyber_ap" />
+    <target name="init">
+        <!-- Create the build directory structure used by compile -->
+        <mkdir dir="${distdir}"/>
+        <mkdir dir="${distdir}/classes"/>
+        <mkdir dir="${distdir}/lib"/>
+    </target>
+
+    <target name="clean">
+    <!-- Create the build directory structure used by compile -->
+        <delete includeEmptyDirs="true">
+            <fileset dir="${distdir}/"/>
+            <!--<fileset dir="${webdir}/*"/>  -->
+        </delete>
+    </target>
+
+    <target name="copylib">
+        <!-- Copy librarrm y files -->
+        <copy todir="${distdir}/lib">
+            <fileset dir="${basedir}/lib">
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="copyap">
+        <!-- Copy servlet & jsp files -->
+        <copy todir="${distdir}">
+            <fileset dir="${basedir}">
+                <exclude name="**/src/"/>               
+            </fileset>
+        </copy>
+        <copy todir="${distdir}/classes">
+            <fileset dir="${basedir}/src">
+                <exclude name="**/*.java"/>        
+                <exclude name="**/*.class"/>        
+            </fileset>
+        </copy>
+    </target>
+
+    <path id="classpath">
+        <!-- <fileset dir="${java.home}" includes="classes.zip"/> -->
+        <!-- <fileset dir="/tmax/jeus6/lib/system/" /> -->
+        <!-- fileset dir="/usr/j2ee/lib"/ -->
+        <fileset dir="${distdir}/classes"/>
+        <fileset dir="${distdir}/lib"/>
+    </path>
+
+    <target name="compile" depends="init, copyap, copylib" description="compile the source " >
+        <javac srcdir="${basedir}/src" destdir="${distdir}/classes" debug="on" debuglevel="lines">
+            <classpath refid="classpath"/>
+        </javac>
+    </target>
+
+</project>

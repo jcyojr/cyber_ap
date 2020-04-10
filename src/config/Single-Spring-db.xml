@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="EUC-KR"?>
+
+<beans  xmlns="http://www.springframework.org/schema/beans"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:aop="http://www.springframework.org/schema/aop" 
+		xmlns:tx="http://www.springframework.org/schema/tx"
+		xmlns:jee="http://www.springframework.org/schema/jee"
+        xsi:schemaLocation="http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+		http://www.springframework.org/schema/aop
+		http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+		http://www.springframework.org/schema/tx
+		http://www.springframework.org/schema/tx/spring-tx-2.5.xsd
+		http://www.springframework.org/schema/jee
+		http://www.springframework.org/schema/jee/spring-jee-2.5.xsd
+		"
+		default-autowire='autodetect'>
+
+    <!-- Connection pool 등에서 사용할 JDBC 설정 Load -->
+    <bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations">
+        <list>
+        	<value>/config/jdbc.properties</value>
+        </list>
+        </property>
+        <property name="fileEncoding">
+        	<value>EUC-KR</value>
+        </property>
+	</bean>
+
+    <!-- add your spring beans here -->
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+        <property name="driverClassName" value="${jdbc.driverClassName}"/>
+        <property name="url" value="${jdbc.url}"/>
+        <property name="username" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+        <property name="maxActive" value="50"/>
+    </bean>
+	    
+	<!-- Spring Transaction Manager 사용 -->
+	<bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource">
+        	<ref local="dataSource"/>
+        </property>
+	</bean>
+	
+	<!-- Annotation 기반 트랜젝션 사용... -->	
+	<tx:annotation-driven transaction-manager="txManager"/>
+    
+    
+	<bean id="nativeJdbcExtractor" class="org.springframework.jdbc.support.nativejdbc.SimpleNativeJdbcExtractor" lazy-init="true"/>
+	 
+	<bean id="oracleLobHandler"  class="org.springframework.jdbc.support.lob.OracleLobHandler" lazy-init="true">
+	 <property name="nativeJdbcExtractor">
+	  <ref local="nativeJdbcExtractor"/>
+	 </property>
+	</bean>
+    
+    <!-- Spring 에서 제공하는 ibatis client plugin 사용 -->
+    <bean id="sqlMapClient" class="com.uc.core.spring.service.SqlMapClient">
+           <property name="configLocation">
+           		<value>config/sqlmapConfig.xml</value>
+           </property>
+           <property name="dataSource" ref="dataSource"/>
+           <property name="lobHandler" ref="oracleLobHandler"/>
+	</bean>
+
+
+	<!-- Ibatis를 사용하기 위한 기본 서비스...(여러개의 쿼리를 하나의 트랜젝션에 묶을때는 서비스를 새로 만들자 그 외는 전부 이것) -->	
+	<bean id="ibatisService" class="com.uc.core.spring.service.IbatisServiceImpl">
+		<property name="sqlMapClient" ref="sqlMapClient"/>
+	</bean>
+
+	<!-- 배치처리용 Service 개별 메소드에 트랜젝션이 없다. -->
+	<bean id="baseService" class="com.uc.core.spring.service.IbatisBaseService">
+		<property name="sqlMapClient" ref="sqlMapClient"/>
+	</bean>
+
+	<!-- 배치처리(여러개의 쿼리를 트랜젝션에 묶기) 공통 서비스 --> 
+	<bean id="ibatisBatchService" class="com.uc.core.spring.service.IbatisBatchServiceImpl">
+
+	</bean>
+	
+</beans>
+
+

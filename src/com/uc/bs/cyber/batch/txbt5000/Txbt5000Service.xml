@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXBT5000" >
+
+	<select id="select_supplying_list" parameterClass="mapForm" resultClass="mapForm">
+	<![CDATA[
+		SELECT
+			NVL(TOT_CNT, 0) TOT_CNT,												/* 총건수 */
+			NVL(TOT_AMT, 0) TOT_AMT,											/* 총금액 */
+			NVL(EPAY_NO,' ') EPAY_NO,											/* 전자납부번호 */
+			NVL(OCR_LINE1,' ') OCR_LINE1,										/* OCR_LINE1 */
+			NVL(OCR_LINE2,' ') OCR_LINE2,										/* OCR_LINE2 */
+			NVL(C_BANK,' ') C_BANK,													/* 은행코드 */
+			NVL(D_BANK_SUNAP, ' ') D_BANK_SUNAP,						/* 수납일자 */
+			NVL(D_COM_SOIN, ' ') D_COM_SOIN,								/* 회계일자 */
+			NVL(D_BANK_REP, ' ') D_BANK_REP,								/* 이체일자 */
+			NVL(DIV_APPR, ' ') DIV_APPR,											/* 충당구분(1: 일반충당, 2: 직권충당) */
+			NVL(REPLACE (OVERPAY_NO, '-', ''), ' ') OVERPAY_NO,	/* 지방세환급번호 */
+		    NVL(REPLACE (GWASE_NO, '-', ''), ' ') GWASE_NO,			/* 과세번호 */
+		    CHG_TYPE,
+		    SEQ
+		    
+		FROM SCYB551 
+	  WHERE  RTN_YN = #TRN_YN#		 /* 전송처리코드 */
+     ORDER BY RAISE_TIME ASC, 	SEQ ASC
+	 
+	]]>
+	</select>
+	
+	<select id="select_supplying_count" parameterClass="mapForm" resultClass="int">
+	<![CDATA[
+		SELECT COUNT(*) CNT
+		   FROM SCYB551
+		 WHERE RTN_YN = #TRN_YN#		 /* 전송처리코드 */
+
+	 
+	]]>
+	</select>	
+
+	<insert id = "insert_tx4111_tb"  parameterClass="mapForm">
+	<![CDATA[
+		INSERT INTO TX4111_TB
+				(SGG_COD   
+						, EPAY_NO			/* 전자납부번호 */
+						, C_BANK				/* 은행코드 */
+						, PAY_DT				/* 납부일자 */
+						, ACC_DT    			/* 회계일자 */
+						, ICHE_DT				/* 이체일자 */
+						, DIV_APPR			/* 충당구분 */
+						, OVERPAY_NO		/* 지방세환급번호 */
+						, GWASE_NO		/* 과세번호 */
+						, TOT_CNT			/* 총건수 */
+						, TOT_AMT			/* 총금액 */
+						, OCR1					/* OCR LINE1 */
+						, OCR2					/* OCR LINE2 */
+						, REG_DT				/* 등록일자 */
+						, LAST_DT			/* 변경일자 */
+						, TRN_YN)  
+						VALUES 
+						(SUBSTR(#OCR_LINE1#, 3, 3)
+						, #EPAY_NO#				/* 전자납부번호 */
+						, #C_BANK#					/* 은행코드 */
+						, #D_BANK_SUNAP#		/* 수납일자 */
+						, #D_COM_SOIN#			/* 회계일자 */
+						, #D_BANK_REP#			/* 이체일자 */
+						, #DIV_APPR#				/* 충당구분 */
+						, #OVERPAY_NO#			/* 지방세환급번호 */
+						, #GWASE_NO#			/* 과세번호 */
+						, #TOT_CNT#				/* 총건수 */
+						, #TOT_AMT#				/* 총금액 */
+						, #OCR_LINE1#				/* OCR LINE1 */
+						, #OCR_LINE2#				/* OCR LINE2 */
+						, SYSDATE
+						, SYSDATE
+						, '0'
+						)
+       ]]>
+	</insert>
+	    
+	
+    <update id="update_tx4111_tb" parameterClass="mapForm">
+        <![CDATA[
+			UPDATE TX4111_TB
+       			  SET TOT_CNT = #TOT_CNT#					/* 총건수 */
+       					, TOT_AMT = #TOT_AMT#					/* 총금액 */
+       					, OCR1 = #OCR_LINE1#						/* OCR LINE1 */
+       					, OCR2 = #OCR_LINE2#						/* OCR LINE2 */
+       					, C_BANK = #C_BANK#						/* 은행코드 */
+       					, PAY_DT = #D_BANK_SUNAP#			/* 수납일자 */
+       					, ACC_DT = #D_COM_SOIN#				/* 회계일자 */
+       					, ICHE_DT = #D_BANK_REP#				/* 이체일자 */
+       					, DIV_APPR = #DIV_APPR#				/* 충당구분 */
+       					, OVERPAY_NO = #OVERPAY_NO#	/* 지방세환급번호 */
+       					, GWASE_NO = #GWASE_NO#			/* 과세번호 */
+       					, TRN_YN = '0'									/* 전송상태 */
+       					, LAST_DT = SYSDATE        
+             WHERE EPAY_NO = #EPAY_NO#
+             	AND OVERPAY_NO = #OVERPAY_NO#
+        ]]>
+    </update> 
+    
+	
+    <update id="delete_tx4111_tb" parameterClass="mapForm">
+        <![CDATA[
+			DELETE 
+			   FROM TX4111_TB
+			WHERE EPAY_NO = #EPAY_NO#
+				AND OVERPAY_NO = #OVERPAY_NO#
+        ]]>
+    </update>     
+    
+    <update id="update_complete" parameterClass="mapForm">
+        <![CDATA[
+			UPDATE SCYB551 
+			      SET RTN_YN = '1'
+			WHERE SEQ = #SEQ#
+        ]]>
+    </update>         
+
+
+</sqlMap>

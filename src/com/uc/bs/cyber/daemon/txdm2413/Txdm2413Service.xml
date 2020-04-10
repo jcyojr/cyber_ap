@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXDM2413" >
+
+	
+	<!-- 표준세외수입 연계 건수 -->
+	<select id="SELECT_SPNT300_CNT" parameterClass="mapForm" resultClass="int">
+
+		<![CDATA[
+        SELECT COUNT(*) CNT
+        FROM SPNT300
+        WHERE TRN_YN='N'
+        	AND C_SUNAP_IN='01'
+            AND TRIM(TAX_NO) IS NOT NULL
+            AND SUM_RCP>0
+            AND MOD(NVL(SUM_RCP,0),10)=0
+            AND ROWNUM<2001
+		]]>
+	</select>
+
+
+
+    <!-- 표준세외수입 연계내역 가져오기 -->
+	<select id="SELECT_SPNT300_LIST" parameterClass="mapForm"  resultClass="mapForm">
+
+		<![CDATA[    
+	    SELECT
+    	     SEQ                    SEQ
+        	,EPAY_NO                EPAY_NO
+	        ,TAX_NO                 TAX_NO
+    	    ,SUBSTR(DEP_COD,1,3)    SGG_COD
+        	,PAY_DT                 PAY_DT
+	        ,SUM_RCP                SUM_RCP
+    	    ,0						PAY_CNT
+        	,'2'					SNTG
+	        ,'1'					SNSU
+    	    ,'100'					BANK_CD
+        	,'1000000'				BRC_NO
+	        ,''						TMSG_NO
+    	    ,'0'					TRTG
+        	,'N'					RSN_YN
+	        ,'0'					RGSYS_DSC
+    	FROM
+    	(
+        	SELECT
+	             SEQ
+    	        ,EPAY_NO
+        	    ,TAX_NO
+            	,DEP_COD
+	            ,PAY_DT
+    	        ,SUM_RCP
+        	FROM SPNT300
+	        WHERE TRN_YN='N'
+	        	AND C_SUNAP_IN='01'
+	            AND TRIM(TAX_NO) IS NOT NULL
+	            AND SUM_RCP>0
+            	AND MOD(NVL(SUM_RCP,0),10)=0
+    	    ORDER BY SEQ
+    	)
+    	WHERE ROWNUM<2001
+		]]>
+
+	</select>
+
+	
+	
+	<!-- 표준세외수입 부과 건수 -->
+	<select id="SELECT_TX2112_CNT" parameterClass="mapForm" resultClass="int">
+
+		<![CDATA[
+   		SELECT COUNT(*) CNT
+   		FROM TX2112_TB
+   		WHERE SGG_COD=#SGG_COD#
+       		AND TAX_NO=#TAX_NO#
+		]]>
+
+	</select>
+
+
+
+	<!-- 표준세외수입 수납 건수 -->
+	<select id="SELECT_TX2211_CNT" parameterClass="mapForm" resultClass="int">
+
+		<![CDATA[
+		SELECT COUNT(*) CNT
+		FROM TX2111_TB_DAMO A, TX2112_TB B, TX2211_TB C
+		WHERE A.TAX_NO=B.TAX_NO
+			AND A.SGG_COD=B.SGG_COD
+			AND B.TAX_NO=C.TAX_NO
+			AND B.TAX_CNT=C.TAX_CNT
+			AND C.SNTG IN ('1','2')
+			AND A.SGG_COD=#SGG_COD#
+			AND A.TAX_NO=#TAX_NO#
+		]]>
+
+	</select>
+
+
+
+	<!-- 표준세외수입 TAX_CNT 조회 -->
+	<select id="SELECT_TX2112_TAX_CNT" parameterClass="mapForm" resultClass="int">
+
+		<![CDATA[
+		SELECT MAX(TAX_CNT) TAX_CNT
+		FROM TX2112_TB
+		WHERE SGG_COD=#SGG_COD#
+			AND TAX_NO=#TAX_NO#
+		]]>
+
+	</select>
+
+
+
+	<!-- 표준세외수입 OCR밴드 조회 -->
+	<select id="SELECT_TX2112_OCR_BD" parameterClass="mapForm" resultClass="String">
+
+		<![CDATA[
+		SELECT OCR_BD
+		FROM TX2112_TB
+		WHERE SGG_COD=#SGG_COD#
+			AND TAX_NO=#TAX_NO#
+			AND TAX_CNT=#TAX_CNT#
+		]]>
+
+	</select>
+
+
+
+    <!-- 표준세외수입 수납자료 입력  -->
+	<insert id="INSERT_TX2211" parameterClass="mapForm">
+
+		<![CDATA[
+		INSERT INTO TX2211_TB
+		(
+			 TAX_NO
+			,TAX_CNT
+			,PAY_CNT
+			,SUM_RCP
+			,PAY_DT
+			,SNTG
+			,SNSU
+			,BANK_CD
+			,BRC_NO
+			,TMSG_NO
+			,OCR_BD
+			,TRTG
+			,RSN_YN
+			,RGSYS_DSC
+		)
+		VALUES
+		(
+			 #TAX_NO#
+			,#TAX_CNT#
+			,#PAY_CNT#
+			,#SUM_RCP#
+			,#PAY_DT#
+			,#SNTG#
+			,#SNSU#
+			,#BANK_CD#
+			,#BRC_NO#
+			,#TMSG_NO#
+			,#OCR_BD#
+			,#TRTG#
+			,#RSN_YN#
+			,#RGSYS_DSC#
+		)
+    	]]>           
+
+	</insert>	
+
+
+
+	<!-- 표준세외수입 수납자료 업데이트  -->
+	<update id="UPDATE_TX2112" parameterClass="mapForm">
+
+		<![CDATA[
+		UPDATE TX2112_TB
+		SET  LAST_DTM=SYSDATE
+			,DEL_DT=''
+			,DEL_YN='N'
+			,SNTG='2'
+		WHERE TAX_NO=#TAX_NO#
+			AND TAX_CNT=#TAX_CNT#
+		]]>
+
+	</update>	
+
+
+
+	<!-- 연계테이블 업데이트  -->
+	<update id="UPDATE_SPNT300_TRN_YN" parameterClass="mapForm">
+
+		<![CDATA[
+		UPDATE SPNT300
+		SET TRN_YN='1'
+		WHERE SEQ=#SEQ#
+		]]>
+
+	</update>	
+
+</sqlMap>

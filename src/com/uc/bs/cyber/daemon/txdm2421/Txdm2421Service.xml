@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXDM2421" >
+
+    <!-- 사이버 -->
+    <!-- WORKTIME 테이블에 업데이트할 시간구하기 -->  
+    <!-- YYYYMMDDHH24MISS / YYYY-MM-DD HH24:MI:SS -->
+    <select id="GET_UPDATE_DATE" resultClass="mapForm">
+    <![CDATA[
+          SELECT TO_CHAR(SYSDATE ,#DATEFORM#) AS V_DATE FROM DUAL
+    ]]>        
+    </select>
+    
+
+	<!-- 가상계좌통계를 가져온다. -->
+	<!-- 사이버 -->
+	<select id="SELECT_VIRTUAL_STATE" parameterClass="mapForm" resultClass="mapForm">
+    <![CDATA[
+    
+        SELECT 
+           A.SGG_COD           AS SGG_COD        /*구청별*/
+          ,COUNT(*)            AS CNT            /*건수*/
+        FROM  TX2111_TB_DAMO A, TX2112_TB B  /*A:표준세외수입 부과, B:표준세외수입 부과상세 */
+        WHERE A.TAX_NO     = B.TAX_NO
+          AND A.SGG_COD    = B.SGG_COD
+          AND A.SGG_COD    = #SGG_COD#  /*구청코드 */
+          AND B.TAX_CNT    = 0
+          AND B.VIR_ACC_NO IS NOT NULL    /*가상계좌번호 */
+          AND B.PROC_CLS   = '3'          /*가상계좌채번구분코드 */
+          AND B.SGG_TR_TG  IN ('0', '7')  /*구청전송처리구분코드*/
+          AND B.DEL_YN     = 'N'          /*삭제여부*/     
+          AND A.TAX_ITEM   = '281005'     /*교통유발부담금(과세목)*/
+        GROUP BY A.SGG_COD
+    ]]>
+	</select>
+
+
+	<!-- 가상계좌채번내역을 가져온다. -->
+	<!-- 사이버 -->
+	<select id="SELECT_VIRTUAL_ACCT_LIST" resultClass="mapForm" parameterClass="mapForm">
+    <![CDATA[
+    
+    SELECT A.TAX_NO                   AS TAX_NO         /*부과번호(31)*/
+         , B.LVY_NO                   AS LVY_NO         /*납부번호연계(21)*/
+         , B.BDNG_MGT_NO              AS BDNG_MGT_NO    /*(17)*/
+         , B.OWNER_MGT_NO             AS OWNER_MGT_NO   /*( 6)*/
+         , B.VIR_ACC_NO               AS VIR_ACC_NO     /*가상계좌번호(30)*/
+         , B.PAYMENT_DATE1            AS LVY_AM         /*납기내금액*/
+         , NVL(B.AFTPAYMENT_DATE1, 0) AS ADD_AM         /*가산금금액*/ 
+      FROM TX2111_TB_DAMO A, TX2112_TB B  /*A:표준세외수입 부과, B:표준세외수입 부과상세 */
+     WHERE A.TAX_NO     = B.TAX_NO
+       AND A.SGG_COD    = B.SGG_COD
+       AND A.SGG_COD    = #SGG_COD#  /*구청코드 */
+       AND B.TAX_CNT    = 0
+       AND B.VIR_ACC_NO IS NOT NULL    /*가상계좌번호 */
+       AND B.PROC_CLS   = '3'          /*가상계좌채번구분코드 */
+       AND B.SGG_TR_TG  IN ('0', '7')  /*구청전송처리구분코드*/
+       AND B.DEL_YN     = 'N'          /*삭제여부*/     
+       AND A.TAX_ITEM   = '281005'     /*교통유발부담금(과세목)*/
+
+    ]]>
+	</select>
+	
+	<!-- 구청전송여부를 업데이트 한다.  -->
+	<!-- CYBER -->
+	<update id="UPDATE_TRANS_TRAFFIC_DETAIL" parameterClass="mapForm">
+    <![CDATA[
+    
+        UPDATE TX2112_TB
+        SET 
+             SGG_TR_TG    =   #SGG_TR_TG#  /*구청전송처리여부*/
+            ,LAST_DTM     =   SYSDATE      /*최종수정일시*/
+        WHERE TAX_NO      = #TAX_NO#       /*납세번호            (31) pk*/ 
+          AND TAX_CNT     = 0
+
+    ]]>
+	</update>	
+
+</sqlMap>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="KF273002" >
+
+    <!-- 세외수입 납부내역 가져온다. -->
+	<select id="SELECT_RECIP_LIST" resultClass="mapForm" parameterClass="mapForm">
+	<![CDATA[    
+		SELECT BUGWA_STAT                                    /*고지구분                  */
+		     , TAX_ITEM                                      /*과목/세목                 */
+		     , TAX_NM                                        /*과목/세목명               */
+		     , OCR_BD                                        /*OCR밴드                   */
+		     , REG_NM                                        /*납부자 성명               */
+		     , PAYMENT_DATE1                                 /*납기내 금액               */
+		     , AFTPAYMENT_DATE1                              /*납기후 금액               */
+		     , NATN_TAX                                      /*국세                      */
+		     , NATN_TAX * (NATN_RATE * 0.01) NATN_TAX_ADD    /*국세가산금                */
+		     , SIDO_TAX                                      /*시도세                    */
+		     , SIDO_TAX * (SIDO_RATE * 0.01) SIDO_TAX_ADD    /*시도세 가산금             */
+		     , SIGUNGU_TAX                                   /*시군구세                  */
+		     , SIGUNGU_TAX * (SIGUNGU_RATE * 0.01) SIGUNGU_TAX_ADD /*시군구세 가산금     */
+		     , DUE_DT                                        /*납기일 (납기내)           */
+		     , DUE_F_DT                                      /*납기일 (납기후)           */
+		     , TAX_GDS                                       /*과세 대상                 */
+		     , TAX_NOTICE_TITLE                              /*부과 내역                 */
+		     , TRIM(LEVY_DETAIL6) LEVY_DETAIL6                                 /*고지자료 발생일자         */
+		     , DECODE(SNSU, '1', 'K', '2', 'C', '3', 'B')NAPBU_SYS      /*납부이용 시스템*/
+		     , BRC_NO BANK_CD                                /*수납은행 점별 코드        */
+		     , PAY_DT                                        /*납부 일시                 */
+		     , SUM_RCP                                       /*납부 금액                 */
+		  FROM TX2211_VW_RCP
+		 WHERE TAX_NO = #ETAXNO#
+		   AND EPAY_NO = #EPAYNO#
+		   AND REG_NO = FC_DAMO(#NAPBU_JUMIN_NO#)
+           AND TAX_ITEM  IN ('281005', '288125')
+
+		
+	]]>		
+		
+	</select>
+	
+</sqlMap>

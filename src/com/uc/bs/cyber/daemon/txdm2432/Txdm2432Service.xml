@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXDM2432" >
+
+    <!-- 사이버 -->
+    <!-- 버스전용차로위반과태료 가상계좌수납분 취합 -->
+	<select id="SELECT_VIRUAL_BUS_FINE_SUNAP_LIST" resultClass="mapForm">
+	<![CDATA[    
+
+        SELECT 
+             C.PAY_DT       AS PAY_DT     /*수납(납부)일자*/
+            ,C.ACC_DT       AS ACC_DT     /*회계일자*/
+            ,C.FILE_NO      AS FILE_NO    /*파일번호*/
+            ,C.SEQ          AS SEQ        /*SEQ*/
+            ,A.SGG_COD      AS SGG_COD    /*구청코드*/
+            ,C.ACCT_COD     AS ACCT_COD   /*회계코드*/
+            ,C.TAX_ITEM     AS TAX_ITEM   /*과세목*/
+            ,A.TAX_YY       AS TAX_YY     /*부과년도*/
+            ,A.TAX_MM       AS TAX_MM     /*분기(부과월)*/
+            ,A.TAX_DIV      AS TAX_DIV    /*기분*/
+            ,A.HACD         AS HACD       /*행정동*/
+            ,A.TAX_SNO      AS TAX_SNO    /*과세번호*/
+            ,C.VIR_ACC_NO   AS VIR_ACC_NO /*가상계좌번호*/
+
+        FROM   TX2121_TB A       /*세외수입 부과TBL*/
+              ,TX2122_TB B       /*세외수입 부과상세TBL*/
+              ,TX1202_TB C       /*지방세 수납TBL*/
+        WHERE A.SGG_COD    =  B.SGG_COD
+          AND A.ACCT_COD   =  B.ACCT_COD
+          AND A.TAX_ITEM   =  B.TAX_ITEM
+          AND A.TAX_YY     =  B.TAX_YY
+          AND A.TAX_MM     =  B.TAX_MM
+          AND A.TAX_DIV    =  B.TAX_DIV
+          AND A.HACD       =  B.HACD
+          AND A.TAX_SNO    =  B.TAX_SNO
+          /*A-B pk*/
+          AND B.VIR_ACC_NO =  C.VIR_ACC_NO 
+          AND C.MEDA_CD    =  '50'                          /*납부채널구분코드*/
+          AND C.PAY_DT     =  TO_CHAR(SYSDATE, 'YYYYMMDD')  /*납부(수납)일자 */
+          AND C.TAX_ITEM   =  '288025'                      /*과목:288 세목:025 과세목*/
+          AND (C.TR_TG     = 0 OR C.TR_TG IS NULL)
+          /*수납갱신건 제외*/
+          AND ROWNUM <= 3000 
+
+    ]]>  
+	</select>
+	
+	<update id="UPDATE_TX1202_TB_TRTG_TAB" parameterClass="mapForm">
+    <![CDATA[
+               
+            UPDATE TX1202_TB                  /*세외수입(주정차, 버스전용, 주거지)*/
+               SET TR_TG     = '1'                 /*가상계좌수납여부*/
+                 , LAST_DTM  =  SYSDATE
+            WHERE SGG_COD    =  #SGG_COD#
+              AND ACCT_COD   =  #ACCT_COD#
+              AND FILE_NO    =  #FILE_NO#
+              AND SEQ        =  #SEQ#
+              AND PAY_DT     =  #PAY_DT#
+    ]]> 
+	</update>		
+	
+
+	<!-- 구청원장테이블에 가상계좌수납여부를 업데이트한다.  -->
+	<!-- 구청 -->
+	<update id="UPDATE_NONTAX_SUNAP_INFO_TAB" parameterClass="mapForm">
+    <![CDATA[
+               
+            UPDATE NONTAX_TAB                       /*세외수입(주정차, 버스전용, 주거지)*/
+               SET VIR_SNTG = '2'                   /*가상계좌수납여부*/
+                 , VIR_SYMD = #PAY_DT#              /*수납일자*/
+                 , VIR_DTM  = SYSDATE
+             WHERE NON_SMCD   = '288025'            /*과세목 : 버스전용차로위반과태료*/ 
+               AND NON_BYYY   = #TAX_YY#
+               AND NON_SGCD   = #SGG_COD#
+               AND NON_HACD   = #HACD#
+               AND NON_NPNO   = #TAX_SNO#
+               AND NON_GIBN   = #TAX_DIV#
+               AND NON_BNGI   = #TAX_MM#
+               AND NON_ACKU   = '25'                /*회계코드*/
+               AND VIR_ACC_NO = #VIR_ACC_NO#
+               AND VIR_SNTG   <> '2'                /*수납갱신건(이미수납처리된것)은 제외 */
+    ]]>             
+	</update>		
+
+</sqlMap>

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXDM2417">
+
+	<select id="getCyberVirAccNoCount" parameterClass="mapForm" resultClass="Integer">
+	SELECT COUNT(*) CNT
+	  FROM TX2114_TB_DAMO
+     WHERE 1 = 1
+       AND PROC_CLS = '3'
+       AND SGG_TR_TG = '0'
+       AND VIR_ACC_NO IS NOT NULL
+       AND SGG_COD = #SGG_COD#
+	</select>
+	
+	
+	<select id="getCyberVirAccNoTranDataList" parameterClass="mapForm" resultClass="mapForm">
+	SELECT SGG_COD
+	     , TAX_NO
+	     , TAX_CNT
+	     , DIV_SNO
+	     , SITE_CODE
+	     , DEP_CODE
+	     , ACC_YEAR
+	     , ACC_GBN
+	     , SEMOK_CODE
+	     , LVY_NO
+	     , LVY_GBN
+	     , SUBSTR(VIR_ACC_NO,0,3) || '-' || SUBSTR(VIR_ACC_NO,4,2) || '-' || SUBSTR(VIR_ACC_NO,6,6) || '-' || SUBSTR(VIR_ACC_NO,12) AS VIR_ACC_NO
+	  FROM TX2114_TB_DAMO
+	 WHERE 1 = 1
+	   AND PROC_CLS = '3'
+       AND SGG_TR_TG = '0'
+       AND VIR_ACC_NO IS NOT NULL 
+       AND SGG_COD = #SGG_COD#
+       AND ROWNUM <![CDATA[ <= ]]> 20000
+	</select>
+	
+
+    <insert id="insertSeoiVirAccNoData" parameterClass="mapForm">
+    INSERT INTO RISTNLCBOOK (
+                SITE_CODE
+              , DEP_CODE
+              , ACC_YEAR
+              , ACC_GBN
+              , SEMOK_CODE
+              , LVY_NO
+              , DIV_SNO
+              , LVY_GBN
+              , LVY_KEY
+              , ACCOUNT_NO
+              , BANK_NM
+              , CREATE_YMD
+              , CREATE_USER
+              , UPDATE_YMD
+              , UPDATE_USER
+              , END_YMD
+     ) VALUES ( #SITE_CODE#
+              , #DEP_CODE#
+              , #ACC_YEAR#
+              , #ACC_GBN#
+              , #SEMOK_CODE#
+              , #LVY_NO#
+              , #DIV_SNO#
+              , #LVY_GBN#
+              , #TAX_NO#
+              , #VIR_ACC_NO#
+              , '부산은행'
+              , SYSDATE
+              , 'ETAX'
+              , SYSDATE
+              , 'ETAX'
+              , '99991231'
+    )
+    </insert>  
+    
+    
+    <update id="updateSeoiVirAccnoData" parameterClass="mapForm">
+    UPDATE RISTNLCBOOK
+       SET ACCOUNT_NO = #VIR_ACC_NO#
+         , UPDATE_YMD = SYSDATE
+     WHERE 1 = 1
+       AND SITE_CODE  = #SITE_CODE#
+       AND DEP_CODE   = #DEP_CODE#
+       AND ACC_YEAR   = #ACC_YEAR#
+       AND ACC_GBN    = #ACC_GBN#
+       AND SEMOK_CODE = #SEMOK_CODE#
+       AND LVY_NO     = #LVY_NO#
+       AND DIV_SNO    = #DIV_SNO#
+       AND LVY_GBN    = #LVY_GBN#
+       AND LVY_KEY    = #TAX_NO#
+    </update>
+    
+    
+    <update id="updateVirAccNoTransEnd" parameterClass="mapForm">
+    UPDATE TX2114_TB_DAMO 
+       SET SGG_TR_TG = '1'
+         , LAST_DTM  = SYSDATE
+     WHERE 1 = 1
+       AND SGG_COD   = #SGG_COD#
+       AND TAX_NO    = #TAX_NO#
+       AND TAX_CNT   = #TAX_CNT#
+       AND SGG_TR_TG = '0'
+    </update> 
+    
+
+</sqlMap>

@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="WE972001" >
+
+    <!-- 위택스 전문 수신로그 TAB을 조회한다(은행전문관리번호, 수납일자)... -->
+	<select id="CO4102_TB_Select" parameterClass="mapForm" resultClass="mapForm">
+	<![CDATA[
+        
+        SELECT MSG, TRN_CD 
+          FROM CO4102_TB
+         WHERE CO_BKNUM = #O_AGNUM# 
+           AND SUBSTR(PAY_DT, 3) = SUBSTR(#O_DT#, 0 ,6)
+    
+	]]>
+	</select>
+    
+    
+    <!-- [표준]세외수입 부과상세정보(실시간납부결과용 취소건)를 조회한다... -->
+	<select id="TX2112_TB_532001_Select" parameterClass="mapForm" resultClass="mapForm">
+    <![CDATA[
+    
+       SELECT '1' TAX_GBN
+            , M.EPAY_NO
+            , D.TAX_NO
+            , D.TAX_CNT
+            , D.SNTG
+         FROM TX2112_TB D  /* 표준세외수입 부과상세 */
+            , TX2111_TB_DAMO M  /* 표준세외수입 부과 */
+        WHERE D.TAX_NO  = M.TAX_NO
+          AND D.SGG_COD = M.SGG_COD
+          AND M.EPAY_NO  IS NOT NULL      /* 전자납부번호는 무조건 있어야된다.  */
+          AND D.SNTG     IN  ('1', '2')   /* 0: 기본값, 1: 납부처리중, 2: 납부완료, 9: 납부취소*/
+          AND D.TONG_DIV IN ('2', '3')    /* 통합구분코드*/
+          AND D.DEL_YN  = 'N'
+        ]]>
+        <isNotEmpty prepend = "AND" property="EPAY_NO">
+              M.EPAY_NO   = #EPAY_NO#     /*전자납부번호 */
+        </isNotEmpty>
+	</select>
+    
+    
+    <!-- [표준]세외수입 부과상세정보(실시간총괄납부결과용 취소건)를 조회한다... -->
+	<select id="TX2112_TB_532002_Select" parameterClass="mapForm" resultClass="mapForm">
+	<![CDATA[
+        
+        SELECT 
+               A.TAX_NO    AS TAX_NO
+             , A.TAX_CNT   AS TAX_CNT
+             , A.SNTG      AS SNTG        /*납부상태       */
+          FROM TX2112_TB A
+             , TX2312_TB B   /* A :표준세외수입부과상세  B:표준세외수입일괄통합 및 상세 */
+         WHERE A.TAX_NO   = B.TAX_NO
+           AND A.TAX_CNT  = B.TAX_CNT
+           AND A.SNTG     IN ('1', '2')   /*0: 기본값, 1: 납부처리중, 2: 납부완료, 9: 납부취소*/
+           AND A.DEL_YN   = 'N'
+           AND B.T0NG_NO  = #TOTPAY_NO#   /*통합납부번호*/
+           AND A.TONG_DIV  IN ('1')       /*통합구분코드*/
+    
+	]]>
+	</select>
+    
+    
+    <!-- 전자수납분을 삭제하기 위한 Max 값. -->
+    <!-- 현재 수납수단 '1' 인것 중 최대값을 구해서 삭제하도록 한다. : 그러면 안된다 -->
+    <!-- 2014.0418 수정 : 수납수단 1:위택스에서 수납된 건만 수납취소 해야함, 이택스 수납 및 취소건의 경우 표준세외수입사업단으로 전송되므로 -->
+    <select id="TX2211_TB_MaxValue" parameterClass="mapForm" resultClass="int">
+    <![CDATA[
+        
+        SELECT NVL(MAX(A.PAY_CNT), 9999) AS MAX_PAY_CNT
+          FROM TX2211_TB A
+         WHERE A.TAX_NO    = #TAX_NO#
+           AND A.TAX_CNT   = #TAX_CNT# 
+           AND A.SNSU      = '1'      /*수납수단 1:위택스, 2:카드 3:은행*/
+    ]]>
+    </select>
+    
+    
+    <!-- 표준세외수입 수납건수를 구한다. -->
+    <select id="TX2211_TB_SU_CNT" parameterClass="mapForm" resultClass="int">
+    <![CDATA[
+        
+        SELECT COUNT(*) AS PAY_CNT
+          FROM TX2211_TB A
+         WHERE A.TAX_NO   = #TAX_NO#
+           AND A.TAX_CNT  = #TAX_CNT# 
+           AND A.SNTG     IN ('1', '2')
+          
+    ]]>
+    </select>
+    
+    
+    <!-- 표준세외수입 전자수납테이블에 수납정보를 취소한다. -->
+    <!-- 20110831 변경 -->
+    <delete id="TX2211_TB_Delete" parameterClass="mapForm">
+    <![CDATA[
+        /*
+        DELETE TX2211_TB
+         */
+        
+        UPDATE TX2211_TB
+           SET SNTG = '9'
+              ,TRTG = '0'
+              ,LAST_DTM = SYSDATE
+        WHERE TAX_NO   = #TAX_NO#
+          AND TAX_CNT  = #TAX_CNT# 
+          AND PAY_CNT  = #PAY_CNT#          /*수납순번*/
+          
+    ]]>
+    </delete>
+    
+    
+    <!-- 표준세외수입 부과상세정보를 업데이트 한다...(실시간총괄납부결과 취소용) -->
+    <update id="TX2112_TB_Cancle532002_Update" parameterClass="mapForm">
+    <![CDATA[
+    
+         UPDATE TX2112_TB 
+            SET SNTG = '0'
+              , LAST_DTM = SYSDATE
+          WHERE TAX_NO = #TAX_NO#
+            AND DEL_YN = 'N'
+    
+    ]]>
+    </update>
+    
+    
+    <!-- 표준세외수입 부과상세정보를 업데이트 한다...(실시간납부결과 취소용) -->
+    <update id="TX2112_TB_Cancle532001_Update" parameterClass="mapForm">
+    <![CDATA[
+    
+         UPDATE TX2112_TB 
+            SET SNTG = '0'
+              , LAST_DTM = SYSDATE
+          WHERE TAX_NO = #TAX_NO#
+            AND DEL_YN = 'N'
+    
+    ]]>
+    </update>
+    
+    
+</sqlMap>

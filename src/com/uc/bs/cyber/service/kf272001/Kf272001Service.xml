@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="KF272001" >
+   
+ 	<!-- 전자수납분에 대해 수납순번을 구한다. -->
+	<!-- 중복수납이 존재하므로... -->
+	<select id="TX2211_TB_MaxPayCnt" parameterClass="mapForm" resultClass="int">
+	<![CDATA[
+	    
+	    SELECT NVL(MAX(A.PAY_CNT) +1, 0) AS MAX_PAY_CNT
+          FROM TX2211_TB A
+             , TX2112_TB B
+	     WHERE A.TAX_NO = B.TAX_NO
+           AND A.TAX_CNT = B.TAX_CNT
+           AND B.TAX_ITEM  IN ('281005', '288125') /*기타세입금*/
+           AND A.TAX_NO = #TAX_NO#
+          
+	]]>
+	</select>  
+	
+	<select id="TX2221_TB_MaxPayCnt" parameterClass="mapForm" resultClass="int">
+	<![CDATA[
+
+ 		SELECT NVL(MAX(A.PAY_CNT)+1, 0) AS MAX_PAY_CNT
+		 FROM TX2221_TB A, TX2121_VW_OCR B
+		WHERE A.SGG_COD  = B.SGG_COD
+          AND A.ACCT_COD = B.ACCT_COD
+          AND A.TAX_ITEM = B.TAX_ITEM
+          AND A.TAX_YY   = B.TAX_YY
+          AND A.TAX_MM   = B.TAX_MM
+          AND A.TAX_DIV  = B.TAX_DIV
+          AND A.HACD     = B.HACD
+          AND A.TAX_SNO  = B.TAX_SNO
+          AND A.TAX_CNT  = B.TAX_CNT
+		  AND B.EPAY_NO  IS NOT NULL               /*전자납부번호*/
+		  AND RPAD(B.EPAY_NO,19,'0')   = RPAD(#GRNO#,19,'0')    /*전자납부번호 */
+	 ]]> 
+		  <isNotEqual prepend = "AND" property = "JUMIN_NO" compareValue="0000000000000">
+		    B.REG_NO   = FC_DAMO(#JUMIN_NO#) 	
+		  </isNotEqual>     
+
+	</select>  	
+	
+    <!-- 세외수입 조회내역 가져온다. -->
+	<select id="SELECT_BNON_SEARCH_LIST"  parameterClass="mapForm" resultClass="mapForm"  >
+	<![CDATA[ 
+        /*특별회계에 해당 1.주거지전용주차료, 2.버스전용주차료*/
+        SELECT A.EPAY_NO
+             , A.TAX_ITEM
+             , A.TAX_YY || A.TAX_MM TAX_YM
+             , SUBSTR(A.OCR_BD, 3, 29)||'000' TAX_NO
+             , FC_DAMO(A.REG_NO) REG_NO
+             , A.OCR_BD
+             , A.DUE_DT
+             , F_GET_GYMD(NVL(A.DUE_F_DT, TO_CHAR(SYSDATE, 'yyyyMMdd'))) DUE_F_DT
+             , A.BUTT              AMT
+             , A.BUTT + A.GAMONEY  AFTAMT
+             , A.TAX_CNT
+             , '2' TAX_GB
+          FROM TX2121_VW_OCR A, CO3301_TB B   /*구세외수입 TBL,  세목코드 TBL*/
+         WHERE A.EPAY_NO  IS NOT NULL         /*전자납부번호는 무조건 있어야된다.*/
+           AND A.SNTG     IN ('0', '9')       /*납부상태 미수납 및 취소*/
+		   AND F_GET_GYMD(A.DUE_F_DT) >= TO_CHAR(SYSDATE, 'YYYYMMDD')   /*납부가능한 것만...*/
+           AND A.TAX_ITEM = B.TAX_ITEM
+	 ]]>         
+		  /* 전자납부번호 */
+		  <isNotEmpty prepend = "AND" property="GRNO">
+		 	   RPAD(A.EPAY_NO,19,'0')   = RPAD(#GRNO#,19,'0')    /*전자납부번호 */
+		  </isNotEmpty>	
+
+	</select>	
+   
+	<!--세외수입 전자수납테이블 INSERT -->
+    <insert id="INSERT_TX2211_TB_EPAY"  parameterClass="mapForm">
+    <![CDATA[
+	
+	    INSERT INTO TX2211_TB(  /*표준세외수입 전자수납*/
+		   TAX_NO   
+		  ,TAX_CNT 
+		  ,PAY_CNT 
+		  ,SUM_RCP 
+		  ,PAY_DT  
+		  ,SNTG    
+		  ,SNSU    
+		  ,BANK_CD 
+		  ,OCR_BD  
+		  ,TRTG
+		  ,BRC_NO
+		  ,TMSG_NO
+		  ,RSN_YN )  
+	     VALUES(
+		   #TAX_NO# 
+          ,#TAX_CNT#
+          ,#PAY_CNT#
+          ,TRUNC(#SUM_RCP#,-1)
+          ,#PAY_DT#
+          ,#SNTG#
+          ,#SNSU#
+          ,#BANK_CD#
+          ,#OCR_BD#
+          ,#TRTG#
+          ,#BRC_NO#
+          ,#TMSG_NO#
+          ,#RSN_YN#
+	      )
+	
+    ]]>
+    </insert>
+    
+	<!--구)세외 주거지,버스전용 전자수납테이블 INSERT -->
+    <insert id="INSERT_TX2221_TB_EPAY"  parameterClass="mapForm">
+    <![CDATA[
+	
+	    INSERT INTO TX2221_TB(  /*구세외수입 전자수납*/
+             SGG_COD
+            ,ACCT_COD
+            ,TAX_ITEM
+            ,TAX_YY
+            ,TAX_MM
+            ,TAX_DIV
+            ,HACD
+            ,TAX_SNO
+            ,TAX_CNT
+            ,PAY_CNT
+            ,SUM_RCP
+            ,PAY_DT
+            ,SNTG
+            ,SNSU
+            ,BANK_CD
+            ,BRC_NO
+            ,TMSG_NO
+            ,OCR_BD
+            ,TRTG
+            ,RSN_YN
+            ,LAST_DTM)  
+        SELECT 
+             SGG_COD
+            ,ACCT_COD
+            ,TAX_ITEM
+            ,TAX_YY
+            ,TAX_MM
+            ,TAX_DIV
+            ,HACD
+            ,TAX_SNO
+            ,TAX_CNT
+            ,#PAY_CNT#
+            ,TRUNC(#SUM_RCP#,-1)
+            ,#PAY_DT#
+            ,#SNTG#
+            ,#SNSU#
+            ,#BANK_CD#
+            ,#BRC_NO#
+            ,#TMSG_NO#
+            ,OCR_BD
+            ,#TRTG#
+            ,#RSN_YN#
+            ,SYSDATE
+            
+        FROM TX2121_VW_OCR
+        WHERE EPAY_NO  IS NOT NULL 
+          AND SNTG     IN ('0', '9')
+     ]]>
+          /* 전자납부번호 */
+		  <isNotEmpty prepend = "AND" property="GRNO">
+		 	 RPAD(EPAY_NO,19,'0')   = RPAD(#GRNO#,19,'0')    /*전자납부번호 */
+		  </isNotEmpty>		
+		  <isNotEqual prepend = "AND" property = "JUMIN_NO" compareValue="0000000000000">
+		     REG_NO    = FC_DAMO(#JUMIN_NO#)
+		  </isNotEqual>	
+   
+    </insert>    
+    
+    <!-- 세외수입 전자납부내역조회. -->
+	<select id="SELECT_BNON_PAY_LIST"  parameterClass="mapForm" resultClass="mapForm">
+	<![CDATA[   
+	
+		SELECT A.TAX_NO TAX_NO
+		     , A.SNTG   SNTG
+		     , '1'      TAX_GB
+		 FROM TX2211_TB A, TX2111_VW_OCR  B
+		WHERE A.TAX_NO = B.TAX_NO
+		  AND B.EPAY_NO  IS NOT NULL         /*전자납부번호*/
+          AND B.SNTG     IN ('1', '2', '9')  /*납부 1:가수납 2: 수납 9:취소*/ 
+		  AND B.EPAY_NO = #GRNO#
+          AND B.TAX_ITEM  IN ('281005', '288125')
+		  
+		UNION ALL
+		
+		SELECT SUBSTR(B.OCR_BD, 3, 29)||'000' TAX_NO
+		     , A.SNTG                  SNTG
+		     , '2'                     TAX_GB
+		 FROM TX2221_TB A, TX2121_VW_OCR B
+		WHERE A.SGG_COD  = B.SGG_COD
+          AND A.ACCT_COD = B.ACCT_COD
+          AND A.TAX_ITEM = B.TAX_ITEM
+          AND A.TAX_YY   = B.TAX_YY
+          AND A.TAX_MM   = B.TAX_MM
+          AND A.TAX_DIV  = B.TAX_DIV
+          AND A.HACD     = B.HACD
+          AND A.TAX_SNO  = B.TAX_SNO
+          AND A.TAX_CNT  = B.TAX_CNT
+		  AND B.EPAY_NO  IS NOT NULL               /*전자납부번호*/
+          AND B.SNTG     IN ('1', '2', '9')        /*납부 1:가수납 2: 수납 9:취소*/ 
+		  AND RPAD(B.EPAY_NO,19,'0')   = RPAD(#GRNO#,19,'0')    /*전자납부번호 */
+	
+	]]>
+    </select>
+    
+    <!-- 세외수입 수납처리한다. (수납FLAG) -->
+    <update id="UPDATE_TX2112_TB_NAPBU_INFO" parameterClass="mapForm">
+    <![CDATA[
+    
+        UPDATE TX2112_TB
+         SET SNTG     = '1'
+            ,LAST_DTM = SYSDATE
+  	    WHERE TAX_NO = #TAX_NO#
+    
+    ]]>
+    </update>    
+    
+    <!-- 구세외수입 수납처리한다. (수납FLAG) -->
+    <update id="UPDATE_TX2122_TB_NAPBU_INFO" parameterClass="mapForm">
+    <![CDATA[
+    UPDATE /*+ bypass_ujvc */
+       (
+         SELECT D.SNTG SNTG2 , D.last_dtm ldtm
+         FROM MUSER.TX2121_TB_DAMO M, MUSER.TX2122_TB D
+         WHERE   M.SGG_COD = D.SGG_COD
+             AND M.ACCT_COD = D.ACCT_COD
+             AND M.TAX_ITEM = D.TAX_ITEM
+             AND M.TAX_YY = D.TAX_YY
+             AND M.TAX_MM = D.TAX_MM
+             AND M.TAX_DIV = D.TAX_DIV
+             AND M.HACD = D.HACD
+             AND M.TAX_SNO = D.TAX_SNO
+             AND M.SEC_REG_NO  = FC_DAMO(#JUMIN_NO#)
+		 	 AND RPAD(D.EPAY_NO,19,'0')   = RPAD(#GRNO#,19,'0')    /*전자납부번호 */
+       ) SET SNTG2='1' , ldtm=SYSDATE
+
+    ]]>
+    </update>    
+    
+</sqlMap>

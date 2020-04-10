@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="WE252002" >
+
+    <!-- 상수도일괄 및 통합상세 TAB을 조회한다(상하수도 통합번호)... -->
+	<select id="TX3312_TB_TB_Select" parameterClass="mapForm" resultClass="mapForm">
+	<![CDATA[
+        
+        SELECT 
+             A.TONG_NO   AS TONG_NO,   /*전자납부번호(총괄납부고유번호)*/
+             A.TAX_YY    AS TAX_YY,
+             A.TAX_MM    AS TAX_MM,
+             A.PRT_NPNO  AS PRT_NPNO
+             A.GUBUN     AS GUBUN
+        FROM TX3312_TB A   /* A :지방세일괄 및 통합상세 */
+        WHERE A.TONG_NO   = #TOTPAY_NO#
+          
+	]]>
+	</select>
+	
+	
+	<!-- 전자수납분에 대해 수납순번을 구한다. -->
+	<!-- 중복수납이 존재하므로... -->
+	<select id="TX3211_TB_MaxPayCnt" parameterClass="mapForm" resultClass="int">
+	<![CDATA[
+	    
+	    SELECT NVL(MAX(A.PAY_CNT) + 1, 0) AS MAX_PAY_CNT 
+          FROM TX3211_TB A
+         WHERE A.TAX_YY    = #TAX_YY#
+           AND A.TAX_MM    = #TAX_MM#
+           AND A.PRT_NPNO  = #PRT_NPNO#
+           AND A.GUBUN     = #GUBUN#
+	]]>
+	</select>
+
+
+	<!-- 전자수납테이블 INSERT -->
+    <update id="TX3211_TB_Insert"  parameterClass="mapForm">
+    <![CDATA[
+    
+        INSERT INTO TX3211_TB( 
+              TAX_YY               /*부과년도          */
+             ,TAX_MM               /*부과월            */
+             ,PRT_NPNO             /*상하수도 관리번호 */
+             ,GUBUN                /*당월구분 */
+             ,PAY_CNT              /*수납순번          */
+             ,SUM_RCP              /*수납금액          */
+             ,PAY_DT               /*납부일자          */
+             ,SNSU                 /*수납수단          */
+             ,BANK_CD              /*납부기관*/
+             ,BRC_NO               /*수납기관코드      */
+             ,TMSG_NO              /*출금은행_전문관리번호 */
+             ,SNTG                 /*수납상태          */
+             ,RSN_YN)              /*예약납부 여부     */
+        VALUES(
+              #TAX_YY#
+             ,#TAX_MM#
+             ,#PRT_NPNO#
+             ,#GUBUN#
+             ,#PAY_CNT#
+             ,#SUM_RCP#
+             ,#PAY_DT#
+             ,'1'       /* SNSU */
+             ,#BNK_CD#
+             ,#BANK_COD#
+             ,#CO_BKNUM#
+             ,'2'
+             ,#RSN_YN#)
+    ]]>
+    </update>
+
+
+    <!-- 상수도 부과상세정보 수납처리한다. (수납FLAG) -->
+    <update id="TX3111_TB_Update" parameterClass="mapForm">
+    <![CDATA[
+    
+        UPDATE TX3111_TB
+           SET SNTG = '2'
+         WHERE TAX_YY    = #TAX_YY#
+           AND TAX_MM    = #TAX_MM#
+           AND PRT_NPNO  = #PRT_NPNO#
+           AND GUBUN     = #GUBUN#
+    
+    ]]>
+    </update>
+    
+    <!-- 일괄납부 Master 테이블 -->
+    <update id="TX1301_TB_Update" parameterClass="mapForm">
+    <![CDATA[
+         UPDATE TX1301_TB 
+            SET DATA_GB='2' 
+              , LAST_DTM = SYSDATE 
+          WHERE TONG_NO=#TOTPAY_NO#
+
+    ]]>
+    </update>
+
+</sqlMap>

@@ -1,0 +1,376 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXDM2415" >
+
+	
+	<!-- 표준세외수입 연계건수 계산 -->
+	<select id="SELECT_SPNT410_SEQ" resultClass="String">
+	<![CDATA[
+
+	SELECT NVL(MAX(SEQ),0) SEQ
+	FROM
+	(
+		SELECT SEQ, ROWNUM RNUM
+		FROM
+		(
+			SELECT SEQ
+			FROM SPNT410
+			WHERE TRN_YN IN ('N','0')
+			ORDER BY SEQ
+		)
+	)
+	WHERE RNUM<5001
+
+	]]>
+	</select>
+
+
+	
+	<!-- 표준세외수입 과오납자료를 연계 대기상태로 변경 -->
+	<update id="UPDATE_SPNT410_START" parameterClass="long">
+	<![CDATA[
+
+    UPDATE SPNT410
+    SET TRN_YN='0'
+    WHERE TRN_YN='N'
+    	AND SEQ<=#SEQ#
+
+	]]>
+	</update>
+	
+	
+	<!-- 표준세외수입 부과를 연계 오류상태로 변경 -->
+	<update id="UPDATE_SPNT410_END">
+	<![CDATA[
+
+    UPDATE SPNT410
+    SET TRN_YN='E'
+    WHERE TRN_YN='0'
+
+	]]>
+	</update>
+	
+	
+    <!-- 시구청 -->
+    <!-- 세외수입 부과내역 가져오기 -->
+	<select id="SELECT_SPNT410_LIST" parameterClass="mapForm"  resultClass="mapForm">
+	<![CDATA[    
+
+    SELECT
+         SEQ                    SEQ
+        ,TRNN_ID                TRNN_ID
+        ,SIDO_COD               SIDO_COD
+        ,SGG_COD                SGG_COD
+        ,MPAY_YY                MPAY_YY
+        ,TAX_NO                 TAX_NO
+        ,MPAY_NO                MPAY_NO
+        ,DEP_COD                DEP_COD
+        ,ACCT_COD               ACCT_COD
+        ,TAX_ITEM               TAX_ITEM
+        ,TAX_YY                 TAX_YY
+        ,TAX_MM                 TAX_MM
+        ,TAX_ITEM_NM            TAX_ITEM_NM
+        ,TAX_NO_DIV             TAX_NO_DIV
+        ,MPAY_R                 MPAY_R
+        ,MPAY_R_NM              MPAY_R_NM
+        ,NATTX                  NATTX
+        ,NATTX_RTN              NATTX_RTN
+        ,NATTX_MPAY             NATTX_MPAY
+        ,NATTX_IJA              NATTX_IJA
+        ,SDOTX                  SDOTX
+        ,SDOTX_RTN              SDOTX_RTN
+        ,SDOTX_MPAY             SDOTX_MPAY
+        ,SDOTX_IJA              SDOTX_IJA
+        ,SGGTX                  SGGTX
+        ,SGGTX_RTN              SGGTX_RTN
+        ,SGGTX_MPAY             SGGTX_MPAY
+        ,SGGTX_IJA              SGGTX_IJA
+        ,BUGTX                  BUGTX
+        ,BUGTX_RTN              BUGTX_RTN
+        ,BUGTX_MPAY             BUGTX_MPAY
+        ,BUGTX_IJA              BUGTX_IJA
+        ,BUNTX                  BUNTX
+        ,BUNTX_RTN              BUNTX_RTN
+        ,BUNTX_MPAY             BUNTX_MPAY
+        ,BUNTX_IJA              BUNTX_IJA
+        ,IJA_S_DT               IJA_S_DT
+        ,IJA_CNT                IJA_CNT
+        ,NTF_DT                 NTF_DT
+        ,PAY_DT                 PAY_DT
+        ,REQ_DT                 REQ_DT
+        ,REQ_HOW                REQ_HOW
+        ,PAY_AMT                PAY_AMT
+        ,TOT_RTN                TOT_RTN
+        ,MPAY_AMT               MPAY_AMT
+        ,IJA_AMT                IJA_AMT
+        ,APPR_AMT               APPR_AMT
+        ,RTN_DT                 RTN_DT
+        ,BANK_COD               BANK_COD
+        ,ACN_NO                 ACN_NO
+        ,DTOR_NM                DTOR_NM
+        ,TEL                    TEL
+        ,MO_TEL                 MO_TEL
+        ,REG_NO                 REG_NO
+        ,REG_NM                 REG_NM
+        ,PRGS_STT               PRGS_STT
+        ,UPDATE_DT              UPDATE_DT
+        ,CHG_TYPE               CHG_TYPE
+        ,TRN_YN                 TRN_YN
+        ,INSERT_DT              INSERT_DT
+    FROM
+    (
+		SELECT TMP.*
+			,ROWNUM				RNUM
+		FROM
+		(
+        	SELECT *
+        	FROM SPNT410
+        	WHERE TRN_YN='0'
+        	ORDER BY TRNN_ID, SEQ
+		) TMP
+		ORDER BY RNUM
+    )
+
+	
+     ]]>
+	</select>
+
+
+	<!-- 표준세외수입 기연계 건수 -->
+	<select id="SELECT_TX2401_CNT" parameterClass="mapForm" resultClass="int">
+	<![CDATA[
+
+    SELECT COUNT(*) CNT
+    FROM TX2401_TB_DAMO
+    WHERE TAX_NO=#TAX_NO#
+		AND MPAY_YY=#MPAY_YY#
+		AND MPAY_NO=#MPAY_NO#
+
+	]]>
+	</select>
+	
+	
+
+	<!-- CYBER -->
+    <!-- 표준세외수입 과오납자료 입력  -->
+	<insert id="INSERT_TX2401" parameterClass="mapForm">
+	<![CDATA[
+
+	INSERT INTO TX2401_TB_DAMO
+	(
+	     SEQ
+	    ,TRNN_ID
+	    ,SIDO_COD
+	    ,SGG_COD
+	    ,MPAY_YY
+	    ,TAX_NO
+	    ,MPAY_NO
+	    ,DEP_COD
+	    ,ACCT_COD
+	    ,TAX_ITEM
+	    ,TAX_YY
+	    ,TAX_MM
+	    ,TAX_ITEM_NM
+	    ,TAX_NO_DIV
+	    ,MPAY_R
+	    ,MPAY_R_NM
+	    ,NATTX
+	    ,NATTX_RTN
+	    ,NATTX_MPAY
+	    ,NATTX_IJA
+	    ,SDOTX
+	    ,SDOTX_RTN
+	    ,SDOTX_MPAY
+	    ,SDOTX_IJA
+	    ,SGGTX
+	    ,SGGTX_RTN
+	    ,SGGTX_MPAY
+	    ,SGGTX_IJA
+	    ,BUGTX
+	    ,BUGTX_RTN
+	    ,BUGTX_MPAY
+	    ,BUGTX_IJA
+	    ,BUNTX
+	    ,BUNTX_RTN
+	    ,BUNTX_MPAY
+	    ,BUNTX_IJA
+	    ,IJA_S_DT
+	    ,IJA_CNT
+	    ,NTF_DT
+	    ,PAY_DT
+	    ,REQ_DT
+	    ,REQ_HOW
+	    ,PAY_AMT
+	    ,TOT_RTN
+	    ,MPAY_AMT
+	    ,IJA_AMT
+	    ,APPR_AMT
+	    ,RTN_DT
+	    ,BANK_COD
+	    ,ACN_NO
+	    ,DTOR_NM
+	    ,TEL
+	    ,MO_TEL
+	    ,REG_NM
+	    ,PRGS_STT
+	    ,UPDATE_DT
+	    ,CHG_TYPE
+	    ,INSERT_DT
+	    ,SEC_REG_NO
+	)
+	VALUES
+	(
+	     #SEQ#
+	    ,#TRNN_ID#
+	    ,#SIDO_COD#
+	    ,#SGG_COD#
+	    ,#MPAY_YY#
+	    ,#TAX_NO#
+	    ,#MPAY_NO#
+	    ,#DEP_COD#
+	    ,#ACCT_COD#
+	    ,#TAX_ITEM#
+	    ,#TAX_YY#
+	    ,#TAX_MM#
+	    ,#TAX_ITEM_NM#
+	    ,#TAX_NO_DIV#
+	    ,#MPAY_R#
+	    ,#MPAY_R_NM#
+	    ,#NATTX#
+	    ,#NATTX_RTN#
+	    ,#NATTX_MPAY#
+	    ,#NATTX_IJA#
+	    ,#SDOTX#
+	    ,#SDOTX_RTN#
+	    ,#SDOTX_MPAY#
+	    ,#SDOTX_IJA#
+	    ,#SGGTX#
+	    ,#SGGTX_RTN#
+	    ,#SGGTX_MPAY#
+	    ,#SGGTX_IJA#
+	    ,#BUGTX#
+	    ,#BUGTX_RTN#
+	    ,#BUGTX_MPAY#
+	    ,#BUGTX_IJA#
+	    ,#BUNTX#
+	    ,#BUNTX_RTN#
+	    ,#BUNTX_MPAY#
+	    ,#BUNTX_IJA#
+	    ,#IJA_S_DT#
+	    ,#IJA_CNT#
+	    ,#NTF_DT#
+	    ,#PAY_DT#
+	    ,#REQ_DT#
+	    ,#REQ_HOW#
+	    ,#PAY_AMT#
+	    ,#TOT_RTN#
+	    ,#MPAY_AMT#
+	    ,#IJA_AMT#
+	    ,#APPR_AMT#
+	    ,#RTN_DT#
+	    ,#BANK_COD#
+	    ,#ACN_NO#
+	    ,#DTOR_NM#
+	    ,#TEL#
+	    ,#MO_TEL#
+	    ,#REG_NM#
+	    ,#PRGS_STT#
+	    ,#UPDATE_DT#
+	    ,#CHG_TYPE#
+	    ,#INSERT_DT#
+	    ,FC_DAMO(#REG_NO#)
+	)
+
+    ]]>           
+	</insert>	
+
+	
+
+	<!-- 표준세외수입 과오납자료 업데이트 -->
+	<!-- CYBER -->
+	<update id="UPDATE_TX2401" parameterClass="mapForm">
+    <![CDATA[
+
+	UPDATE TX2401_TB_DAMO
+	SET  SEQ=#SEQ#
+	    ,TRNN_ID=#TRNN_ID#
+	    ,SIDO_COD=#SIDO_COD#
+	    ,SGG_COD=#SGG_COD#
+	    ,MPAY_YY=#MPAY_YY#
+	    ,TAX_NO=#TAX_NO#
+	    ,MPAY_NO=#MPAY_NO#
+	    ,DEP_COD=#DEP_COD#
+	    ,ACCT_COD=#ACCT_COD#
+	    ,TAX_ITEM=#TAX_ITEM#
+	    ,TAX_YY=#TAX_YY#
+	    ,TAX_MM=#TAX_MM#
+	    ,TAX_ITEM_NM=#TAX_ITEM_NM#
+	    ,TAX_NO_DIV=#TAX_NO_DIV#
+	    ,MPAY_R=#MPAY_R#
+	    ,MPAY_R_NM=#MPAY_R_NM#
+	    ,NATTX=#NATTX#
+	    ,NATTX_RTN=#NATTX_RTN#
+	    ,NATTX_MPAY=#NATTX_MPAY#
+	    ,NATTX_IJA=#NATTX_IJA#
+	    ,SDOTX=#SDOTX#
+	    ,SDOTX_RTN=#SDOTX_RTN#
+	    ,SDOTX_MPAY=#SDOTX_MPAY#
+	    ,SDOTX_IJA=#SDOTX_IJA#
+	    ,SGGTX=#SGGTX#
+	    ,SGGTX_RTN=#SGGTX_RTN#
+	    ,SGGTX_MPAY=#SGGTX_MPAY#
+	    ,SGGTX_IJA=#SGGTX_IJA#
+	    ,BUGTX=#BUGTX#
+	    ,BUGTX_RTN=#BUGTX_RTN#
+	    ,BUGTX_MPAY=#BUGTX_MPAY#
+	    ,BUGTX_IJA=#BUGTX_IJA#
+	    ,BUNTX=#BUNTX#
+	    ,BUNTX_RTN=#BUNTX_RTN#
+	    ,BUNTX_MPAY=#BUNTX_MPAY#
+	    ,BUNTX_IJA=#BUNTX_IJA#
+	    ,IJA_S_DT=#IJA_S_DT#
+	    ,IJA_CNT=#IJA_CNT#
+	    ,NTF_DT=#NTF_DT#
+	    ,PAY_DT=#PAY_DT#
+	    ,REQ_DT=#REQ_DT#
+	    ,REQ_HOW=#REQ_HOW#
+	    ,PAY_AMT=#PAY_AMT#
+	    ,TOT_RTN=#TOT_RTN#
+	    ,MPAY_AMT=#MPAY_AMT#
+	    ,IJA_AMT=#IJA_AMT#
+	    ,APPR_AMT=#APPR_AMT#
+	    ,RTN_DT=#RTN_DT#
+	    ,BANK_COD=#BANK_COD#
+	    ,ACN_NO=#ACN_NO#
+	    ,DTOR_NM=#DTOR_NM#
+	    ,TEL=#TEL#
+	    ,MO_TEL=#MO_TEL#
+	    ,REG_NM=#REG_NM#
+	    ,PRGS_STT=#PRGS_STT#
+	    ,UPDATE_DT=#UPDATE_DT#
+	    ,CHG_TYPE=#CHG_TYPE#
+	    ,INSERT_DT=#INSERT_DT#
+	    ,SEC_REG_NO=FC_DAMO(#REG_NO#)
+	WHERE TAX_NO=#TAX_NO#
+	    AND MPAY_YY=#MPAY_YY#
+	    AND MPAY_NO=#MPAY_NO#
+         
+    ]]>
+	</update>
+
+
+	<!-- NID -->
+	<!-- 연계테이블 업데이트  -->
+	<update id="UPDATE_SPNT410_TRN_YN" parameterClass="mapForm">
+    <![CDATA[
+
+        UPDATE SPNT410
+        SET TRN_YN=#TRN_YN#
+        WHERE SEQ=#SEQ#
+        	AND TRNN_ID=#TRNN_ID#
+
+    ]]>
+	</update>	
+
+</sqlMap>

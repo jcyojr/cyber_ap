@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="WE992001" >
+
+
+    <!-- 위택스 전문 수신로그 TAB을 조회한다(은행전문관리번호, 수납일자)... -->
+	<select id="CO4102_TB_Select" parameterClass="mapForm" resultClass="mapForm">
+	<![CDATA[
+        
+        SELECT MSG, TRN_CD FROM CO4102_TB
+        WHERE CO_BKNUM = #O_AGNUM# 
+          AND SUBSTR(PAY_DT, 3) = SUBSTR(#O_DT#, 0 ,6)
+
+	]]>
+	</select>
+
+	<!-- 전자수납분을 삭제하기 위한 Max 값. -->
+	<!-- 현재 수납수단 '1' 인것 중 최대값을 구해서 삭제하도록 한다. : 그러면 안된다 -->
+	
+	<select id="TX1201_TB_MaxValue" parameterClass="mapForm" resultClass="int">
+	<![CDATA[
+	    
+	    SELECT NVL(MAX(A.PAY_CNT), 0) AS MAX_PAY_CNT FROM TX1201_TB A
+	    WHERE A.SGG_COD   = #SGG_COD#
+          AND A.ACCT_COD  = #ACCT_COD#
+          AND A.TAX_ITEM  = #TAX_ITEM#
+          AND A.TAX_YY    = #TAX_YY#
+          AND A.TAX_MM    = #TAX_MM#
+          AND A.TAX_DIV   = #TAX_DIV#
+          AND A.HACD      = #HACD#
+          AND A.TAX_SNO   = #TAX_SNO#
+          AND A.RCP_CNT   = #RCP_CNT# 
+          /*수납수단 1:위택스, 2:카드 3:은행*/
+          /*
+          AND A.SNSU      = '1' */  
+	]]>
+	</select>
+
+    <!-- 수납건수를 구한다. -->
+	<select id="TX1201_TB_SU_CNT" parameterClass="mapForm" resultClass="int">
+	<![CDATA[
+	    
+	    SELECT COUNT(*) AS PAY_CNT FROM TX1201_TB A
+	    WHERE A.SGG_COD   = #SGG_COD#
+          AND A.ACCT_COD  = #ACCT_COD#
+          AND A.TAX_ITEM  = #TAX_ITEM#
+          AND A.TAX_YY    = #TAX_YY#
+          AND A.TAX_MM    = #TAX_MM#
+          AND A.TAX_DIV   = #TAX_DIV#
+          AND A.HACD      = #HACD#
+          AND A.TAX_SNO   = #TAX_SNO#
+          AND A.RCP_CNT   = #RCP_CNT# 
+          AND A.SNTG      IN('1', '2')
+          
+	]]>
+	</select>
+
+
+    <!-- 전자수납테이블에 수납정보를 삭제한다. -->
+    <!-- 20110831 변경 -->
+	<delete id="TX1201_TB_Delete" parameterClass="mapForm">
+	<![CDATA[
+	    /*
+	    DELETE TX1201_TB
+	     */
+	    
+	    UPDATE TX1201_TB
+	       SET SNTG = '9'
+	          ,TRTG = '0'
+	          ,LAST_DTM = SYSDATE
+	    WHERE SGG_COD   = #SGG_COD#
+          AND ACCT_COD  = #ACCT_COD#
+          AND TAX_ITEM  = #TAX_ITEM#
+          AND TAX_YY    = #TAX_YY#
+          AND TAX_MM    = #TAX_MM#
+          AND TAX_DIV   = #TAX_DIV#
+          AND HACD      = #HACD#
+          AND TAX_SNO   = #TAX_SNO#
+          AND RCP_CNT   = #RCP_CNT# 
+          /*수납순번*/
+          AND PAY_CNT   = #PAY_CNT#
+          
+          
+    ]]>			   
+	</delete>
+
+    <!-- 지방세 부과상세정보를 업데이트 한다...(실시간납부결과 취소용) -->
+    <update id="TX1102_TB_Cancle532001_Update" parameterClass="mapForm">
+    <![CDATA[
+    
+         UPDATE TX1102_TB 
+            SET SNTG = '0'
+               ,LAST_DTM = SYSDATE
+         WHERE EPAY_NO = #EPAY_NO#
+    
+    ]]>
+    </update>
+
+    <!-- 지방세 부과상세정보를 업데이트 한다...(실시간납부결과 취소용) -->
+    <update id="TX1102_TB_Cancle532002_Update" parameterClass="mapForm">
+    <![CDATA[
+    
+         UPDATE TX1102_TB 
+            SET SNTG = '0'
+               ,LAST_DTM = SYSDATE
+	     WHERE EPAY_NO = #EPAY_NO#
+    
+    ]]>
+    </update>
+    
+    
+    <!-- 지방세 부과상세정보(실시간납부결과용 취소건)를 조회한다... -->
+	<select id="TX1102_TB_532001_Select" parameterClass="mapForm" resultClass="mapForm">
+	<![CDATA[
+        
+        SELECT 
+             A.SGG_COD   AS SGG_COD,
+             A.ACCT_COD  AS ACCT_COD,
+             A.TAX_ITEM  AS TAX_ITEM,
+             A.TAX_YY    AS TAX_YY,
+             A.TAX_MM    AS TAX_MM,
+             A.TAX_DIV   AS TAX_DIV,
+             A.HACD      AS HACD,
+             A.TAX_SNO   AS TAX_SNO,
+             A.RCP_CNT   AS RCP_CNT
+             
+        FROM TX1102_TB A   /* A :지방세부과상세  */
+        /*전자납부번호*/
+        WHERE A.EPAY_NO   = #EPAY_NO#          
+          AND A.SNTG      IN ('1', '2')   /*0: 기본값, 1: 납부처리중, 2: 납부완료, 9: 납부취소*/
+          AND A.TONG_DIV  IN ('2', '3')   /*통합구분코드*/
+
+	]]>
+	</select>
+    
+
+    <!-- 지방세 부과상세정보(실시간총괄납부결과용 취소건)를 조회한다... -->
+	<select id="TX1102_TB_532002_Select" parameterClass="mapForm" resultClass="mapForm">
+	<![CDATA[
+        
+        SELECT 
+             A.SGG_COD   AS SGG_COD,
+             A.ACCT_COD  AS ACCT_COD,
+             A.TAX_ITEM  AS TAX_ITEM,
+             A.TAX_YY    AS TAX_YY,
+             A.TAX_MM    AS TAX_MM,
+             A.TAX_DIV   AS TAX_DIV,
+             A.HACD      AS HACD,
+             A.TAX_SNO   AS TAX_SNO,
+             A.RCP_CNT   AS RCP_CNT
+             
+        FROM TX1102_TB A, TX1302_TB B   /* A :지방세부과상세  B:지방세일괄통합 및 상세 */
+        WHERE A.SGG_COD   = B.SGG_COD
+          AND A.ACCT_COD  = B.ACCT_COD
+          AND A.TAX_ITEM  = B.TAX_ITEM
+          AND A.TAX_YY    = B.TAX_YY
+          AND A.TAX_MM    = B.TAX_MM
+          AND A.TAX_DIV   = B.TAX_DIV
+          AND A.HACD      = B.HACD
+          AND A.TAX_SNO   = B.TAX_SNO
+                  
+          /*통합납부번호*/
+          AND B.T0NG_NO   = #TOTPAY_NO#          
+          
+          AND A.SNTG      IN ('1', '2')   /*0: 기본값, 1: 납부처리중, 2: 납부완료, 9: 납부취소*/
+          AND A.TONG_DIV  IN ('1')        /*통합구분코드*/
+
+	]]>
+	</select>
+
+</sqlMap>

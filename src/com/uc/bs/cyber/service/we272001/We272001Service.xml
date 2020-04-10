@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="WE272001" >
+
+    <!-- 세외수입 부과내역을 가져온다. -->
+    <select id="SELECT_BNON_SEARCH_LIST"  parameterClass="mapForm" resultClass="mapForm"  >
+    <![CDATA[    
+       /*표준세외수입에 해당*/
+       SELECT '1' TAX_GBN
+            , M.EPAY_NO     /* 전자납부번호 */
+            , D.TAX_NO      /* 납부번호     */
+            , D.SNTG        /*납부상태       */
+            , D.TAX_CNT     /*부과순번       */
+         FROM TX2112_TB D, TX2111_TB_DAMO M
+        WHERE D.TAX_NO = M.TAX_NO
+          AND D.SGG_COD = M.SGG_COD
+          AND M.EPAY_NO  IS NOT NULL    /*전자납부번호는 무조건 있어야된다.  */
+          AND D.SNTG     IN  ('0','1', '2', '9')  /*납부상태 미수납 및 취소*/
+          AND D.DEL_YN = 'N'
+          /*AND F_GET_GYMD(D.DUE_F_DT) >= TO_CHAR(SYSDATE, 'YYYYMMDD')   납부가능한 것만...*/
+        ]]>
+        /*조건 : 전자수납번호*/
+        <isNotEmpty prepend = "AND" property="EPAY_NO">
+              M.EPAY_NO   = #EPAY_NO#     /*전자납부번호 */
+        </isNotEmpty>
+    </select>   
+   
+    <!-- 표준세외수입 전자수납분에 대해 수납순번을 구한다. -->
+    <!-- 중복수납이 존재하므로... -->
+    <select id="TX2211_TB_MaxPayCnt" parameterClass="mapForm" resultClass="int">
+    <![CDATA[
+        
+        SELECT NVL(MAX(E.PAY_CNT) +1, 0) AS MAX_PAY_CNT 
+          FROM TX2211_TB E   
+         WHERE E.TAX_NO = #TAX_NO#
+          
+    ]]>
+    </select>  
+
+
+    <!-- 표준세외수입 위택스 기수납확인 -->
+    <select id="TX2211_TB_WetaxCnt" parameterClass="mapForm" resultClass="int">
+    <![CDATA[
+        
+        SELECT COUNT(*) AS CNT 
+          FROM TX2211_TB
+         WHERE TAX_NO = #TAX_NO#
+         	AND SNSU='1'
+         	AND BANK_CD = #BNK_CD#
+          
+    ]]>
+    </select>  
+
+
+    <!-- 표준세외수입 전자수납테이블 INSERT -->
+    <insert id="INSERT_TX2211_TB_EPAY"  parameterClass="mapForm">
+    <![CDATA[
+    INSERT INTO TX2211_TB(     /*표준세외수입 전자수납*/
+             TAX_NO      /*1.납세번호  :: 여기까지 PK */
+            ,TAX_CNT     /*2.부과순번*/
+            ,PAY_CNT     /*3.수납순번*/ 
+            ,SNTG        /*4.수납FLAG*/
+            ,SUM_RCP     /*5.수납금액*/
+            ,PAY_DT      /*6.납부일자*/
+            ,SNSU        /*7.수납수단*/
+            ,BANK_CD     /*8.납부기관*/
+            ,BRC_NO      /*  .수납기관코드(추가)*/
+            ,TMSG_NO     /*출금은행_전문관리번호      */
+            ,OCR_BD      /*9.OCR밴드*/
+            ,RSN_YN      /*예약납부처리여부*/
+            ,TRTG )      /*10.자료전송상태*/
+    SELECT 
+             D.TAX_NO      /*1*/
+            ,D.TAX_CNT     /*2*/
+            ,#PAY_CNT#     /*3 : 취소된건에 대해 중복수납이 가능하다고 함. */
+            ,'2'           /*4*/
+            ,#SUM_RCP#     /*5*/
+            ,#PAY_DT#      /*6*/
+            ,'1'           /*7*/
+            ,#BNK_CD#      /*8*/
+            ,#BANK_COD#    /*  */
+            ,#CO_BKNUM#
+            ,D.OCR_BD      /*9*/
+            ,#RSN_YN#      /*예약납부처리*/
+            ,'0'           /*10*/
+            /*이중으로 수납받을 수 있으므로 View를 사용하지 않음 */
+      FROM  TX2111_TB M,
+            TX2112_TB D
+     WHERE  M.SGG_COD = D.SGG_COD
+       AND  M.TAX_NO = D.TAX_NO
+       AND  D.DEL_YN = 'N'
+       AND  M.EPAY_NO = #EPAY_NO#
+    ]]>
+    </insert>
+
+    <!-- 표준세외수입 수납처리한다. (수납FLAG) -->
+    <update id="UPDATE_TX2112_TB_NAPBU_INFO" parameterClass="mapForm">
+    <![CDATA[
+	UPDATE TX2112_TB
+	SET SNTG='2'
+		,DEL_YN='N'
+		,LAST_DTM=SYSDATE
+	WHERE TAX_NO=#TAX_NO#    /*TAX_NO */
+    ]]>
+    </update>    
+
+</sqlMap>

@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="EUC-KR" ?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TXDM1273" >
+		
+	<!-- 지방소득세양도소득수기분 -->
+	<insert id="tx1617_man_insert_receipt" parameterClass="mapForm">
+    <![CDATA[
+      INSERT INTO
+        tx1617_tb_damo        /* 지방소득세양도소득수기분 */
+        (
+        pay_dt,          /* 납부일자 */
+        tax_sno,         /* 과세번호 */
+        sido_cod,        /* 시도코드 */
+        sgg_cod,         /* 구청코드 */
+        acct_cod,        /* 회계코드 */
+        tax_item,        /* 과세목 */
+        tax_yymm,        /* 과세년월 */
+        tax_div,         /* 과세구분 */
+        hacd,            /* 행정동 */
+        tax_dt,          /* 신고일자 */
+        sec_reg_no,      /* 주민법인번호 */
+        reg_nm,          /* 성명(법인명) */
+        tpr_cod,         /* 법인코드 */
+        reg_bucd,        /* 납세자법정동 */
+        reg_zipcd,       /* 납세자우편번호 */
+        reg_addr1,       /* 납세자우편주소 */
+        reg_addr2,       /* 납세자상세주소 */
+        cel_no,          /* 휴대전화번호 */
+        tel_no,          /* 전화번호 */
+        saup_no,         /* 사업자등록번호 */
+        cmp_nm,          /* 법인명 */
+        rvsn_yy,         /* 귀속년도 */
+        due_dt,          /* 납기일자 */
+        req_div,         /* 신고구분 */
+        rtn_inc_dt,      /* 양도소득일자 */
+        rtn_zip_no,      /* 양도물건지 우편번호 */
+        rtn_addr,        /* 양도물건지 주소 */
+        rtntx,           /* 양도소득세 */
+        rstx_rtn,        /* 주민세양도소득세할 */
+        radtx,           /* 신고불성실가산액 */
+        padtx,           /* 납부불성실가산액 */
+        tax_rate,        /* 세율 */
+        adtx_yn,         /* 가산세유무 */
+        dlq_cnt,         /* 납부지연일수 */
+        tot_adtx,        /* 가산세합계 */
+        tot_amt,         /* 총납부금액 */
+        f_due_dt,        /* 당초납기 */
+        pay_yn,          /* 수납여부(수기수납처리시) */
+        brc_no,          /* 수납기관코드 */
+        trs_dt,          /* 이체일자 */
+        acc_dt,          /* 회계일자 */
+        tax_no_scy,      /* 연계과세번호 */
+        tr_tg,           /* 전송구분 */
+        master_bank_cod, /* 대표은행코드 */
+        reg_dtm,         /* 등록일시 */
+        last_dtm         /* 최종수정일시 */
+      ) VALUES (
+        #PAY_DT#,          /* 납부일자 */
+        #TAX_SNO#,         /* 과세번호 */
+        #SIDO_COD#,        /* 시도코드 */
+        #SGG_COD#,         /* 구청코드 */
+        #ACCT_COD#,        /* 회계코드 */
+        #TAX_ITEM#,        /* 과세목 */
+        #TAX_YYMM#,        /* 과세년월 */
+        #TAX_DIV#,         /* 과세구분 */
+        #HACD#,            /* 행정동 */
+        #TAX_DT#,          /* 신고일자 */
+        FC_DAMO(#REG_NO#), /* 주민법인번호 */
+        #REG_NM#,          /* 성명(법인명) */
+        #TPR_COD#,         /* 법인코드 */
+        #REG_BUCD#,        /* 납세자법정동 */
+        #ZIP_NO#,          /* 납세자우편번호 */
+        #ZIP_ADDR#,        /* 납세자우편주소 */
+        #OTH_ADDR#,        /* 납세자상세주소 */
+        #MO_TEL#,          /* 휴대전화번호 */
+        #TEL#,             /* 전화번호 */
+        #BIZ_NO#,          /* 사업자등록번호 */
+        #CMP_NM#,          /* 법인명 */
+        #RVSN_YY#,         /* 귀속년도 */
+        #DUE_DT#,          /* 납기일자 */
+        #REQ_DIV#,         /* 신고구분 */
+        #RTN_INC_DT#,      /* 양도소득일자 */
+        #RTN_ZIP_NO#,      /* 양도물건지 우편번호 */
+        #RTN_ADDR#,        /* 양도물건지 주소 */
+        #RTNTX#,           /* 양도소득세 */
+        #RSTX_RTN#,        /* 주민세양도소득세할 */
+        #RADTX#,           /* 신고불성실가산액 */
+        #PADTX#,           /* 납부불성실가산액 */
+        #TAX_RT#,          /* 세율 */
+        #ADTX_YN#,         /* 가산세유무 */
+        #DLQ_CNT#,         /* 납부지연일수 */
+        #TOT_ADTX#,        /* 가산세합계 */
+        #TOT_AMT#,         /* 총납부금액 */
+        #F_DUE_DT#,        /* 당초납기 */
+        #PAY_YN#,          /* 수납여부(수기수납처리시) */
+        #BRC_NO#,          /* 수납기관코드 */
+        #TRS_DT#,          /* 이체일자 */
+        #ACC_DT#,          /* 회계일자 */
+        #TAX_NO_SCY#,      /* 연계과세번호 */
+        #TR_TG#,           /* 전송구분 */
+        #MASTER_BANK_COD#, /* 대표은행코드 */
+        SYSDATE,           /* 등록일시 */
+        SYSDATE            /* 최종수정일시 */     
+        )
+    ]]>
+</insert>	
+	
+    <!-- 지방소득세양도소득할수기분 사이버세청 페이지 건수-->
+    <select id="tx1617_tb_select_page_cnt" parameterClass="mapForm" resultClass="int">
+        <![CDATA[
+        
+            SELECT 
+                 CEIL(COUNT(*) / #PAGE_PER_CNT#) PAGE
+            FROM tx1617_tb   /* 지방소득세 특별징수 */
+            WHERE tr_tg    = #tr_tg#                
+              AND sido_cod = #sido_cod#             
+              AND sgg_cod  = #sgg_cod#
+              AND ROWNUM  <= #rowcnt#              
+        ]]>
+    </select>
+   
+
+   
+    <!-- 지방소득세양도소득할수기분 -->
+    <select id="tx1617_tb_select_list" parameterClass="mapForm">
+        <![CDATA[
+        SELECT 
+            *
+        FROM (
+            SELECT
+                NVL(pay_dt,' ')             PAY_DT,         /* 납부일자 */
+                NVL(tax_sno,' ')            TAX_SNO,        /* 과세번호 */
+                NVL(sido_cod,' ')           SIDO_COD,       /* 시도코드 */
+                NVL(sgg_cod,' ')            SGG_COD,        /* 구청코드 */
+                NVL(acct_cod,' ')           ACCT_COD,       /* 회계코드 */
+                NVL(tax_item,' ')           TAX_ITEM,       /* 과세목 */
+                NVL(tax_yymm,' ')           TAX_YYMM,       /* 과세년월 */
+                NVL(tax_div,' ')            TAX_DIV,        /* 과세구분 */
+                NVL(hacd,' ')               HACD,           /* 행정동 */
+                NVL(tax_dt,' ')             TAX_DT,         /* 신고일자 */
+                NVL(FC_DAMO(sec_reg_no),' ')   REG_NO,      /* 주민법인번호 */
+                NVL(reg_nm,' ')             REG_NM,         /* 성명(법인명) */
+                NVL(tpr_cod,' ')            TPR_COD,        /* 법인코드 */
+                NVL(reg_bucd,' ')           REG_BUCD,       /* 납세자법정동 */
+                NVL(reg_zipcd,' ')          REG_ZIPCD,      /* 납세자우편번호 */
+                NVL(reg_addr1,' ')          REG_ADDR1,      /* 납세자우편주소 */
+                NVL(reg_addr2,' ')          REG_ADDR2,      /* 납세자상세주소 */
+                NVL(cel_no,' ')             CEL_NO,         /* 휴대전화번호 */
+                NVL(tel_no,' ')             TEL_NO,         /* 전화번호 */
+                NVL(saup_no,' ')            SAUP_NO,        /* 사업자등록번호 */
+                NVL(cmp_nm,' ')             CMP_NM,         /* 법인명 */
+                NVL(rvsn_yy,' ')            RVSN_YY,        /* 귀속년도 */
+                NVL(due_dt,' ')             DUE_DT,         /* 납기일자 */
+                NVL(req_div,' ')            REQ_DIV,        /* 신고구분 */
+                NVL(rtn_inc_dt,' ')         RTN_INC_DT,     /* 양도소득일자 */
+                NVL(rtn_zip_no,' ')         RTN_ZIP_NO,     /* 양도물건지 우편번호 */
+                NVL(rtn_addr,' ')           RTN_ADDR,       /* 양도물건지 주소 */
+                NVL(rtntx,0)                RTNTX,          /* 양도소득세 */
+                NVL(rstx_rtn,0)             RSTX_RTN,       /* 주민세 양도소득세할 */
+                NVL(radtx,0)                RADTX,          /* 신고불성실가산액 */
+                NVL(padtx,0)                PADTX,          /* 납부불성실가산액 */
+                NVL(tax_rate,0)             TAX_RATE,       /* 세율 */
+                NVL(adtx_yn,' ')            ADTX_YN,        /* 가산세유무 */
+                NVL(dlq_cnt,0)              DLQ_CNT,        /* 납부지연일수 */
+                NVL(tot_adtx,0)             TOT_ADTX,       /* 가산세합계 */
+                NVL(tot_amt,0)              TOT_AMT,        /* 총납부금액 */
+                NVL(f_due_dt,' ')           F_DUE_DT,       /* 당초납기 */
+                NVL(pay_yn,' ')             PAY_YN,         /* 수납여부(수기수납처리시) */
+                NVL(brc_no,' ')             BRC_NO,         /* 수납기관코드 */
+                NVL(trs_dt,' ')             TRS_DT,         /* 이체일자 */
+                NVL(acc_dt,' ')             ACC_DT,         /* 회계일자 */
+                NVL(tax_no_scy,' ')         TAX_NO_SCY,     /* 연계과세번호 */
+                NVL(tr_tg,' ')              TR_TG,          /* 전송구분 */
+                NVL(master_bank_cod,' ')    BANK_COD,       /* 대표은행코드 */
+                CEIL(ROWNUM / #PAGE_PER_CNT#) AS PAGE       /* 페이지당 갯수 */
+            FROM
+                tx1617_tb_damo                /* 지방소득세 양도소득세 */
+            WHERE     
+                tr_tg = #tr_tg#      
+                AND sido_cod = #sido_cod#
+                AND sgg_cod = #sgg_cod#
+            ORDER BY
+                master_bank_cod,
+                tax_sno
+            )T1
+        WHERE
+             T1.PAGE = #PAGE#
+        ]]>
+    </select>   
+
+    <!-- 양도세 수납내역 건수-->
+    <select id="scyb521_select_cnt" parameterClass="mapForm" resultClass="int">
+        <![CDATA[
+        
+            SELECT 
+                 COUNT(*) AS CNT
+            FROM scyb521   /* 지방소득세 특별징수 */
+            WHERE sgg_cod  = #SGG_COD#                
+              AND tax_dt   = #PAY_DT#             
+              AND tax_no   = #TAX_SNO#         
+        ]]>
+    </select>
+    
+	<!-- 지방소득세 양도세 내역 수신 -->
+	<insert id="scyb521_insert_receipt" parameterClass="mapForm">
+		<![CDATA[
+			INSERT INTO
+			scyb521		/* 양도세 */
+			(
+			reg_yy,			/* 1. 등록연도	 */
+			reg_seq,		/* 2. 등록일련번호	 */
+			sido_cod,		/* 3. 시도코드	 */
+			sgg_cod,		/* 4. 시군구코드 	*/
+			acc_cod,		/* 5. 회계코드	 */
+			tax_item,		/* 6. 세목코드	 */
+			tax_yymm,		/* 7. 과세년월	 */
+			tax_div,		/* 8. 과세구분	 */
+			adong_cod,		/* 9. 과세행정동 	*/
+			tax_no,			/* 10. 과세번호	 */
+			tax_dt,			/* 11. 신고일자	 */
+			reg_no,			/* 12. 납세자 주민/법인번호	 */
+			reg_nm,			/* 13. 납세자 성명	 */
+			tpr_cod,		/* 14. 법인코드	 */
+			ldong_cod,		/* 15. 납세자 법정동 	*/
+			zip_no,			/* 16. 납세자 우편번호	 */
+			zip_addr,		/* 17. 납세자 우편주소	 */
+			oth_addr,		/* 18. 납세자 상세주소	 */
+			mo_tel,			/* 19. 납세자 핸드폰번호 	*/
+			tel,			/* 20. 납세자 전화번호	 */
+			biz_no,			/* 21. 납세자 사업자번호 	*/
+			cmp_nm,			/* 22. 상호명 	*/
+			rvsn_yy,		/* 23. 귀속년도	 */
+			due_dt,			/* 24. 납기일자	 */
+			req_div,		/* 25. 신고구분	 */
+			rtn_inc_dt,		/* 26. 양도소득일자	 */
+			rtn_zip_no,		/* 27. 양도물건지 우편번호	 */
+			rtn_addr,		/* 28. 양도물건지 주소	 */
+			rtntx,			/* 29. 양도소득세 	*/
+			rstx_rtn,		/* 30. 주민세 양도소득세할	 */
+			radtx,			/* 31. 신고불성실 가산세 	*/
+			padtx,			/* 32. 납부불성실 가산세 	*/
+			tax_rt,			/* 33. 세율	 */
+			adtx_yn,		/* 34. 가산세유무 	*/
+			dlq_cnt,		/* 35. 납부지연일수	 */
+			tot_adtx,		/* 36. 가산세 합계	 */
+			tot_amt,		/* 37. 총납부세액 	*/
+			f_due_dt,		/* 38. 당초납기	 */
+			rpt_reg_no,		/* 39. 신고자 주민/법인번호	 */
+			rpt_nm,			/* 30. 신고자 성명/법인명 	*/
+			rpt_tel,		/* 40. 신고자 전화번호	 */
+			rpt_id,			/* 41. 신고자ID	 */
+			epay_no,		/* 42. 전자납부번호	 */
+			trn_yn,			/* 43. 처리여부	 */
+			rec_dtm,		/* 44. 수신일시	 */
+			snd_ip,			/* 45. 송신IP	 */
+			update_dt,		/* 46. 처리시간	 */
+			insert_dt,		/* 47. 입력시간	 */
+			pay_yn,			/* 48. 수납여부(수기수납처리시)	 */
+			bank_cod,		/* 49. 은행코드(수기수납처리시)	 */
+			pay_dt,			/* 50. 수납일자(수기수납처리시)	 */
+			trs_dt,			/* 51. 이체일자(수기수납처리시)	 */
+			acc_dt			/* 52. 회계일자(수기수납처리시)	 */
+			) VALUES (
+			 #REG_YY#,			    /* 1. 등록연도	 */
+			 bill_seq.NEXTVAL,		/* 2. 등록일련번호	 */
+			 #SIDO_COD#,		    /* 3. 시도코드	 */
+			 #SGG_COD#,		        /* 4. 시군구코드 	*/
+			 #ACC_COD#,		        /* 5. 회계코드	 */
+			 #TAX_ITEM#,		    /* 6. 세목코드	 */
+			 #TAX_YYMM#,		    /* 7. 과세년월	 */
+			 #TAX_DIV#,		        /* 8. 과세구분	 */
+			 #HACD#,	            /* 9. 과세행정동 	*/
+			 #TAX_SNO#,			    /* 10. 과세번호	 */
+			 #TAX_DT#,			    /* 11. 신고일자	 */
+			 #REG_NO#,			    /* 12. 납세자 주민/법인번호	 */
+			 #REG_NM#,			    /* 13. 납세자 성명	 */
+			 #TPR_COD#,		        /* 14. 법인코드	 */
+			 #REG_BUCD#,	        /* 15. 납세자 법정동 	*/
+			 #REG_ZIPCD#,			/* 16. 납세자 우편번호	 */
+			 #REG_ADDR1#,		    /* 17. 납세자 우편주소	 */
+			 #REG_ADDR2#,		    /* 18. 납세자 상세주소	 */
+			 #CEL_NO#,			    /* 19. 납세자 핸드폰번호 	*/
+			 #TEL_NO#,			    /* 20. 납세자 전화번호	 */
+			 #SAUP_NO#,			    /* 21. 납세자 사업자번호 	*/
+			 #CMP_NM#,			    /* 22. 상호명 	*/
+			 #RVSN_YY#,		        /* 23. 귀속년도	 */
+			 #DUE_DT#,			    /* 24. 납기일자	 */
+			 #REQ_DIV#,		        /* 25. 신고구분	 */
+			 #RTN_INC_DT#,	        /* 26. 양도소득일자	 */
+			 #RTN_ZIP_NO#,	        /* 27. 양도물건지 우편번호	 */
+			 #RTN_ADDR#,		    /* 28. 양도물건지 주소	 */
+			 #RTNTX#,			    /* 29. 양도소득세 	*/
+			 #RSTX_RTN#,		    /* 30. 주민세 양도소득세할	 */
+			 #RADTX#,			    /* 31. 신고불성실 가산세 	*/
+			 #PADTX#,			    /* 32. 납부불성실 가산세 	*/
+			 #TAX_RATE#,			/* 33. 세율	 */
+			 #ADTX_YN#,		        /* 34. 가산세유무 	*/
+			 #DLQ_CNT#,		        /* 35. 납부지연일수	 */
+			 #TOT_ADTX#,		    /* 36. 가산세 합계	 */
+			 #TOT_AMT#,		        /* 37. 총납부세액 	*/
+			 #F_DUE_DT#,		    /* 38. 당초납기	 */
+			 #RPT_REG_NO#,	        /* 39. 신고자 주민/법인번호	 */
+			 #RPT_NM#,			    /* 30. 신고자 성명/법인명 	*/
+			 #RPT_TEL#,		        /* 40. 신고자 전화번호	 */
+			 #RPT_ID#,			    /* 41. 신고자ID	 */
+			 #EPAY_NO#,		        /* 42. 전자납부번호	 */
+			 #TRN_YN#,			    /* 43. 처리여부	 */
+			 TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS'),	/* 44. 수신일시	 */
+			 #SND_IP#,			                    /* 45. 송신IP	 */
+			 TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS'),	/* 46. 처리시간	 */
+			 TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS'),	/* 47. 입력시간	 */
+			 #PAY_YN#,			    /* 48. 수납여부(수기수납처리시)	 */
+			 #BRC_NO#,		        /* 49. 은행코드(수기수납처리시)	 */
+			 #PAY_DT#,			    /* 50. 수납일자(수기수납처리시)	 */
+			 #TRS_DT#,			    /* 51. 이체일자(수기수납처리시)	 */
+			 #ACC_DT#			    /* 52. 회계일자(수기수납처리시)	 */			
+			)
+		]]>
+	</insert>      
+   
+   
+</sqlMap>

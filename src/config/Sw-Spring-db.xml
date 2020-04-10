@@ -1,0 +1,360 @@
+<?xml version="1.0" encoding="EUC-KR"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xmlns:context="http://www.springframework.org/schema/context"
+	   xmlns:jee="http://www.springframework.org/schema/jee"
+	   xmlns:tx="http://www.springframework.org/schema/tx"
+	   xsi:schemaLocation="http://www.springframework.org/schema/jee 
+	   http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+	   http://www.springframework.org/schema/beans 
+	   http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+	   http://www.springframework.org/schema/tx 
+	   http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+	   http://www.springframework.org/schema/context 
+	   http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+		
+	<context:annotation-config />
+	
+    <!-- Connection pool 등에서 사용할 JDBC 설정 Load  -->
+    <bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations">
+        <list>
+        	<value>/config/jdbc.properties</value>
+        </list>
+        </property>
+        <property name="fileEncoding">
+        	<value>EUC-KR</value>
+        </property>
+	</bean>
+	
+	<bean id="baseDataSource" class="com.atomikos.jdbc.AtomikosDataSourceBean" init-method="init" destroy-method="close" abstract="true">
+		<property name="xaDataSourceClassName" value="oracle.jdbc.xa.client.OracleXADataSource" />
+		<property name="poolSize" value="20" />
+		<property name="borrowConnectionTimeout" value="3600" />
+	</bean>
+	
+    <bean id="dataSource_cyber" parent="baseDataSource">                                                                                                                                                                         
+        <property name="uniqueResourceName" value="oracle_cyber" />                                                                                                                                                          
+        <property name="xaProperties">                                                                                                                                                                                       
+          <props>
+            <prop key="URL" >${dev_jdbc.url}</prop>                                                                                                                                                                      
+            <prop key="user">${dev_jdbc.username}</prop>                                                                                                                                                                 
+            <prop key="password">${dev_jdbc.password}</prop>                                                                                                                                                             
+          </props>
+        </property>
+    </bean> 	
+	
+	<!-- ####################################### -->
+	<!-- 사이버 지방세청 관련연결                -->
+    <!-- 시청 DB 연결정보                        -->
+	<!-- ####################################### -->
+	<bean id="dataSource" parent="baseDataSource">
+		<property name="uniqueResourceName" value="oracle1" />
+		<property name="xaProperties">
+			<props>
+		        <prop key="URL" >${jdbc.url}</prop>
+		        <prop key="user">${jdbc.username}</prop>			
+		        <prop key="password">${jdbc.password}</prop>		        
+			</props>
+		</property>
+	</bean>
+	
+	<!-- ####################################### -->
+	<!-- 표준세외수입 시도DB서버                 -->
+	<!-- ####################################### -->
+	<bean id="dataSource37" parent="baseDataSource">
+		<property name="uniqueResourceName" value="oracle37" />
+		<property name="xaProperties">
+			<props>
+		        <prop key="URL" >${jdbc37.url}</prop>
+		        <prop key="user">${jdbc9.username}</prop>
+		        <prop key="password">${jdbc9.password}</prop>
+			</props>
+		</property>
+	</bean>	
+
+	
+	<!-- ####################################### -->
+	<!-- 표준세외수입 각 구청DB서버             -->
+	<!-- ####################################### -->
+	<bean id="dataSource18" parent="baseDataSource">
+		<property name="uniqueResourceName" value="oracle18" />
+		<property name="xaProperties">
+			<props>
+		        <prop key="URL" >${jdbc18.url}</prop>
+		        <prop key="user">${jdbc9.username}</prop>
+		        <prop key="password">${jdbc9.password}</prop>
+			</props>
+		</property>
+	</bean>
+		
+	<bean id="dataSource19" parent="baseDataSource">
+		<property name="uniqueResourceName" value="oracle19" />
+		<property name="xaProperties">
+			<props>
+		        <prop key="URL" >${jdbc19.url}</prop>
+		        <prop key="user">${jdbc9.username}</prop>
+		        <prop key="password">${jdbc9.password}</prop>
+			</props>
+		</property>
+	</bean>	
+	
+	<bean id="dataSource20" parent="baseDataSource">
+		<property name="uniqueResourceName" value="oracle20" />
+		<property name="xaProperties">
+			<props>
+		        <prop key="URL" >${jdbc20.url}</prop>
+		        <prop key="user">${jdbc9.username}</prop>
+		        <prop key="password">${jdbc9.password}</prop>
+			</props>
+		</property>
+	</bean>	
+	
+	<bean id="dataSource21" parent="baseDataSource">
+		<property name="uniqueResourceName" value="oracle21" />
+		<property name="xaProperties">
+			<props>
+		        <prop key="URL" >${jdbc21.url}</prop>
+		        <prop key="user">${jdbc9.username}</prop>
+		        <prop key="password">${jdbc9.password}</prop>
+			</props>
+		</property>
+	</bean>	
+	
+	<bean id="dataSource22" parent="baseDataSource">
+		<property name="uniqueResourceName" value="oracle22" />
+		<property name="xaProperties">
+			<props>
+		        <prop key="URL" >${jdbc22.url}</prop>
+		        <prop key="user">${jdbc9.username}</prop>
+		        <prop key="password">${jdbc9.password}</prop>
+			</props>
+		</property>
+	</bean>	
+	
+	<bean id="dataSource23" parent="baseDataSource">
+		<property name="uniqueResourceName" value="oracle23" />
+		<property name="xaProperties">
+			<props>
+		        <prop key="URL" >${jdbc23.url}</prop>
+		        <prop key="user">${jdbc9.username}</prop>
+		        <prop key="password">${jdbc9.password}</prop>
+			</props>
+		</property>
+	</bean>	
+	
+	<bean id="dataSource24" parent="baseDataSource">
+		<property name="uniqueResourceName" value="oracle24" />
+		<property name="xaProperties">
+			<props>
+		        <prop key="URL" >${jdbc24.url}</prop>
+		        <prop key="user">${jdbc9.username}</prop>
+		        <prop key="password">${jdbc9.password}</prop>
+			</props>
+		</property>
+	</bean>	
+	
+	<bean id="dataSource25" parent="baseDataSource">
+		<property name="uniqueResourceName" value="oracle25" />
+		<property name="xaProperties">
+			<props>
+		        <prop key="URL" >${jdbc25.url}</prop>
+		        <prop key="user">${jdbc9.username}</prop>
+		        <prop key="password">${jdbc9.password}</prop>
+			</props>
+		</property>
+	</bean>	
+	
+	<bean id="dataSource26" parent="baseDataSource">
+		<property name="uniqueResourceName" value="oracle26" />
+		<property name="xaProperties">
+			<props>
+		        <prop key="URL" >${jdbc26.url}</prop>
+		        <prop key="user">${jdbc9.username}</prop>
+		        <prop key="password">${jdbc9.password}</prop>
+			</props>
+		</property>
+	</bean>	
+	
+	<bean id="dataSource27" parent="baseDataSource">
+		<property name="uniqueResourceName" value="oracle27" />
+		<property name="xaProperties">
+			<props>
+		        <prop key="URL" >${jdbc27.url}</prop>
+		        <prop key="user">${jdbc9.username}</prop>
+		        <prop key="password">${jdbc9.password}</prop>
+			</props>
+		</property>
+	</bean>	
+	
+	<bean id="dataSource28" parent="baseDataSource">
+		<property name="uniqueResourceName" value="oracle28" />
+		<property name="xaProperties">
+			<props>
+		        <prop key="URL" >${jdbc28.url}</prop>
+		        <prop key="user">${jdbc9.username}</prop>
+		        <prop key="password">${jdbc9.password}</prop>
+			</props>
+		</property>
+	</bean>	
+	
+
+	<bean id="dataSource29" parent="baseDataSource">
+		<property name="uniqueResourceName" value="oracle29" />
+		<property name="xaProperties">
+			<props>
+		        <prop key="URL" >${jdbc29.url}</prop>
+		        <prop key="user">${jdbc9.username}</prop>
+		        <prop key="password">${jdbc9.password}</prop>
+			</props>
+		</property>
+	</bean>
+		
+	
+	<bean id="dataSource30" parent="baseDataSource">
+		<property name="uniqueResourceName" value="oracle30" />
+		<property name="xaProperties">
+			<props>
+		        <prop key="URL" >${jdbc30.url}</prop>
+		        <prop key="user">${jdbc9.username}</prop>
+		        <prop key="password">${jdbc9.password}</prop>
+			</props>
+		</property>
+	</bean>	
+	
+	<bean id="dataSource31" parent="baseDataSource">
+		<property name="uniqueResourceName" value="oracle31" />
+		<property name="xaProperties">
+			<props>
+		        <prop key="URL" >${jdbc31.url}</prop>
+		        <prop key="user">${jdbc9.username}</prop>
+		        <prop key="password">${jdbc9.password}</prop>
+			</props>
+		</property>
+	</bean>	
+	
+	<bean id="dataSource32" parent="baseDataSource">
+		<property name="uniqueResourceName" value="oracle32" />
+		<property name="xaProperties">
+			<props>
+		        <prop key="URL" >${jdbc32.url}</prop>
+		        <prop key="user">${jdbc9.username}</prop>
+		        <prop key="password">${jdbc9.password}</prop>
+			</props>
+		</property>
+	</bean>	
+	
+	<bean id="dataSource33" parent="baseDataSource">
+		<property name="uniqueResourceName" value="oracle33" />
+		<property name="xaProperties">
+			<props>
+		        <prop key="URL" >${jdbc33.url}</prop>
+		        <prop key="user">${jdbc9.username}</prop>
+		        <prop key="password">${jdbc9.password}</prop>
+			</props>
+		</property>
+	</bean>	
+	 
+		
+	<bean id="orgDataSource" class="com.uc.core.spring.service.RoutingDataSource">
+	
+		<property name="targetDataSources">
+			<map key-type="java.lang.String">		
+					
+				<entry key="LT_etax" value-ref="dataSource"/>
+				
+				<entry key="NI_325" value-ref="dataSource18"/>
+				<entry key="NI_326" value-ref="dataSource19"/>
+				<entry key="NI_327" value-ref="dataSource20"/>
+				<entry key="NI_328" value-ref="dataSource21"/>
+				<entry key="NI_329" value-ref="dataSource22"/>
+				<entry key="NI_330" value-ref="dataSource23"/>
+				<entry key="NI_331" value-ref="dataSource24"/>
+				<entry key="NI_332" value-ref="dataSource25"/>                                                                                                                               
+				<entry key="NI_333" value-ref="dataSource26"/>                                                                                                                              
+				<entry key="NI_334" value-ref="dataSource27"/>                                                                                                                               
+				<entry key="NI_335" value-ref="dataSource28"/>                                                                                                                               
+			    <entry key="NI_336" value-ref="dataSource29"/>				                                                                                                                              
+				<entry key="NI_337" value-ref="dataSource30"/>                                                                                                                               
+				<entry key="NI_338" value-ref="dataSource31"/>                                                                                                                               
+				<entry key="NI_339" value-ref="dataSource32"/>  	
+				<entry key="NI_340" value-ref="dataSource33"/>	
+				<!-- 표준세외수입 시도DB서버-->
+				<entry key="NI_626" value-ref="dataSource37"/>
+								
+			</map>
+		</property>
+	</bean>
+
+    <!-- JTA -->
+    <bean id="atomikosTransactionManager" class="com.atomikos.icatch.jta.UserTransactionManager" init-method="init" destroy-method="close">
+            <property name="forceShutdown"><value>true</value></property>
+    </bean>
+
+    <bean id="atomikosUserTransaction" class="com.atomikos.icatch.jta.UserTransactionImp">
+            <property name="transactionTimeout"><value>300</value></property>
+    </bean>
+
+    <bean id="txManager" class="org.springframework.transaction.jta.JtaTransactionManager">
+            <property name="transactionManager"><ref bean="atomikosTransactionManager"  /></property>
+            <property name="userTransaction"><ref bean="atomikosUserTransaction"  /></property>
+    </bean>
+
+    <!-- Annotation 기반 트랜젝션 사용... -->
+    <tx:annotation-driven transaction-manager="txManager"/>
+
+    <bean id="nativeJdbcExtractor" class="org.springframework.jdbc.support.nativejdbc.SimpleNativeJdbcExtractor" lazy-init="true"/>
+
+        <bean id="oracleLobHandler"  class="org.springframework.jdbc.support.lob.OracleLobHandler" lazy-init="true">
+         <property name="nativeJdbcExtractor">
+          <ref local="nativeJdbcExtractor"/>
+         </property>
+        </bean>
+
+        <!-- Spring 에서 제공하는 ibatis client plugin 사용 -->
+        <bean id="sqlMapClient" class="com.uc.core.spring.service.SqlMapClient">
+           <property name="configLocation">
+                        <value>config/sqlmapConfig.xml</value>
+           </property>
+           <property name="dataSource" ref="orgDataSource"/>
+           <property name="lobHandler" ref="oracleLobHandler"/>
+        </bean>
+
+        <!-- Spring 에서 제공하는 ibatis client plugin 사용 -->
+        <bean id="sqlMapClient_cyber" class="com.uc.core.spring.service.SqlMapClient">
+           <property name="configLocation">
+                        <value>config/sqlmapConfig.xml</value>
+           </property>
+           <property name="dataSource" ref="dataSource_cyber"/>
+           <property name="lobHandler" ref="oracleLobHandler"/>
+        </bean>
+
+        <!-- Ibatis를 사용하기 위한 기본 서비스...(여러개의 쿼리를 하나의 트랜젝션에 묶을때는 서비스를 새로 만들자 그 외는 전부 이것) -->
+        <bean id="ibatisService" class="com.uc.core.spring.service.IbatisServiceImpl">
+           <property name="sqlMapClient" ref="sqlMapClient"/>
+        </bean>
+
+        <bean id="ibatisService_cyber" class="com.uc.core.spring.service.IbatisServiceImpl">
+           <property name="sqlMapClient" ref="sqlMapClient_cyber"/>
+        </bean>
+
+        <!-- 배치처리용 Service 개별 메소드에 트랜젝션이 없다. -->                                                                                                                                       
+        <bean id="baseService" class="com.uc.core.spring.service.IbatisBaseService">                                                                                                                     
+           <property name="sqlMapClient" ref="sqlMapClient"/>                                                                                                                                       
+        </bean>                                                                                                                                                                                          
+                                                                                                                                                                                                         
+        <bean id="baseService_cyber" class="com.uc.core.spring.service.IbatisBaseService">                                                                                                               
+           <property name="sqlMapClient" ref="sqlMapClient_cyber"/>                                                                                                                                 
+        </bean>                                                                                                                                                                                          
+                                                                                                                                                                                                         
+        <!-- 배치처리(여러개의 쿼리를 트랜젝션에 묶기) 테스트 서비스 -->                                                                                                                                 
+                                                                                                                                                                                                         
+        <!-- 배치처리(여러개의 쿼리를 트랜젝션에 묶기) 공통 서비스 -->                                                                                                                                   
+        <bean id="ibatisBatchService" class="com.uc.core.spring.service.IbatisBatchServiceImpl">                                                                                                         
+                                                                                                                                                                                                         
+        </bean>  
+	
+</beans>
+
+
